@@ -1,0 +1,15 @@
+{
+  "name": "PAOA Lab - Processamento de Alimentos de Origem Animal",
+  "short_name": "PAOA Lab",
+  "description": "App didático para cadastro de produtos, insumos, formulações, legislação e roteiros de aula prática.",
+  "start_url": "index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F6F0E8",
+  "theme_color": "#6B2F1A",
+  "icons": [
+    { "src": "icon.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
