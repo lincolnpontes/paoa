@@ -1,7 +1,8 @@
 'use strict';
 
 const STORAGE_KEY = 'paoa_lab_v1';
-const APP_VERSION = '1.0.0';
+const APP_VERSION = '1.3.1';
+
 const TYPES = [
   { value: 'carne', label: 'Carne / matéria-prima cárnea' },
   { value: 'gordura', label: 'Gordura' },
@@ -15,15 +16,80 @@ const TYPES = [
   { value: 'outro', label: 'Outro' }
 ];
 
+const IMAGE_MIGRATIONS = {
+  'assets/hamburguer-bovino.png': 'assets/hamburguer-bovino.jpg',
+  'assets/linguica-frescal.png': 'assets/linguica-frescal.jpg'
+};
+
+const PRODUCT_CATEGORIES = [
+  {
+    id: 'reestruturados',
+    titulo: 'Produtos Reestruturados',
+    resumo: 'Produtos reestruturados usam cortes moídos ou fragmentados, sal, água/gelo e trabalho mecânico para reorganizar proteínas e formar uma matriz coesa.',
+    topicos: [
+      'Extração de proteínas miofibrilares e formação de liga',
+      'Distribuição de gordura e impacto em suculência, maciez e rendimento',
+      'Modelagem em porções padronizadas e avaliação de perda por cocção',
+      'Formulações podem ser calculadas sobre a massa cárnea ou sobre 100% do produto final'
+    ],
+    perguntas: [
+      'O que muda na textura quando a gordura é reduzida?',
+      'Por que sal e mistura mecânica ajudam na coesão?',
+      'Como interpretar percentuais sobre massa cárnea em vez de produto final?'
+    ],
+    produtos: ['prod_hamburguer', 'prod_kafta', 'prod_almondega'],
+    insumos: ['ing_carne_bovina_magra', 'ing_gordura_bovina', 'ing_sal', 'ing_agua_gelada', 'ing_alho_po', 'ing_farinha_rosca']
+  },
+  {
+    id: 'embutidos',
+    titulo: 'Produtos Embutidos',
+    etiqueta: 'Processos cárneos',
+    resumo: 'Produtos embutidos organizam massa cárnea, gordura, condimentos e envoltório para padronizar formato, calibre, textura e conservação.',
+    topicos: [
+      'Moagem, mistura e controle de temperatura da massa',
+      'Função do envoltório natural ou artificial na forma, mordida e aparência',
+      'Diferenças entre embutidos frescos, cozidos, curados e dessecados',
+      'Controle de bolsas de ar, distribuição de gordura e conservação refrigerada'
+    ],
+    perguntas: [
+      'Como a granulometria muda a aparência e a mordida do produto?',
+      'Por que o produto frescal exige atenção maior à refrigeração?',
+      'Que falhas de processo aparecem durante o embutimento?'
+    ],
+    produtos: ['prod_linguica_frescal', 'prod_salsicha'],
+    insumos: ['ing_pernil_suino', 'ing_toucinho_suino', 'ing_sal', 'ing_agua_gelada', 'ing_tripa_suina', 'ing_paprica_doce']
+  },
+  {
+    id: 'emulsionados',
+    titulo: 'Produtos Emulsionados',
+    resumo: 'Produtos emulsionados dependem de trituração fina, gelo, sal e proteínas solubilizadas para estabilizar água, gordura e fase cárnea em uma massa homogênea.',
+    topicos: [
+      'Controle de temperatura durante cutterização ou processamento fino',
+      'Papel do sal, gelo e fosfatos na extração proteica e estabilidade',
+      'Formação de emulsão cárnea, textura fina e perda de gordura por cocção',
+      'Relação entre produto emulsionado, embutimento e tratamento térmico'
+    ],
+    perguntas: [
+      'O que acontece quando a massa aquece demais durante a emulsificação?',
+      'Como gelo, gordura e proteína influenciam estabilidade e textura?',
+      'Por que alguns produtos podem pertencer a mais de uma categoria?'
+    ],
+    produtos: ['prod_pate', 'prod_salsicha'],
+    insumos: ['ing_pernil_suino', 'ing_toucinho_suino', 'ing_agua_gelada', 'ing_sal', 'ing_fosfato', 'ing_amido', 'ing_leite_po']
+  }
+];
+
 const DEFAULT_DB = {
   app_id: 'paoa_lab',
   version: APP_VERSION,
-  configs: { ultimoProdutoAula: 'prod_hamburguer', filtroInsumo: 'todos' },
+  configs: { ultimoProdutoAula: 'prod_hamburguer', produtoSelecionado: '', filtroInsumo: 'todos' },
   produtos: [
     {
       id: 'prod_hamburguer',
       nome: 'Hambúrguer bovino',
       categoria: 'Produto cárneo reestruturado',
+      categoriaId: 'reestruturados',
+      categoriaIds: ['reestruturados'],
       especie: 'bovina',
       tipo: 'hamburguer',
       descricao: 'Produto cárneo industrializado obtido de carne moída, com ou sem tecido adiposo e ingredientes, moldado e submetido a processo tecnológico adequado.',
@@ -36,13 +102,13 @@ const DEFAULT_DB = {
         proibeProteinaNaoCarnea: false,
         mostrarValidacao: true
       },
-      fotos: [],
+      fotos: ['assets/hamburguer-bovino.jpg'],
       fluxo: [
-        'Recepção e seleção da matéria-prima',
-        'Pesagem dos insumos',
+        'Recepção e seleção da matéria-prima refrigerada',
+        'Pesagem dos insumos conforme a formulação',
         'Moagem da carne e da gordura',
         'Mistura com sal, água gelada e condimentos',
-        'Trabalho mecânico para melhorar a liga',
+        'Trabalho mecânico para melhorar a extração proteica e a liga',
         'Moldagem em porções padronizadas',
         'Congelamento ou cocção conforme o objetivo da prática',
         'Avaliação de rendimento, textura, suculência e aparência'
@@ -53,7 +119,17 @@ const DEFAULT_DB = {
         'Controlar o teor de gordura da formulação',
         'Evitar excesso de água livre',
         'Registrar peso antes e depois da cocção',
-        'Conferir limites legais quando houver uso de proteína não cárnea ou carboidratos'
+        'Conferir limites legais quando houver proteína não cárnea ou carboidratos'
+      ],
+      equipamentos: [
+        'Balança semianalítica ou balança de bancada',
+        'Moedor de carne',
+        'Bacias ou bowls de aço inox',
+        'Modelador de hambúrguer',
+        'Papel filme ou papel manteiga para separação das unidades',
+        'Chapa, frigideira ou grill para cocção experimental',
+        'Termômetro tipo espeto',
+        'Luvas, touca, avental e superfície higienizada'
       ],
       perguntas: [
         'Qual foi o papel do sal na formação da textura?',
@@ -61,16 +137,300 @@ const DEFAULT_DB = {
         'A formulação atende aos parâmetros legais de gordura, proteína e carboidratos?',
         'O que mudaria se fosse usado outro corte ou outra espécie animal?'
       ]
+    },
+    {
+      id: 'prod_kafta',
+      nome: 'Kafta bovina',
+      categoria: 'Produto cárneo reestruturado moldado',
+      categoriaId: 'reestruturados',
+      categoriaIds: ['reestruturados'],
+      especie: 'bovina',
+      tipo: 'geral',
+      descricao: 'Preparação cárnea reestruturada, condimentada e moldada em formato alongado, útil para discutir liga, modelagem, padronização de porções e estabilidade durante cocção.',
+      objetivo: 'Avaliar como condimentos, teor de gordura, mistura mecânica e moldagem influenciam coesão, aparência, rendimento e estabilidade da kafta.',
+      parametros: {
+        gorduraMax: '',
+        proteinaMin: '',
+        carbMax: '',
+        proteinaNaoCarneaMax: '',
+        proibeProteinaNaoCarnea: false,
+        mostrarValidacao: true
+      },
+      fotos: ['assets/kafta-bovina.jpg'],
+      fluxo: [
+        'Seleção da carne e gordura sob refrigeração',
+        'Moagem da matéria-prima na granulometria definida',
+        'Pesagem dos condimentos conforme a formulação',
+        'Mistura até distribuição uniforme e boa coesão da massa',
+        'Moldagem em espetos ou porções alongadas padronizadas',
+        'Pesagem antes da cocção para cálculo de rendimento',
+        'Cocção experimental em chapa, forno ou grelha',
+        'Avaliação de perda por cocção, estabilidade, textura e aparência'
+      ],
+      pontos: [
+        'Manter a massa fria para evitar perda de definição e exsudação de gordura',
+        'Padronizar peso e formato das porções',
+        'Evitar excesso de condimentos secos que fragilizem a coesão',
+        'Registrar peso antes e depois da cocção',
+        'Observar rachaduras, desprendimento do espeto e perda de suculência'
+      ],
+      equipamentos: [
+        'Balança de bancada',
+        'Moedor de carne',
+        'Bowls de aço inox',
+        'Espetos ou moldes alongados',
+        'Espátulas e bandejas',
+        'Chapa, forno ou grelha para cocção experimental',
+        'Termômetro tipo espeto',
+        'Papel filme para padronização e descanso da massa'
+      ],
+      perguntas: [
+        'Como a intensidade da mistura alterou a coesão da kafta?',
+        'O formato alongado aumenta ou reduz a perda por cocção?',
+        'Quais condimentos interferem mais na percepção sensorial?',
+        'Que ajustes fariam a formulação ficar mais estável sem perder suculência?'
+      ]
+    },
+    {
+      id: 'prod_almondega',
+      nome: 'Almôndega bovina',
+      categoria: 'Produto cárneo reestruturado moldado',
+      categoriaId: 'reestruturados',
+      categoriaIds: ['reestruturados'],
+      especie: 'bovina',
+      tipo: 'geral',
+      descricao: 'Produto cárneo moldado em porções esféricas, adequado para estudar liga, ingredientes de estrutura, perda por cocção, padronização e rendimento.',
+      objetivo: 'Compreender o papel de ingredientes ligantes, gordura, mistura e padronização de tamanho na textura, rendimento e aparência da almôndega.',
+      parametros: {
+        gorduraMax: '',
+        proteinaMin: '',
+        carbMax: '',
+        proteinaNaoCarneaMax: '',
+        proibeProteinaNaoCarnea: false,
+        mostrarValidacao: true
+      },
+      fotos: ['assets/almondega-bovina.jpg'],
+      fluxo: [
+        'Recepção e manutenção da carne refrigerada',
+        'Moagem da carne e da gordura',
+        'Pesagem dos ingredientes secos e úmidos',
+        'Mistura até obtenção de massa coesa e homogênea',
+        'Modelagem em unidades com peso padronizado',
+        'Pesagem inicial das unidades',
+        'Cocção experimental em forno, chapa ou molho padronizado',
+        'Cálculo de rendimento e avaliação de textura, cor e formato'
+      ],
+      pontos: [
+        'Controlar o tamanho das unidades para comparar rendimento',
+        'Evitar mistura insuficiente, que causa desmanche na cocção',
+        'Evitar mistura excessiva, que pode endurecer a textura',
+        'Observar efeito de ligantes como ovo e farinha de rosca',
+        'Registrar perda de massa e aparência final'
+      ],
+      equipamentos: [
+        'Balança de bancada',
+        'Moedor de carne',
+        'Bowls de aço inox',
+        'Colher dosadora ou porcionador',
+        'Bandejas',
+        'Forno, chapa ou panela para cocção experimental',
+        'Termômetro tipo espeto',
+        'Papel filme ou recipiente tampado para descanso'
+      ],
+      perguntas: [
+        'Qual foi a função do ovo ou do ingrediente ligante na estrutura?',
+        'Como o tamanho da almôndega altera tempo de cocção e rendimento?',
+        'A formulação ficou mais macia ou mais firme do que o esperado?',
+        'Que alteração faria sentido para reduzir desmanche sem deixar a textura seca?'
+      ]
+    },
+    {
+      id: 'prod_linguica_frescal',
+      nome: 'Linguiça frescal suína',
+      categoria: 'Embutido cárneo fresco',
+      categoriaId: 'embutidos',
+      categoriaIds: ['embutidos'],
+      especie: 'suína',
+      tipo: 'linguica_frescal',
+      descricao: 'Produto cárneo fresco, moído, condimentado e embutido em envoltório natural ou artificial, mantido sob refrigeração e sem tratamento térmico no processamento.',
+      objetivo: 'Relacionar granulometria, teor de gordura, sal, gelo e embutimento com textura, rendimento, aparência e controle higiênico-sanitário da linguiça frescal.',
+      parametros: {
+        gorduraMax: 30,
+        proteinaMin: 12,
+        carbMax: '',
+        proteinaNaoCarneaMax: 2.5,
+        proibeProteinaNaoCarnea: false,
+        mostrarValidacao: true
+      },
+      fotos: ['assets/linguica-frescal.jpg'],
+      fluxo: [
+        'Recepção da carne suína, gordura e tripas sob refrigeração',
+        'Toalete, corte e padronização dos pedaços para moagem',
+        'Moagem da carne e do toucinho na granulometria definida',
+        'Pesagem dos condimentos, sal e água gelada',
+        'Mistura até distribuição uniforme dos ingredientes',
+        'Hidratação e preparo das tripas naturais quando utilizadas',
+        'Embutimento sem excesso de ar e torção em gomos padronizados',
+        'Embalagem, identificação e conservação refrigerada',
+        'Avaliação de rendimento, aparência, coesão e perda por cocção'
+      ],
+      pontos: [
+        'Trabalhar com matéria-prima fria e utensílios higienizados',
+        'Evitar aquecimento da massa durante moagem e mistura',
+        'Controlar teor de gordura para não ultrapassar o limite do produto frescal',
+        'Não utilizar CMS em linguiça frescal',
+        'Evitar bolsas de ar e falhas de enchimento no embutimento',
+        'Manter o produto refrigerado até a cocção experimental'
+      ],
+      equipamentos: [
+        'Balança de bancada',
+        'Moedor de carne',
+        'Misturador manual ou bowls de aço inox',
+        'Embutidora ou ensacadeira',
+        'Tripa suína natural hidratada',
+        'Barbante culinário ou amarrador',
+        'Agulha fina para retirada de ar',
+        'Bandejas, filme plástico e termômetro'
+      ],
+      perguntas: [
+        'Como a granulometria altera textura e aparência?',
+        'Qual é o efeito do teor de gordura sobre suculência e perda por cocção?',
+        'Como o gelo ajuda no controle de temperatura e distribuição dos condimentos?',
+        'Quais diferenças tecnológicas existem entre linguiça frescal, cozida e dessecada?',
+        'A formulação atende aos limites de gordura e proteína previstos para linguiças frescais?'
+      ]
+    },
+    {
+      id: 'prod_pate',
+      nome: 'Patê cárneo',
+      categoria: 'Produto cárneo emulsionado/pastoso',
+      categoriaId: 'emulsionados',
+      categoriaIds: ['emulsionados'],
+      especie: 'suína',
+      tipo: 'geral',
+      descricao: 'Produto cárneo de textura fina e espalhável, adequado para discutir trituração, emulsificação, tratamento térmico, envase e estabilidade de massa pastosa.',
+      objetivo: 'Compreender como matéria-prima cárnea, gordura, água/gelo, sal, amido e processamento fino interferem na textura, estabilidade, rendimento e segurança do patê.',
+      parametros: {
+        gorduraMax: '',
+        proteinaMin: '',
+        carbMax: '',
+        proteinaNaoCarneaMax: '',
+        proibeProteinaNaoCarnea: false,
+        mostrarValidacao: true
+      },
+      fotos: ['assets/pate-carneo.jpg'],
+      fluxo: [
+        'Recepção e seleção da matéria-prima refrigerada',
+        'Pesagem de carnes, gordura, água/gelo, sal e ingredientes secos',
+        'Pré-cominuição ou moagem da matéria-prima',
+        'Processamento fino em cutter ou processador com adição gradual de gelo',
+        'Ajuste de condimentos e ingredientes de estabilidade',
+        'Envase em potes ou formas adequadas',
+        'Tratamento térmico conforme objetivo da prática',
+        'Resfriamento rápido, identificação e avaliação de textura, aparência e espalhabilidade'
+      ],
+      pontos: [
+        'Manter a massa fria durante a trituração fina',
+        'Adicionar gelo de forma controlada para evitar aquecimento',
+        'Observar separação de gordura ou água livre',
+        'Padronizar peso de envase para comparar rendimento',
+        'Monitorar tempo e temperatura do tratamento térmico',
+        'Resfriar rapidamente após o processamento térmico'
+      ],
+      equipamentos: [
+        'Balança de bancada',
+        'Moedor, cutter ou processador de alimentos',
+        'Bowls de aço inox',
+        'Espátulas de silicone',
+        'Potes ou formas para envase',
+        'Banho-maria, panela ou forno para tratamento térmico',
+        'Termômetro tipo espeto',
+        'Bandejas e filme plástico'
+      ],
+      perguntas: [
+        'O que indica instabilidade quando aparece água livre ou gordura separada?',
+        'Como a temperatura da massa interfere na textura final?',
+        'Qual ingrediente teve maior impacto na espalhabilidade?',
+        'Como o envase e o resfriamento podem afetar segurança e padronização?'
+      ]
+    },
+    {
+      id: 'prod_salsicha',
+      nome: 'Salsicha',
+      categoria: 'Produto cárneo embutido e emulsionado',
+      categoriaId: 'embutidos',
+      categoriaIds: ['embutidos', 'emulsionados'],
+      especie: 'suína',
+      tipo: 'geral',
+      descricao: 'Produto cárneo emulsionado, embutido e cozido, usado para integrar conceitos de emulsão cárnea, envoltório, estabilidade, tratamento térmico e resfriamento.',
+      objetivo: 'Relacionar cutterização, teor de gordura, gelo, sal, estabilidade da emulsão e embutimento com textura fina, rendimento, aparência e qualidade da salsicha.',
+      parametros: {
+        gorduraMax: '',
+        proteinaMin: '',
+        carbMax: '',
+        proteinaNaoCarneaMax: '',
+        proibeProteinaNaoCarnea: false,
+        mostrarValidacao: true
+      },
+      fotos: ['assets/salsicha.jpg'],
+      fluxo: [
+        'Recepção e manutenção das matérias-primas sob refrigeração',
+        'Corte, pesagem e pré-moagem de carnes e gordura',
+        'Cutterização com sal, gelo e ingredientes secos',
+        'Acompanhamento da temperatura da massa durante a emulsificação',
+        'Embutimento em envoltório apropriado e padronização do calibre',
+        'Tratamento térmico até atingir temperatura interna definida',
+        'Resfriamento rápido em água fria ou banho de gelo',
+        'Avaliação de textura, cor, estabilidade e perda por cocção'
+      ],
+      pontos: [
+        'Evitar aquecimento excessivo durante a cutterização',
+        'Adicionar gelo gradualmente para controlar temperatura e hidratação',
+        'Observar quebra de emulsão, exsudação e falhas de textura',
+        'Evitar bolhas de ar e variação de calibre no embutimento',
+        'Monitorar temperatura interna no cozimento',
+        'Resfriar rapidamente para interromper cocção e estabilizar textura'
+      ],
+      equipamentos: [
+        'Balança de bancada',
+        'Moedor de carne',
+        'Cutter, processador ou emulsificador',
+        'Embutidora',
+        'Envoltório artificial ou natural adequado',
+        'Tanque, panela ou banho-maria para cozimento',
+        'Banho de gelo para resfriamento',
+        'Termômetro tipo espeto e bandejas'
+      ],
+      perguntas: [
+        'Por que a salsicha aparece em Embutidos e em Emulsionados?',
+        'Quais sinais indicam quebra de emulsão?',
+        'Como temperatura e gelo influenciam textura e rendimento?',
+        'O envoltório usado alterou aparência, calibre ou mordida?'
+      ]
     }
   ],
   insumos: [
-    { id: 'ing_carne_bovina_magra', nome: 'Carne bovina magra', categoria: 'Matéria-prima cárnea', tipo: 'carne', funcao: 'Fornece proteínas miofibrilares responsáveis pela estrutura, liga e textura do produto.', obs: 'Para aula, pode-se comparar cortes mais magros e cortes com maior teor de gordura.', gordura: 5, proteina: 20, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
+    { id: 'ing_carne_bovina_magra', nome: 'Carne bovina magra', categoria: 'Matéria-prima cárnea', tipo: 'carne', funcao: 'Fornece proteínas miofibrilares responsáveis pela estrutura, liga e textura do produto.', obs: 'Em aula, comparar cortes mais magros e cortes com maior teor de gordura evidencia diferenças de textura e rendimento.', gordura: 5, proteina: 20, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
     { id: 'ing_gordura_bovina', nome: 'Gordura bovina', categoria: 'Gordura animal', tipo: 'gordura', funcao: 'Contribui para suculência, sabor, maciez e percepção de palatabilidade.', obs: 'Deve ser bem distribuída para evitar perda excessiva durante a cocção.', gordura: 100, proteina: 0, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
-    { id: 'ing_agua_gelada', nome: 'Água gelada', categoria: 'Veículo tecnológico', tipo: 'agua', funcao: 'Ajuda na distribuição dos ingredientes, hidratação e controle de temperatura durante a mistura.', obs: 'O excesso pode deixar a massa pouco coesa.', gordura: 0, proteina: 0, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
-    { id: 'ing_sal', nome: 'Sal', categoria: 'Condimento / sal', tipo: 'sal', funcao: 'Contribui para sabor e favorece a extração de proteínas miofibrilares, aumentando a liga da massa.', obs: 'Em aula, comparar formulações com diferentes teores de sal mostra diferença de coesão.', gordura: 0, proteina: 0, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
+    { id: 'ing_pernil_suino', nome: 'Pernil suíno magro', categoria: 'Matéria-prima cárnea', tipo: 'carne', funcao: 'Base proteica da linguiça frescal; contribui para estrutura, rendimento e sabor característico.', obs: 'Manter refrigerado e moer frio para reduzir liberação de gordura.', gordura: 8, proteina: 20, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
+    { id: 'ing_toucinho_suino', nome: 'Toucinho suíno', categoria: 'Gordura animal', tipo: 'gordura', funcao: 'Ajusta o teor de gordura, melhora suculência e contribui para sabor e textura do embutido.', obs: 'Cortar em cubos e manter frio antes da moagem para preservar definição de partículas.', gordura: 99, proteina: 1, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
+    { id: 'ing_agua_gelada', nome: 'Água gelada / gelo', categoria: 'Veículo tecnológico', tipo: 'agua', funcao: 'Ajuda na distribuição dos ingredientes, hidratação e controle de temperatura durante a mistura.', obs: 'O excesso pode deixar a massa pouco coesa ou favorecer exsudação.', gordura: 0, proteina: 0, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
+    { id: 'ing_sal', nome: 'Sal', categoria: 'Condimento / sal', tipo: 'sal', funcao: 'Contribui para sabor e favorece a extração de proteínas miofibrilares, aumentando a liga da massa.', obs: 'Em aula, comparar teores de sal mostra diferença de coesão e percepção sensorial.', gordura: 0, proteina: 0, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
     { id: 'ing_alho_po', nome: 'Alho em pó', categoria: 'Condimento', tipo: 'condimento', funcao: 'Fornece sabor e aroma característicos.', obs: 'Pode ser substituído por alho fresco, ajustando umidade e intensidade.', gordura: 0, proteina: 0, carboidrato: 70, custo: 0, proteinaNaoCarnea: false, alergeno: false },
-    { id: 'ing_proteina_soja', nome: 'Proteína de soja texturizada/fina', categoria: 'Proteína não cárnea', tipo: 'proteina_nao_carnea', funcao: 'Pode contribuir para retenção de água, rendimento e textura, respeitando os limites do produto.', obs: 'Discutir rotulagem, limite legal e impacto sensorial.', gordura: 1, proteina: 50, carboidrato: 30, custo: 0, proteinaNaoCarnea: true, alergeno: true },
-    { id: 'ing_amido', nome: 'Amido', categoria: 'Carboidrato', tipo: 'carboidrato', funcao: 'Auxilia na retenção de água e na estabilidade, mas deve respeitar o limite de carboidratos totais do produto.', obs: 'Útil para discutir rendimento e textura.', gordura: 0, proteina: 0, carboidrato: 88, custo: 0, proteinaNaoCarnea: false, alergeno: false }
+    { id: 'ing_pimenta_reino', nome: 'Pimenta-do-reino', categoria: 'Condimento', tipo: 'condimento', funcao: 'Ajusta pungência e aroma, ajudando a caracterizar o perfil sensorial do produto.', obs: 'Usar pequenas quantidades para não mascarar diferenças entre formulações.', gordura: 3, proteina: 10, carboidrato: 64, custo: 0, proteinaNaoCarnea: false, alergeno: false },
+    { id: 'ing_paprica_doce', nome: 'Páprica doce', categoria: 'Condimento', tipo: 'condimento', funcao: 'Contribui para cor e aroma suave em embutidos frescais.', obs: 'Permite discutir padronização visual sem depender de corantes.', gordura: 13, proteina: 14, carboidrato: 54, custo: 0, proteinaNaoCarnea: false, alergeno: false },
+    { id: 'ing_acucar', nome: 'Açúcar', categoria: 'Carboidrato', tipo: 'carboidrato', funcao: 'Equilibra sabor e pode contribuir para escurecimento em produtos submetidos à cocção.', obs: 'Em linguiça frescal, usar em baixo teor para ajuste sensorial.', gordura: 0, proteina: 0, carboidrato: 100, custo: 0, proteinaNaoCarnea: false, alergeno: false },
+    { id: 'ing_cebola_desidratada', nome: 'Cebola desidratada', categoria: 'Condimento', tipo: 'condimento', funcao: 'Fornece aroma e dulçor característicos, contribuindo para o perfil sensorial de produtos moldados.', obs: 'Permite padronização melhor que cebola fresca, que varia em umidade.', gordura: 1, proteina: 10, carboidrato: 75, custo: 0, proteinaNaoCarnea: false, alergeno: false },
+    { id: 'ing_salsa_desidratada', nome: 'Salsa desidratada', categoria: 'Condimento / erva', tipo: 'condimento', funcao: 'Adiciona notas herbais e pontos visuais verdes em produtos como kafta e almôndega.', obs: 'Usar em baixo teor para não mascarar diferenças de textura.', gordura: 4, proteina: 22, carboidrato: 51, custo: 0, proteinaNaoCarnea: false, alergeno: false },
+    { id: 'ing_farinha_rosca', nome: 'Farinha de rosca', categoria: 'Ingrediente ligante', tipo: 'carboidrato', funcao: 'Auxilia na absorção de umidade e na estrutura de produtos moldados, reduzindo desmanche durante a cocção.', obs: 'Discutir presença de glúten e impacto sobre textura, rendimento e rotulagem.', gordura: 3, proteina: 13, carboidrato: 72, custo: 0, proteinaNaoCarnea: false, alergeno: true },
+    { id: 'ing_ovo_liquido', nome: 'Ovo líquido', categoria: 'Ingrediente ligante', tipo: 'outro', funcao: 'Contribui para liga, emulsificação parcial e estrutura térmica em produtos moldados.', obs: 'Ingrediente alergênico; útil para comparar formulações com e sem ligante proteico.', gordura: 10, proteina: 12, carboidrato: 1, custo: 0, proteinaNaoCarnea: false, alergeno: true },
+    { id: 'ing_tripa_suina', nome: 'Tripa suína natural', categoria: 'Envoltório', tipo: 'outro', funcao: 'Envoltório comestível que dá formato ao embutido e influencia aparência, calibre e mordida.', obs: 'Hidratar, lavar e manter sob boas condições higiênicas antes do embutimento.', gordura: 0, proteina: 0, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
+    { id: 'ing_proteina_soja', nome: 'Proteína de soja texturizada/fina', categoria: 'Proteína não cárnea', tipo: 'proteina_nao_carnea', funcao: 'Pode contribuir para retenção de água, rendimento e textura, respeitando os limites do produto.', obs: 'Discutir rotulagem, limite legal, declaração de alergênico e impacto sensorial.', gordura: 1, proteina: 50, carboidrato: 30, custo: 0, proteinaNaoCarnea: true, alergeno: true },
+    { id: 'ing_figado_suino', nome: 'Fígado suíno', categoria: 'Matéria-prima cárnea', tipo: 'carne', funcao: 'Contribui para sabor característico, cor e corpo em formulações pastosas como patê.', obs: 'Usar refrigerado e discutir intensidade sensorial quando a proporção aumenta.', gordura: 4, proteina: 20, carboidrato: 4, custo: 0, proteinaNaoCarnea: false, alergeno: false },
+    { id: 'ing_fosfato', nome: 'Fosfato', categoria: 'Aditivo funcional', tipo: 'aditivo', funcao: 'Auxilia na retenção de água, extração proteica e estabilidade de emulsões cárneas, quando permitido.', obs: 'Usar apenas em discussão didática e conferir limites e permissões na legislação vigente para cada produto.', gordura: 0, proteina: 0, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
+    { id: 'ing_leite_po', nome: 'Leite em pó', categoria: 'Ingrediente lácteo', tipo: 'lacteo', funcao: 'Contribui para corpo, retenção de água e estabilidade em alguns produtos emulsionados.', obs: 'Ingrediente alergênico; discutir declaração em rótulo quando utilizado.', gordura: 1, proteina: 34, carboidrato: 52, custo: 0, proteinaNaoCarnea: false, alergeno: true },
+    { id: 'ing_pimenta_branca', nome: 'Pimenta branca', categoria: 'Condimento', tipo: 'condimento', funcao: 'Ajusta pungência e aroma com menor impacto visual em massas claras e emulsionadas.', obs: 'Boa opção para comparar sabor suave e acentuado sem alterar muito a aparência.', gordura: 2, proteina: 10, carboidrato: 64, custo: 0, proteinaNaoCarnea: false, alergeno: false },
+    { id: 'ing_amido', nome: 'Amido', categoria: 'Carboidrato', tipo: 'carboidrato', funcao: 'Auxilia na retenção de água e na estabilidade, quando permitido e dentro dos limites do produto.', obs: 'Rendimento, textura e enquadramento legal podem ser comparados quando o teor é alterado.', gordura: 0, proteina: 0, carboidrato: 88, custo: 0, proteinaNaoCarnea: false, alergeno: false }
   ],
   formulacoes: [
     {
@@ -78,15 +438,114 @@ const DEFAULT_DB = {
       produtoId: 'prod_hamburguer',
       nome: 'Hambúrguer bovino base',
       pesoReferencia: 1000,
+      baseCalculo: 'massa_carnea',
       rendimento: 82,
       itens: [
-        { insumoId: 'ing_carne_bovina_magra', percentual: 76 },
+        { insumoId: 'ing_carne_bovina_magra', percentual: 82 },
         { insumoId: 'ing_gordura_bovina', percentual: 18 },
         { insumoId: 'ing_agua_gelada', percentual: 3 },
         { insumoId: 'ing_sal', percentual: 1.8 },
-        { insumoId: 'ing_alho_po', percentual: 1.2 }
+        { insumoId: 'ing_alho_po', percentual: 1.5 }
       ],
-      observacoes: 'Formulação inicial para discussão do papel da gordura e do sal na estrutura do hambúrguer.'
+      observacoes: ''
+    },
+    {
+      id: 'form_kafta_base',
+      produtoId: 'prod_kafta',
+      nome: 'Kafta bovina base',
+      pesoReferencia: 1000,
+      baseCalculo: 'massa_carnea',
+      rendimento: 80,
+      itens: [
+        { insumoId: 'ing_carne_bovina_magra', percentual: 90 },
+        { insumoId: 'ing_gordura_bovina', percentual: 10 },
+        { insumoId: 'ing_sal', percentual: 1.7 },
+        { insumoId: 'ing_alho_po', percentual: 0.6 },
+        { insumoId: 'ing_cebola_desidratada', percentual: 1.2 },
+        { insumoId: 'ing_pimenta_reino', percentual: 0.2 },
+        { insumoId: 'ing_salsa_desidratada', percentual: 0.6 }
+      ],
+      observacoes: 'Formulação para discutir moldagem, estabilidade no espeto e efeito de condimentos sobre a coesão.'
+    },
+    {
+      id: 'form_almondega_base',
+      produtoId: 'prod_almondega',
+      nome: 'Almôndega bovina base',
+      pesoReferencia: 1000,
+      baseCalculo: 'massa_carnea',
+      rendimento: 78,
+      itens: [
+        { insumoId: 'ing_carne_bovina_magra', percentual: 88 },
+        { insumoId: 'ing_gordura_bovina', percentual: 12 },
+        { insumoId: 'ing_ovo_liquido', percentual: 5 },
+        { insumoId: 'ing_farinha_rosca', percentual: 4 },
+        { insumoId: 'ing_sal', percentual: 1.6 },
+        { insumoId: 'ing_alho_po', percentual: 0.4 },
+        { insumoId: 'ing_pimenta_reino', percentual: 0.2 },
+        { insumoId: 'ing_salsa_desidratada', percentual: 0.5 }
+      ],
+      observacoes: 'Formulação para comparar o efeito de ingredientes ligantes sobre desmanche, textura e perda por cocção.'
+    },
+    {
+      id: 'form_linguica_base',
+      produtoId: 'prod_linguica_frescal',
+      nome: 'Linguiça frescal suína base',
+      pesoReferencia: 2000,
+      baseCalculo: 'produto_final',
+      rendimento: 92,
+      itens: [
+        { insumoId: 'ing_pernil_suino', percentual: 72 },
+        { insumoId: 'ing_toucinho_suino', percentual: 20 },
+        { insumoId: 'ing_agua_gelada', percentual: 5 },
+        { insumoId: 'ing_sal', percentual: 1.8 },
+        { insumoId: 'ing_alho_po', percentual: 0.5 },
+        { insumoId: 'ing_paprica_doce', percentual: 0.3 },
+        { insumoId: 'ing_pimenta_reino', percentual: 0.2 },
+        { insumoId: 'ing_acucar', percentual: 0.2 }
+      ],
+      observacoes: 'Formulação demonstrativa para observar embutimento, teor de gordura, coesão e perda por cocção em produto frescal.'
+    },
+    {
+      id: 'form_pate_base',
+      produtoId: 'prod_pate',
+      nome: 'Patê cárneo base',
+      pesoReferencia: 1000,
+      baseCalculo: 'produto_final',
+      rendimento: 88,
+      itens: [
+        { insumoId: 'ing_pernil_suino', percentual: 42 },
+        { insumoId: 'ing_figado_suino', percentual: 18 },
+        { insumoId: 'ing_toucinho_suino', percentual: 16 },
+        { insumoId: 'ing_agua_gelada', percentual: 15 },
+        { insumoId: 'ing_amido', percentual: 5 },
+        { insumoId: 'ing_sal', percentual: 1.8 },
+        { insumoId: 'ing_alho_po', percentual: 0.4 },
+        { insumoId: 'ing_pimenta_branca', percentual: 0.2 },
+        { insumoId: 'ing_acucar', percentual: 0.6 },
+        { insumoId: 'ing_leite_po', percentual: 1 }
+      ],
+      observacoes: 'Formulação didática em 100% do produto final para observar estabilidade, espalhabilidade e efeito do processamento fino.'
+    },
+    {
+      id: 'form_salsicha_base',
+      produtoId: 'prod_salsicha',
+      nome: 'Salsicha base',
+      pesoReferencia: 2000,
+      baseCalculo: 'produto_final',
+      rendimento: 90,
+      itens: [
+        { insumoId: 'ing_pernil_suino', percentual: 60 },
+        { insumoId: 'ing_toucinho_suino', percentual: 15 },
+        { insumoId: 'ing_agua_gelada', percentual: 18 },
+        { insumoId: 'ing_amido', percentual: 3 },
+        { insumoId: 'ing_sal', percentual: 1.8 },
+        { insumoId: 'ing_leite_po', percentual: 1 },
+        { insumoId: 'ing_acucar', percentual: 0.5 },
+        { insumoId: 'ing_alho_po', percentual: 0.3 },
+        { insumoId: 'ing_fosfato', percentual: 0.3 },
+        { insumoId: 'ing_pimenta_branca', percentual: 0.1 }
+      ],
+      observacoes: 'Formulação didática fechada em 100% para discutir massa emulsionada, embutimento, cozimento e resfriamento.'
     }
   ],
   legislacoes: [
@@ -96,37 +555,135 @@ const DEFAULT_DB = {
       titulo: 'Portaria SDA/MAPA nº 724/2022',
       orgao: 'Ministério da Agricultura e Pecuária',
       url: 'https://www.gov.br/agricultura/pt-br/assuntos/inspecao/produtos-animal/legislacao/Port7242022RThamburguer1.pdf',
-      resumo: 'Aprova o Regulamento Técnico de Identidade e Qualidade do hambúrguer. Define ingredientes permitidos, denominação de venda e parâmetros físico-químicos como gordura máxima, carboidratos totais máximos e proteína mínima.',
+      resumo: 'Aprova o Regulamento Técnico de Identidade e Qualidade do hambúrguer, com definição, denominação de venda, ingredientes e parâmetros físico-químicos.',
       pontos: [
         'Gordura máxima: 25%',
         'Carboidratos totais máximos: 3%',
         'Proteína mínima: 15%',
         'Proteína não cárnea: máximo de 4% na forma agregada',
-        'Quando houver indicação de corte na denominação de venda, não é permitida adição de proteína não cárnea'
+        'Quando houver indicação de corte na denominação, não é permitida proteína não cárnea'
+      ]
+    },
+    {
+      id: 'leg_linguica_in4_2000',
+      produtoId: 'prod_linguica_frescal',
+      titulo: 'IN SDA/MAPA nº 4/2000 - RTIQ de Linguiça',
+      orgao: 'Ministério da Agricultura e Pecuária',
+      url: 'https://www.gov.br/agricultura/pt-br/assuntos/inspecao/produtos-animal/legislacao/IN042000salsichamortadelalinguia.pdf',
+      resumo: 'Aprova o RTIQ de linguiça e diferencia parâmetros para linguiças frescais, cozidas e dessecadas.',
+      pontos: [
+        'Linguiças frescais: umidade máxima 70%',
+        'Linguiças frescais: gordura máxima 30%',
+        'Linguiças frescais: proteína mínima 12%',
+        'Proteína animal e/ou vegetal agregada: máximo 2,5%, com regras específicas por denominação',
+        'É proibido o uso de CMS em linguiças frescais'
+      ]
+    },
+    {
+      id: 'leg_salsicha_in4_2000',
+      produtoId: 'prod_salsicha',
+      titulo: 'IN SDA/MAPA nº 4/2000 - RTIQ de Salsicha',
+      orgao: 'Ministério da Agricultura e Pecuária',
+      url: 'https://www.gov.br/agricultura/pt-br/assuntos/inspecao/produtos-animal/legislacao/IN042000salsichamortadelalinguia.pdf',
+      resumo: 'Inclui regulamentos técnicos de produtos cárneos como salsicha, mortadela e linguiça, apoiando a discussão de produto embutido e emulsionado.',
+      pontos: [
+        'Definição e identidade tecnológica da salsicha',
+        'Ingredientes permitidos e denominação de venda',
+        'Parâmetros físico-químicos e discussão de composição',
+        'Conexão entre formulação, estabilidade da emulsão e enquadramento legal'
+      ]
+    },
+    {
+      id: 'leg_riispoa_9013',
+      produtoId: null,
+      titulo: 'RIISPOA - Decreto nº 9.013/2017',
+      orgao: 'Presidência da República',
+      url: 'https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2017/decreto/d9013.htm',
+      resumo: 'Regulamento de inspeção industrial e sanitária de produtos de origem animal. Serve como base geral para discussão de inspeção, registro, estabelecimento e responsabilidades.',
+      pontos: [
+        'Referência geral para produtos de origem animal',
+        'Inspeção, controle higiênico-sanitário e responsabilidades',
+        'Deve ser consultado com suas alterações vigentes'
       ]
     },
     {
       id: 'leg_rotulagem_anvisa',
       produtoId: null,
-      titulo: 'Rotulagem de alimentos - Anvisa',
+      titulo: 'Rotulagem nutricional - Anvisa',
       orgao: 'Agência Nacional de Vigilância Sanitária',
-      url: 'https://www.gov.br/anvisa/pt-br/assuntos/alimentos/rotulagem',
-      resumo: 'Página de referência sobre regras de rotulagem de alimentos, incluindo lista de ingredientes, informações nutricionais e cuidados para evitar informações que induzam o consumidor ao erro.',
+      url: 'https://www.gov.br/anvisa/pt-br/assuntos/alimentos/rotulagem/rotulagem-nutricional',
+      resumo: 'Página de referência sobre rotulagem nutricional de alimentos embalados, incluindo RDC 429/2020 e IN 75/2020.',
       pontos: [
-        'Útil para discutir denominação de venda',
-        'Útil para discutir lista de ingredientes',
-        'Útil para discutir informação nutricional e rotulagem frontal'
+        'Tabela de informação nutricional',
+        'Rotulagem frontal',
+        'Relação entre formulação, composição e comunicação ao consumidor'
       ]
     }
   ]
 };
 
+const THEORY_LESSONS = PRODUCT_CATEGORIES;
+
+const CLASS_SCHEDULE = [
+  {
+    id: 'aula_1',
+    aula: 'Aula 1',
+    tema: 'Introdução ao laboratório e cálculos percentuais',
+    foco: 'Boas práticas, pesagem, leitura de formulações e diferença entre massa cárnea e produto final.',
+    produtos: ['prod_hamburguer'],
+    categorias: ['reestruturados']
+  },
+  {
+    id: 'aula_2',
+    aula: 'Aula 2',
+    tema: 'Produtos reestruturados',
+    foco: 'Hambúrguer, kafta e almôndega: liga, gordura, modelagem, rendimento e discussão de textura.',
+    produtos: ['prod_hamburguer', 'prod_kafta', 'prod_almondega'],
+    categorias: ['reestruturados']
+  },
+  {
+    id: 'aula_3',
+    aula: 'Aula 3',
+    tema: 'Produtos embutidos frescais',
+    foco: 'Linguiça frescal: moagem, mistura, embutimento, calibre, conservação refrigerada e perda por cocção.',
+    produtos: ['prod_linguica_frescal'],
+    categorias: ['embutidos']
+  },
+  {
+    id: 'aula_4',
+    aula: 'Aula 4',
+    tema: 'Produtos emulsionados e pastosos',
+    foco: 'Patê: processamento fino, estabilidade, espalhabilidade, tratamento térmico e resfriamento.',
+    produtos: ['prod_pate'],
+    categorias: ['emulsionados']
+  },
+  {
+    id: 'aula_5',
+    aula: 'Aula 5',
+    tema: 'Produto embutido emulsionado',
+    foco: 'Salsicha: emulsão cárnea, envoltório, cozimento, resfriamento e pertencimento a mais de uma categoria.',
+    produtos: ['prod_salsicha'],
+    categorias: ['embutidos', 'emulsionados']
+  },
+  {
+    id: 'aula_6',
+    aula: 'Aula 6',
+    tema: 'Discussão técnica e relatório',
+    foco: 'Comparação dos roteiros, ajuste de formulações, interpretação de perdas, parâmetros e referências.',
+    produtos: ['prod_hamburguer', 'prod_linguica_frescal', 'prod_pate', 'prod_salsicha'],
+    categorias: ['reestruturados', 'embutidos', 'emulsionados']
+  }
+];
+
 let db = loadDB();
 let activePage = 'Inicio';
 let selectedIngredientFilter = db.configs.filtroInsumo || 'todos';
+let activeProductId = db.configs.produtoSelecionado || '';
 let pendingInstallPrompt = null;
 let tempProductPhotos = [];
 let formulaDraftItems = [];
+let activeProductSlideId = 'visao';
+let inlineEditTimer = null;
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => Array.from(document.querySelectorAll(selector));
@@ -137,23 +694,28 @@ function init() {
   setTimeout(() => $('#splashScreen')?.classList.add('hide'), 450);
   setupEvents();
   populateTypeOptions();
+  populateProductCategoryOptions();
   renderAll();
   registerServiceWorker();
 }
 
 function setupEvents() {
   $$('.nav-btn').forEach(btn => btn.addEventListener('click', () => setPage(btn.dataset.page)));
+  $$('[data-page-target]').forEach(btn => btn.addEventListener('click', () => setPage(btn.dataset.pageTarget)));
+  $$('[data-open-url]').forEach(btn => btn.addEventListener('click', () => window.open(btn.dataset.openUrl, '_blank', 'noopener')));
   $$('[data-action="open-product"]').forEach(btn => btn.addEventListener('click', () => openProductModal()));
   $$('[data-action="open-ingredient"]').forEach(btn => btn.addEventListener('click', () => openIngredientModal()));
   $$('[data-action="open-formula"]').forEach(btn => btn.addEventListener('click', () => openFormulaModal()));
+  $$('[data-config-tab]').forEach(btn => btn.addEventListener('click', () => setConfigTab(btn.dataset.configTab)));
   $$('[data-close]').forEach(btn => btn.addEventListener('click', () => closeModal(btn.dataset.close)));
-  $$('.modal-overlay').forEach(overlay => overlay.addEventListener('click', (ev) => { if (ev.target === overlay) closeModal(overlay.id); }));
   $$('[data-toggle]').forEach(btn => btn.addEventListener('click', () => $('#' + btn.dataset.toggle)?.classList.toggle('open')));
+  $$('.modal-overlay').forEach(overlay => overlay.addEventListener('click', (ev) => {
+    if (ev.target === overlay) closeModal(overlay.id);
+  }));
 
   $('#searchProdutos')?.addEventListener('input', renderProdutos);
+  $('#searchConfigProdutos')?.addEventListener('input', renderConfigProdutos);
   $('#searchInsumos')?.addEventListener('input', renderInsumos);
-  $('#formulaProductFilter')?.addEventListener('change', renderFormulas);
-  $('#aulaProdutoSelect')?.addEventListener('change', ev => { db.configs.ultimoProdutoAula = ev.target.value; saveDB(); renderAulas(); });
   $('#btnSalvarProduto')?.addEventListener('click', saveProductFromModal);
   $('#btnExcluirProduto')?.addEventListener('click', deleteProductFromModal);
   $('#produtoFotos')?.addEventListener('change', handleProductPhotos);
@@ -161,13 +723,23 @@ function setupEvents() {
   $('#btnExcluirInsumo')?.addEventListener('click', deleteIngredientFromModal);
   $('#btnSalvarFormula')?.addEventListener('click', saveFormulaFromModal);
   $('#btnExcluirFormula')?.addEventListener('click', deleteFormulaFromModal);
-  $('#btnAddFormulaItem')?.addEventListener('click', () => { formulaDraftItems.push({ insumoId: db.insumos[0]?.id || '', percentual: 0 }); renderFormulaItems(); });
+  $('#btnAddFormulaItem')?.addEventListener('click', () => {
+    formulaDraftItems.push({ insumoId: db.insumos[0]?.id || '', percentual: 0 });
+    renderFormulaItems();
+  });
   $('#formulaPeso')?.addEventListener('input', renderFormulaItems);
-  $('#formulaProduto')?.addEventListener('change', renderFormulaItems);
+  $('#formulaProduto')?.addEventListener('change', () => {
+    if (!$('#formulaId')?.value) $('#formulaBaseCalculo').value = defaultFormulaBase(findProduct($('#formulaProduto').value));
+    renderFormulaItems();
+  });
+  $('#formulaBaseCalculo')?.addEventListener('change', renderFormulaItems);
   $('#btnGerarRelatorio')?.addEventListener('click', showFormulaReport);
   $('#btnCopiarRelatorio')?.addEventListener('click', copyReport);
   $('#btnCopiarRoteiro')?.addEventListener('click', copyLesson);
-  $('#btnConfig')?.addEventListener('click', () => openModal('modalConfig'));
+  $('#btnConfig')?.addEventListener('click', () => {
+    setConfigTab('produtos');
+    openModal('modalConfig');
+  });
   $('#btnExportar')?.addEventListener('click', exportData);
   $('#btnImportar')?.addEventListener('click', () => $('#fileImportar').click());
   $('#fileImportar')?.addEventListener('change', importData);
@@ -195,8 +767,7 @@ function loadDB() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return clone(DEFAULT_DB);
-    const parsed = JSON.parse(raw);
-    return normalizeDB(parsed);
+    return normalizeDB(JSON.parse(raw));
   } catch (err) {
     console.error(err);
     return clone(DEFAULT_DB);
@@ -204,18 +775,29 @@ function loadDB() {
 }
 
 function normalizeDB(data) {
-  const base = clone(DEFAULT_DB);
-  const merged = Object.assign(base, data || {});
-  merged.configs = Object.assign(base.configs, data?.configs || {});
-  merged.produtos = Array.isArray(data?.produtos) ? data.produtos : base.produtos;
-  merged.insumos = Array.isArray(data?.insumos) ? data.insumos : base.insumos;
-  merged.formulacoes = Array.isArray(data?.formulacoes) ? data.formulacoes : base.formulacoes;
-  merged.legislacoes = Array.isArray(data?.legislacoes) ? data.legislacoes : base.legislacoes;
+  const source = data && typeof data === 'object' ? data : {};
+  const merged = Object.assign(clone(DEFAULT_DB), source);
+  merged.configs = Object.assign(clone(DEFAULT_DB.configs), source.configs || {});
+  merged.configs.cronograma = normalizeSchedule(source.configs?.cronograma || merged.configs.cronograma);
+  merged.produtos = mergeDefaults(Array.isArray(source.produtos) ? source.produtos : clone(DEFAULT_DB.produtos), DEFAULT_DB.produtos);
+  merged.insumos = mergeDefaults(Array.isArray(source.insumos) ? source.insumos : clone(DEFAULT_DB.insumos), DEFAULT_DB.insumos);
+  merged.formulacoes = mergeDefaults(Array.isArray(source.formulacoes) ? source.formulacoes : clone(DEFAULT_DB.formulacoes), DEFAULT_DB.formulacoes);
+  merged.legislacoes = mergeDefaults(Array.isArray(source.legislacoes) ? source.legislacoes : clone(DEFAULT_DB.legislacoes), DEFAULT_DB.legislacoes);
+
+  DEFAULT_DB.produtos.forEach(def => {
+    const existing = merged.produtos.find(p => p.id === def.id);
+    if (existing && (!Array.isArray(existing.fotos) || existing.fotos.length === 0) && def.fotos?.length) existing.fotos = clone(def.fotos);
+  });
+
   merged.produtos.forEach(p => {
+    const defaultProduct = DEFAULT_DB.produtos.find(def => def.id === p.id);
+    p.categoriaIds = normalizeCategoryIds(p, defaultProduct);
+    p.categoriaId = p.categoriaIds[0] || p.categoriaId || inferProductCategoryId(p);
     p.parametros = Object.assign({ gorduraMax: '', proteinaMin: '', carbMax: '', proteinaNaoCarneaMax: '', proibeProteinaNaoCarnea: false, mostrarValidacao: true }, p.parametros || {});
-    p.fotos = Array.isArray(p.fotos) ? p.fotos : [];
+    p.fotos = Array.isArray(p.fotos) ? p.fotos.map(src => IMAGE_MIGRATIONS[src] || src) : [];
     p.fluxo = Array.isArray(p.fluxo) ? p.fluxo : linesFrom(p.fluxo);
     p.pontos = Array.isArray(p.pontos) ? p.pontos : linesFrom(p.pontos);
+    p.equipamentos = Array.isArray(p.equipamentos) ? p.equipamentos : (defaultProduct?.equipamentos ? clone(defaultProduct.equipamentos) : linesFrom(p.equipamentos));
     p.perguntas = Array.isArray(p.perguntas) ? p.perguntas : linesFrom(p.perguntas);
   });
   merged.insumos.forEach(i => {
@@ -224,7 +806,36 @@ function normalizeDB(data) {
     i.carboidrato = toNumber(i.carboidrato);
     i.custo = toNumber(i.custo);
   });
+  merged.formulacoes.forEach(f => {
+    const product = merged.produtos.find(p => p.id === f.produtoId);
+    const hadBaseCalculo = Boolean(f.baseCalculo);
+    const defaultFormula = DEFAULT_DB.formulacoes.find(def => def.id === f.id);
+    if (!hadBaseCalculo && defaultFormula && f.id === 'form_hamb_base') {
+      f.itens = clone(defaultFormula.itens);
+      f.observacoes = defaultFormula.observacoes;
+    }
+    f.baseCalculo = f.baseCalculo || defaultFormula?.baseCalculo || defaultFormulaBase(product);
+    f.pesoReferencia = toNumber(f.pesoReferencia) || 1000;
+    f.itens = Array.isArray(f.itens) ? f.itens : [];
+    if (String(f.observacoes || '').startsWith('Percentuais calculados sobre')) f.observacoes = '';
+  });
+  merged.legislacoes.forEach(law => {
+    law.pontos = (Array.isArray(law.pontos) ? law.pontos : linesFrom(law.pontos)).map(point => String(point)
+      .replace(/^Útil para discutir tabela/i, 'Tabela')
+      .replace(/^Útil para discutir rotulagem/i, 'Rotulagem')
+      .replace(/^Útil para discutir /i, '')
+      .replace(/^Útil para conectar /i, 'Relação entre '));
+  });
   return merged;
+}
+
+function mergeDefaults(current, defaults) {
+  const list = Array.isArray(current) ? current : [];
+  const ids = new Set(list.map(item => item.id));
+  defaults.forEach(item => {
+    if (!ids.has(item.id)) list.push(clone(item));
+  });
+  return list;
 }
 
 function saveDB() {
@@ -233,15 +844,13 @@ function saveDB() {
 }
 
 function renderAll() {
-  renderDashboard();
   renderHomeProducts();
   renderProdutos();
+  renderConfigProdutos();
   renderInsumos();
-  renderFormulaFilters();
-  renderFormulas();
-  renderAulaSelect();
+  renderCronograma();
+  renderScheduleConfig();
   renderAulas();
-  renderLegislacao();
 }
 
 function setPage(page) {
@@ -250,71 +859,369 @@ function setPage(page) {
   $('#page' + page)?.classList.add('active');
   $$('.nav-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.page === page));
   $('.content').scrollTop = 0;
-  if (page === 'Formulas') renderFormulas();
+  if (page === 'Produtos') renderProdutos();
+  if (page === 'Cronograma') renderCronograma();
   if (page === 'Aulas') renderAulas();
 }
 
-function renderDashboard() {
-  const metrics = [
-    ['Produtos', db.produtos.length],
-    ['Insumos', db.insumos.length],
-    ['Formulações', db.formulacoes.length],
-    ['Normas', db.legislacoes.length]
-  ];
-  $('#dashboardMetrics').innerHTML = metrics.map(([label, value]) => `
-    <div class="metric-card"><div class="metric-value">${value}</div><div class="metric-label">${label}</div></div>
-  `).join('');
+function setConfigTab(tab) {
+  $$('.config-tab').forEach(btn => btn.classList.toggle('active', btn.dataset.configTab === tab));
+  $$('.config-panel').forEach(panel => panel.classList.remove('active'));
+  $('#configPanel' + capitalize(tab))?.classList.add('active');
+  if (tab === 'produtos') renderConfigProdutos();
+  if (tab === 'insumos') renderInsumos();
+  if (tab === 'cronograma') renderScheduleConfig();
 }
 
 function renderHomeProducts() {
-  const html = db.produtos.map(productCardHTML).join('') || emptyHTML('Nenhum produto cadastrado.');
-  $('#homeProductCards').innerHTML = html;
+  $('#homeProductCards').innerHTML = db.produtos.map(productCardHTML).join('') || emptyHTML('Nenhum produto cadastrado.');
   $('#homeProductCards').querySelectorAll('[data-product-card]').forEach(card => card.addEventListener('click', () => {
-    db.configs.ultimoProdutoAula = card.dataset.productCard;
-    saveDB();
-    setPage('Aulas');
+    openProductWorkspace(card.dataset.productCard);
   }));
 }
 
-function renderProdutos() {
-  const term = ($('#searchProdutos')?.value || '').toLowerCase().trim();
-  const produtos = db.produtos.filter(p => [p.nome, p.categoria, p.especie, p.descricao].join(' ').toLowerCase().includes(term));
-  $('#produtosList').innerHTML = produtos.map(p => productListHTML(p)).join('') || emptyHTML('Nenhum produto encontrado.');
-  $('#produtosList').querySelectorAll('[data-edit-product]').forEach(el => el.addEventListener('click', () => openProductModal(el.dataset.editProduct)));
+function productCardHTML(p) {
+  const categoryLabel = productCategoryLabel(p);
+  const photo = p.fotos?.[0] || '';
+  const mediaStyle = photo ? ` style="background-image: url('${escapeAttr(photo)}')"` : '';
+  const mediaText = photo ? '' : escapeHTML((p.nome || '?').slice(0, 1).toUpperCase());
+  return `
+    <button type="button" class="product-tile" data-product-card="${escapeAttr(p.id)}">
+      <div class="product-tile-media"${mediaStyle}>${mediaText}</div>
+      <div class="product-tile-body">
+        <div class="product-tile-title">${escapeHTML(p.nome)}</div>
+        <div class="product-tile-subtitle">${escapeHTML(categoryLabel)} · ${escapeHTML(p.especie || 'espécie não informada')}</div>
+      </div>
+    </button>`;
 }
 
-function productCardHTML(p) {
-  const formulas = db.formulacoes.filter(f => f.produtoId === p.id).length;
-  return `
-    <div class="item-card" data-product-card="${p.id}">
-      <div class="item-avatar">${photoOrInitial(p)}</div>
-      <div>
-        <div class="item-title">${escapeHTML(p.nome)}</div>
-        <div class="item-subtitle">${escapeHTML(p.categoria || 'Sem categoria')} · ${formulas} formulação(ões)</div>
-        <div class="item-meta">
-          ${p.tipo === 'hamburguer' ? '<span class="badge warn">RTIQ hambúrguer</span>' : '<span class="badge info">Produto geral</span>'}
-          ${p.fotos?.length ? `<span class="badge ok">${p.fotos.length} foto(s)</span>` : '<span class="badge">sem foto</span>'}
-        </div>
-      </div>
-    </div>`;
+function renderProdutos() {
+  const overview = $('#produtosOverview');
+  const workspace = $('#produtoWorkspace');
+  const selected = activeProductId ? findProduct(activeProductId) : null;
+  if (selected && !($('#searchProdutos')?.value || '').trim()) {
+    overview.hidden = true;
+    workspace.hidden = false;
+    workspace.innerHTML = productWorkspaceHTML(selected);
+    bindProductWorkspace(workspace);
+    return;
+  }
+  overview.hidden = false;
+  workspace.hidden = true;
+  if (activeProductId && !selected) activeProductId = '';
+  const term = ($('#searchProdutos')?.value || '').toLowerCase().trim();
+  const produtos = db.produtos.filter(p => [p.nome, p.categoria, p.especie, p.descricao].join(' ').toLowerCase().includes(term));
+  $('#produtosList').innerHTML = produtos.map(productListHTML).join('') || emptyHTML('Nenhum produto encontrado.');
+  $('#produtosList').querySelectorAll('[data-open-product]').forEach(el => el.addEventListener('click', () => openProductWorkspace(el.dataset.openProduct)));
 }
 
 function productListHTML(p) {
-  const formulas = db.formulacoes.filter(f => f.produtoId === p.id);
-  const analyses = formulas.map(analyzeFormula).flatMap(a => a.alerts).filter(a => a.type === 'danger');
+  const categoryLabel = productCategoryLabel(p);
   return `
-    <div class="item-card" data-edit-product="${p.id}">
+    <button type="button" class="item-card" data-open-product="${escapeAttr(p.id)}">
       <div class="item-avatar">${photoOrInitial(p)}</div>
       <div>
         <div class="item-title">${escapeHTML(p.nome)}</div>
-        <div class="item-subtitle">${escapeHTML(p.descricao || p.categoria || 'Sem descrição')}</div>
+        <div class="item-subtitle">${escapeHTML(categoryLabel || p.categoria || 'Sem categoria')} · ${escapeHTML(p.descricao || '')}</div>
+      </div>
+    </button>`;
+}
+
+function renderConfigProdutos() {
+  const root = $('#configProdutosList');
+  if (!root) return;
+  const term = ($('#searchConfigProdutos')?.value || '').toLowerCase().trim();
+  const produtos = db.produtos.filter(p => [p.nome, p.categoria, p.especie, p.descricao].join(' ').toLowerCase().includes(term));
+  root.innerHTML = produtos.map(productConfigHTML).join('') || emptyHTML('Nenhum produto encontrado.');
+  root.querySelectorAll('[data-config-edit-product]').forEach(btn => btn.addEventListener('click', () => openProductModal(btn.dataset.configEditProduct)));
+}
+
+function productConfigHTML(p) {
+  return `
+    <button type="button" class="item-card" data-config-edit-product="${escapeAttr(p.id)}">
+      <div class="item-avatar">${photoOrInitial(p)}</div>
+      <div>
+        <div class="item-title">${escapeHTML(p.nome)}</div>
+        <div class="item-subtitle">${escapeHTML(productCategoryLabel(p))}</div>
         <div class="item-meta">
-          <span class="badge info">${escapeHTML(p.categoria || 'Sem categoria')}</span>
-          <span class="badge">${formulas.length} fórmula(s)</span>
-          ${analyses.length ? '<span class="badge danger">alerta técnico</span>' : '<span class="badge ok">sem alerta grave</span>'}
+          <span class="badge info">Editar cadastro</span>
+          <span class="badge">${(p.equipamentos || []).length} equipamento(s)</span>
         </div>
       </div>
+    </button>`;
+}
+
+function openProductWorkspace(id) {
+  if (!findProduct(id)) return;
+  activeProductId = id;
+  activeProductSlideId = 'visao';
+  db.configs.produtoSelecionado = id;
+  db.configs.ultimoProdutoAula = id;
+  saveDB();
+  if ($('#searchProdutos')) $('#searchProdutos').value = '';
+  setPage('Produtos');
+  renderProdutos();
+}
+
+function closeProductWorkspace() {
+  activeProductId = '';
+  activeProductSlideId = 'visao';
+  db.configs.produtoSelecionado = '';
+  saveDB();
+  renderProdutos();
+}
+
+function productWorkspaceHTML(p) {
+  const formulas = db.formulacoes.filter(f => f.produtoId === p.id);
+  const laws = db.legislacoes.filter(l => !l.produtoId || l.produtoId === p.id);
+  const categoryLabel = productCategoryLabel(p);
+  const photo = p.fotos?.[0] || '';
+  const mediaStyle = photo ? ` style="background-image: url('${escapeAttr(photo)}')"` : '';
+  const mediaText = photo ? '' : escapeHTML((p.nome || '?').slice(0, 1).toUpperCase());
+  const slides = [
+    { id: 'visao', label: 'Visão geral' },
+    { id: 'fluxo', label: 'Fluxograma' },
+    { id: 'controle', label: 'Pontos de controle' },
+    { id: 'equipamentos', label: 'Equipamentos' },
+    { id: 'formulas', label: 'Formulações do produto' },
+    { id: 'discussao', label: 'Discussão da prática' },
+    { id: 'referencias', label: 'Referências' }
+  ];
+  return `
+    <button type="button" class="back-btn" data-product-back>Voltar aos produtos</button>
+    <div class="product-slide-deck" data-slide-deck>
+      <aside class="product-slide-summary">
+        <div class="summary-label">Sumário do roteiro</div>
+        ${slides.map((slide, index) => `<button type="button" class="slide-jump ${index === 0 ? 'active' : ''}" data-product-slide="${escapeAttr(slide.id)}"><span>${index + 1}</span>${escapeHTML(slide.label)}</button>`).join('')}
+      </aside>
+
+      <div class="product-slide-stage">
+        <section class="product-slide active" data-slide-panel="visao">
+          <div class="product-detail-hero">
+            <div class="product-detail-media"${mediaStyle}>${mediaText}</div>
+            <div class="product-detail-copy">
+              <div class="hero-label">Roteiro de aula prática</div>
+              <h2>${escapeHTML(p.nome)}</h2>
+              <div class="category-callout">
+                <span>Categoria do produto</span>
+                <strong>${escapeHTML(categoryLabel)}</strong>
+              </div>
+              <p>${escapeHTML(p.objetivo || p.descricao || 'Produto cadastrado para a disciplina.')}</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="product-slide" data-slide-panel="fluxo">
+          <div class="slide-card">
+            <div class="slide-kicker">${escapeHTML(p.nome)}</div>
+            <h3>Fluxograma</h3>
+            <div class="timeline-list">${timelineHTML(p.fluxo)}</div>
+          </div>
+        </section>
+
+        <section class="product-slide" data-slide-panel="controle">
+          <div class="slide-card">
+            <div class="slide-kicker">${escapeHTML(categoryLabel || 'Roteiro')}</div>
+            <h3>Pontos de controle</h3>
+            <div class="control-grid">${(p.pontos || []).map(point => `<div class="control-point">${escapeHTML(point)}</div>`).join('')}</div>
+          </div>
+        </section>
+
+        <section class="product-slide" data-slide-panel="equipamentos">
+          <div class="slide-card">
+            <div class="slide-kicker">Preparação da bancada</div>
+            <h3>Equipamentos e utensílios</h3>
+            <div class="equipment-grid">${equipmentHTML(p.equipamentos)}</div>
+          </div>
+        </section>
+
+        <section class="product-slide" data-slide-panel="formulas">
+          <div class="slide-card">
+            <div class="slide-title-row">
+              <div>
+                <div class="slide-kicker">Cálculo e composição</div>
+                <h3>Formulações do produto</h3>
+              </div>
+            </div>
+            <div class="formula-work-list">
+              ${formulas.map(productFormulaHTML).join('') || emptyHTML('Nenhuma formulação cadastrada para este produto.')}
+            </div>
+          </div>
+        </section>
+
+        <section class="product-slide" data-slide-panel="discussao">
+          <div class="slide-card">
+            <div class="slide-kicker">Relatório e debate</div>
+            <h3>Discussão da prática</h3>
+            <div class="discussion-list">${(p.perguntas || []).map((question, index) => `<div class="discussion-question"><span>${index + 1}</span>${escapeHTML(question)}</div>`).join('')}</div>
+          </div>
+        </section>
+
+        <section class="product-slide" data-slide-panel="referencias">
+          <div class="slide-card">
+            <div class="slide-kicker">Consulta de apoio</div>
+            <h3>Referências vinculadas</h3>
+            <div class="stack-list">${laws.map(lawCardHTML).join('') || emptyHTML('Nenhuma referência vinculada.')}</div>
+          </div>
+        </section>
+
+        <div class="slide-controls">
+          <button type="button" class="secondary-btn compact" data-slide-prev>Voltar</button>
+          <div class="slide-position" data-slide-position>1 / ${slides.length}</div>
+          <button type="button" class="primary-btn compact" data-slide-next>Avançar</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function productFormulaHTML(f) {
+  const analysis = analyzeFormula(f);
+  const danger = analysis.alerts.some(a => a.type === 'danger');
+  const warn = analysis.alerts.some(a => a.type === 'warn');
+  const hasBlend = formulaHasBeefBlend(f);
+  return `
+    <div class="formula-work-card">
+      <div class="formula-work-head">
+        <div>
+          <h3>${escapeHTML(f.nome)}</h3>
+          <p class="item-subtitle">${escapeHTML(analysis.baseLabel)}: ${fmt(f.pesoReferencia)} g · massa estimada ${fmt(analysis.finalWeight)} g${f.rendimento !== '' ? ` · rendimento esperado ${fmt(f.rendimento)}%` : ''}</p>
+        </div>
+        <span class="badge ${danger ? 'danger' : warn ? 'warn' : 'ok'}">${danger ? 'corrigir' : warn ? 'atenção' : 'ok'}</span>
+      </div>
+      ${hasBlend ? '' : `<div class="formula-base-panel single">
+        <div class="form-group">
+          <label>Peso de referência (g)</label>
+          <input type="number" min="1" step="1" value="${escapeAttr(f.pesoReferencia)}" data-inline-weight="${escapeAttr(f.id)}">
+        </div>
+      </div>`}
+      ${blendEditorHTML(f)}
+      ${inlineFormulaEditorHTML(f)}
+      ${analysisHTML(analysis)}
+      <div class="product-action-row">
+        <button type="button" class="secondary-btn compact" data-report-formula="${escapeAttr(f.id)}">Relatório</button>
+      </div>
     </div>`;
+}
+
+function blendEditorHTML(f) {
+  if (!formulaHasBeefBlend(f)) return '';
+  const state = formulaBlendState(f);
+  return `<div class="blend-editor">
+    <div class="blend-switch-row">
+      <div>
+        <strong>Blend</strong>
+        <span>Carne bovina magra + gordura bovina</span>
+      </div>
+      <label class="switch-control">
+        <input type="checkbox" data-toggle-blend="${escapeAttr(f.id)}" ${state.useBlend ? 'checked' : ''}>
+        <span></span>
+      </label>
+    </div>
+    ${state.useBlend ? `
+      <div class="blend-grid">
+        <div class="form-group">
+          <label>Carne bovina magra (g)</label>
+          <input type="number" min="0" step="1" value="${escapeAttr(fmtInput(state.leanGrams))}" data-blend-lean="${escapeAttr(f.id)}">
+        </div>
+        <div class="form-group">
+          <label>Gordura bovina (g)</label>
+          <input type="number" min="0" step="1" value="${escapeAttr(fmtInput(state.fatGrams))}" data-blend-fat="${escapeAttr(f.id)}">
+        </div>
+        <div class="blend-total">
+          <span>Blend</span>
+          <strong>${fmt(state.blendGrams)} g</strong>
+        </div>
+      </div>` : `
+      <div class="blend-grid single">
+        <div class="form-group">
+          <label>Carne bovina magra (g)</label>
+          <input type="number" min="1" step="1" value="${escapeAttr(fmtInput(state.blendGrams || f.pesoReferencia))}" data-meat-total="${escapeAttr(f.id)}">
+        </div>
+      </div>`}
+  </div>`;
+}
+
+function inlineFormulaEditorHTML(f) {
+  const editableItems = (f.itens || []).filter(item => !isBlendItem(item.insumoId, f));
+  return `<div class="inline-formula-editor">
+    <div class="inline-formula-head">
+      <span>Insumos da formulação</span>
+      <small>Ajuste os percentuais usados na prática.</small>
+    </div>
+    ${editableItems.length ? editableItems.map(item => inlineFormulaRowHTML(f, item)).join('') : '<div class="notice-card slim">Sem insumos adicionais nesta formulação.</div>'}
+  </div>`;
+}
+
+function inlineFormulaRowHTML(f, item) {
+    const ing = findIngredient(item.insumoId);
+    const pct = toNumber(item.percentual);
+    const grams = formulaItemGrams(f, item);
+    const suggestion = ingredientSuggestion(ing);
+    const suggestionHTML = suggestion ? `
+        <button type="button" class="suggestion-btn" data-suggestion-formula="${escapeAttr(f.id)}" data-suggestion-insumo="${escapeAttr(item.insumoId)}" data-suggestion-value="${escapeAttr(suggestion.suave)}">Suave ${fmt(suggestion.suave)}%</button>
+        <button type="button" class="suggestion-btn accent" data-suggestion-formula="${escapeAttr(f.id)}" data-suggestion-insumo="${escapeAttr(item.insumoId)}" data-suggestion-value="${escapeAttr(suggestion.acentuado)}">Acentuado ${fmt(suggestion.acentuado)}%</button>` : '';
+    return `<div class="inline-formula-row">
+      <div class="inline-formula-name">
+        <button type="button" class="inline-link" data-open-ingredient="${escapeAttr(item.insumoId)}">${escapeHTML(ing?.nome || 'Insumo não encontrado')}</button>
+        <span>${escapeHTML(typeLabel(ing?.tipo || 'outro'))}</span>
+      </div>
+      <label class="pct-field">
+        <span>%</span>
+        <input type="number" min="0" step="0.1" value="${escapeAttr(fmtInput(pct))}" data-inline-pct-formula="${escapeAttr(f.id)}" data-inline-pct-insumo="${escapeAttr(item.insumoId)}">
+      </label>
+      <strong class="gram-pill">${fmt(grams)} g</strong>
+      ${suggestionHTML ? `<div class="suggestion-panel">${suggestionHTML}</div>` : ''}
+    </div>`;
+}
+
+function bindProductWorkspace(root) {
+  root.querySelector('[data-product-back]')?.addEventListener('click', closeProductWorkspace);
+  root.querySelectorAll('[data-report-formula]').forEach(btn => btn.addEventListener('click', () => showFormulaReport(btn.dataset.reportFormula)));
+  root.querySelectorAll('[data-open-ingredient]').forEach(btn => btn.addEventListener('click', () => openIngredientView(btn.dataset.openIngredient)));
+  root.querySelectorAll('[data-inline-weight]').forEach(input => {
+    input.addEventListener('input', () => queueInlineFormulaEdit(() => updateFormulaWeight(input.dataset.inlineWeight, input.value, { silent: true })));
+    input.addEventListener('change', () => updateFormulaWeight(input.dataset.inlineWeight, input.value));
+  });
+  root.querySelectorAll('[data-inline-pct-formula]').forEach(input => {
+    input.addEventListener('input', () => queueInlineFormulaEdit(() => updateFormulaItemPercent(input.dataset.inlinePctFormula, input.dataset.inlinePctInsumo, input.value, { silent: true })));
+    input.addEventListener('change', () => updateFormulaItemPercent(input.dataset.inlinePctFormula, input.dataset.inlinePctInsumo, input.value));
+  });
+  root.querySelectorAll('[data-suggestion-formula]').forEach(btn => btn.addEventListener('click', () => updateFormulaItemPercent(btn.dataset.suggestionFormula, btn.dataset.suggestionInsumo, btn.dataset.suggestionValue)));
+  root.querySelectorAll('[data-toggle-blend]').forEach(input => input.addEventListener('change', () => updateFormulaBlend(input.dataset.toggleBlend, { useBlend: input.checked })));
+  root.querySelectorAll('[data-blend-lean]').forEach(input => {
+    input.addEventListener('input', () => queueInlineFormulaEdit(() => updateFormulaBlend(input.dataset.blendLean, { leanGrams: input.value }, { silent: true })));
+    input.addEventListener('change', () => updateFormulaBlend(input.dataset.blendLean, { leanGrams: input.value }));
+  });
+  root.querySelectorAll('[data-blend-fat]').forEach(input => {
+    input.addEventListener('input', () => queueInlineFormulaEdit(() => updateFormulaBlend(input.dataset.blendFat, { fatGrams: input.value }, { silent: true })));
+    input.addEventListener('change', () => updateFormulaBlend(input.dataset.blendFat, { fatGrams: input.value }));
+  });
+  root.querySelectorAll('[data-meat-total]').forEach(input => {
+    input.addEventListener('input', () => queueInlineFormulaEdit(() => updateFormulaBlend(input.dataset.meatTotal, { useBlend: false, blendGrams: input.value }, { silent: true })));
+    input.addEventListener('change', () => updateFormulaBlend(input.dataset.meatTotal, { useBlend: false, blendGrams: input.value }));
+  });
+  root.querySelectorAll('[data-equipment-check]').forEach(btn => btn.addEventListener('click', () => toggleEquipmentCheck(btn)));
+  bindProductSlides(root);
+  bindLawLinks(root);
+}
+
+function bindProductSlides(root) {
+  const panels = Array.from(root.querySelectorAll('[data-slide-panel]'));
+  const jumps = Array.from(root.querySelectorAll('[data-product-slide]'));
+  const position = root.querySelector('[data-slide-position]');
+  let index = Math.max(0, panels.findIndex(panel => panel.dataset.slidePanel === activeProductSlideId));
+  const show = (nextIndex) => {
+    index = Math.max(0, Math.min(panels.length - 1, nextIndex));
+    activeProductSlideId = panels[index]?.dataset.slidePanel || 'visao';
+    panels.forEach((panel, panelIndex) => panel.classList.toggle('active', panelIndex === index));
+    jumps.forEach((jump, jumpIndex) => jump.classList.toggle('active', jumpIndex === index));
+    if (position) position.textContent = `${index + 1} / ${panels.length}`;
+  };
+  jumps.forEach((jump, jumpIndex) => jump.addEventListener('click', () => show(jumpIndex)));
+  root.querySelector('[data-slide-prev]')?.addEventListener('click', () => show(index - 1));
+  root.querySelector('[data-slide-next]')?.addEventListener('click', () => show(index + 1));
+  show(index);
 }
 
 function renderInsumos() {
@@ -325,13 +1232,13 @@ function renderInsumos() {
     const okSearch = [i.nome, i.categoria, i.funcao, i.obs].join(' ').toLowerCase().includes(term);
     return okFilter && okSearch;
   });
-  $('#insumosList').innerHTML = list.map(i => ingredientHTML(i)).join('') || emptyHTML('Nenhum insumo encontrado.');
+  $('#insumosList').innerHTML = list.map(ingredientHTML).join('') || emptyHTML('Nenhum insumo encontrado.');
   $('#insumosList').querySelectorAll('[data-edit-ingredient]').forEach(el => el.addEventListener('click', () => openIngredientModal(el.dataset.editIngredient)));
 }
 
 function renderIngredientFilters() {
   const chips = [{ value: 'todos', label: 'Todos' }, ...TYPES];
-  $('#ingredientTypeFilters').innerHTML = chips.map(c => `<button class="chip ${selectedIngredientFilter === c.value ? 'active' : ''}" data-filter="${c.value}">${c.label}</button>`).join('');
+  $('#ingredientTypeFilters').innerHTML = chips.map(c => `<button type="button" class="chip ${selectedIngredientFilter === c.value ? 'active' : ''}" data-filter="${escapeAttr(c.value)}">${escapeHTML(c.label)}</button>`).join('');
   $('#ingredientTypeFilters').querySelectorAll('[data-filter]').forEach(chip => chip.addEventListener('click', () => {
     selectedIngredientFilter = chip.dataset.filter;
     db.configs.filtroInsumo = selectedIngredientFilter;
@@ -342,34 +1249,31 @@ function renderIngredientFilters() {
 
 function ingredientHTML(i) {
   return `
-    <div class="item-card" data-edit-ingredient="${i.id}">
-      <div class="item-avatar">${ingredientIcon(i.tipo)}</div>
+    <button type="button" class="item-card" data-edit-ingredient="${escapeAttr(i.id)}">
+      <div class="item-avatar">${escapeHTML(ingredientIcon(i.tipo))}</div>
       <div>
         <div class="item-title">${escapeHTML(i.nome)}</div>
         <div class="item-subtitle">${escapeHTML(i.funcao || 'Sem função tecnológica cadastrada')}</div>
         <div class="item-meta">
           <span class="badge info">${escapeHTML(typeLabel(i.tipo))}</span>
-          ${i.proteinaNaoCarnea ? '<span class="badge warn">proteína não cárnea</span>' : ''}
+          ${i.proteinaNaoCarnea ? '<span class="badge warn">proteína agregada</span>' : ''}
           ${i.alergeno ? '<span class="badge danger">alérgeno</span>' : ''}
           <span class="badge">G ${fmt(i.gordura)}% · P ${fmt(i.proteina)}% · C ${fmt(i.carboidrato)}%</span>
         </div>
       </div>
-    </div>`;
+    </button>`;
 }
 
 function renderFormulaFilters() {
-  const currentFilter = $('#formulaProductFilter')?.value || 'todos';
   const currentFormulaProduct = $('#formulaProduto')?.value || db.produtos[0]?.id || '';
-  const opts = ['<option value="todos">Todos os produtos</option>', ...db.produtos.map(p => `<option value="${p.id}">${escapeHTML(p.nome)}</option>`)].join('');
-  $('#formulaProductFilter').innerHTML = opts;
-  if (db.produtos.some(p => p.id === currentFilter) || currentFilter === 'todos') $('#formulaProductFilter').value = currentFilter;
-  $('#formulaProduto').innerHTML = db.produtos.map(p => `<option value="${p.id}">${escapeHTML(p.nome)}</option>`).join('');
+  $('#formulaProduto').innerHTML = db.produtos.map(p => `<option value="${escapeAttr(p.id)}">${escapeHTML(p.nome)}</option>`).join('');
   if (db.produtos.some(p => p.id === currentFormulaProduct)) $('#formulaProduto').value = currentFormulaProduct;
 }
 
 function renderFormulas() {
+  if (!$('#formulasList')) return;
   renderFormulaFilters();
-  const filter = $('#formulaProductFilter')?.value || 'todos';
+  const filter = 'todos';
   const formulas = db.formulacoes.filter(f => filter === 'todos' || f.produtoId === filter);
   $('#formulasList').innerHTML = formulas.map(formulaHTML).join('') || emptyHTML('Nenhuma formulação cadastrada.');
   $('#formulasList').querySelectorAll('[data-edit-formula]').forEach(el => el.addEventListener('click', () => openFormulaModal(el.dataset.editFormula)));
@@ -381,68 +1285,222 @@ function formulaHTML(f) {
   const danger = analysis.alerts.some(a => a.type === 'danger');
   const warn = analysis.alerts.some(a => a.type === 'warn');
   return `
-    <div class="item-card" data-edit-formula="${f.id}">
-      <div class="item-avatar">🧮</div>
+    <button type="button" class="item-card" data-edit-formula="${escapeAttr(f.id)}">
+      <div class="item-avatar">∑</div>
       <div>
         <div class="item-title">${escapeHTML(f.nome)}</div>
         <div class="item-subtitle">${escapeHTML(product?.nome || 'Produto não encontrado')} · soma ${fmt(analysis.totalPct)}%</div>
         <div class="item-meta">
           <span class="badge ${Math.abs(analysis.totalPct - 100) < 0.01 ? 'ok' : 'warn'}">Total ${fmt(analysis.totalPct)}%</span>
-          <span class="badge ${analysis.fatPct <= (product?.parametros?.gorduraMax || 999) ? 'ok' : 'danger'}">Gordura ${fmt(analysis.fatPct)}%</span>
+          <span class="badge ${limitBadge(analysis.fatPct, product?.parametros?.gorduraMax, 'max')}">Gordura ${fmt(analysis.fatPct)}%</span>
           <span class="badge ${danger ? 'danger' : warn ? 'warn' : 'ok'}">${danger ? 'corrigir' : warn ? 'atenção' : 'ok'}</span>
         </div>
       </div>
+    </button>`;
+}
+
+function renderCronograma() {
+  const root = $('#cronogramaContent');
+  if (!root) return;
+  const schedule = getSchedule();
+  root.innerHTML = `
+    <div class="calendar-list">
+      ${schedule.map(scheduleCardHTML).join('')}
+    </div>
+    <div class="notice-card">
+      O cronograma pode ser ajustado conforme a oferta da disciplina. Os roteiros e as aulas teóricas permanecem conectados para consulta rápida durante a prática.
     </div>`;
+  bindInternalLinks(root);
+  root.querySelectorAll('[data-open-category]').forEach(btn => btn.addEventListener('click', () => setPage('Aulas')));
+}
+
+function scheduleCardHTML(item) {
+  const categoryChips = (item.categorias || []).map(id => {
+    const category = PRODUCT_CATEGORIES.find(c => c.id === id);
+    return category ? `<button type="button" class="link-chip soft" data-open-category="${escapeAttr(id)}">${escapeHTML(category.titulo)}</button>` : '';
+  }).join('');
+  return `<article class="calendar-card">
+    <div class="calendar-index">
+      <strong>${escapeHTML(item.aula)}</strong>
+      ${item.dia ? `<span>${escapeHTML(formatScheduleDate(item.dia))}</span>` : ''}
+    </div>
+    <div class="calendar-body">
+      <h3>${escapeHTML(item.tema)}</h3>
+      <p>${escapeHTML(item.foco)}</p>
+      ${item.local ? `<div class="calendar-local">${escapeHTML(item.local)}</div>` : ''}
+      ${item.observacao ? `<div class="calendar-note">${escapeHTML(item.observacao)}</div>` : ''}
+      <div class="linked-block">
+        <div class="linked-title">Roteiros da aula</div>
+        ${linkedProductsHTML(item.produtos || [])}
+      </div>
+      <div class="linked-block">
+        <div class="linked-title">Teoria relacionada</div>
+        <div class="link-chip-row">${categoryChips}</div>
+      </div>
+    </div>
+  </article>`;
+}
+
+function getSchedule() {
+  if (!Array.isArray(db.configs.cronograma)) db.configs.cronograma = normalizeSchedule();
+  return db.configs.cronograma;
+}
+
+function normalizeSchedule(source = []) {
+  const current = Array.isArray(source) ? source : [];
+  return CLASS_SCHEDULE.map((item, index) => {
+    const saved = current.find(row => row.id === item.id) || current[index] || {};
+    return Object.assign({}, item, {
+      id: item.id || `aula_${index + 1}`,
+      dia: saved.dia || item.dia || '',
+      tema: saved.tema || item.tema,
+      foco: saved.foco || item.foco,
+      local: saved.local || item.local || '',
+      observacao: saved.observacao || item.observacao || ''
+    });
+  });
+}
+
+function renderScheduleConfig() {
+  const root = $('#configCronogramaList');
+  if (!root) return;
+  const schedule = getSchedule();
+  root.innerHTML = schedule.map(scheduleConfigHTML).join('');
+  root.querySelectorAll('[data-schedule-field]').forEach(input => input.addEventListener('change', () => saveScheduleField(input)));
+}
+
+function scheduleConfigHTML(item, index) {
+  return `<article class="config-schedule-card">
+    <div class="config-schedule-head">
+      <strong>${escapeHTML(item.aula)}</strong>
+      <span>${escapeHTML(item.tema)}</span>
+    </div>
+    <div class="form-grid two-cols">
+      <div class="form-group">
+        <label>Dia da aula</label>
+        <input type="date" value="${escapeAttr(item.dia || '')}" data-schedule-field="dia" data-schedule-index="${index}">
+      </div>
+      <div class="form-group">
+        <label>Local</label>
+        <input type="text" value="${escapeAttr(item.local || '')}" data-schedule-field="local" data-schedule-index="${index}" placeholder="Ex: Laboratório">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Tema</label>
+      <input type="text" value="${escapeAttr(item.tema || '')}" data-schedule-field="tema" data-schedule-index="${index}">
+    </div>
+    <div class="form-group">
+      <label>Foco da aula</label>
+      <textarea rows="2" data-schedule-field="foco" data-schedule-index="${index}">${escapeHTML(item.foco || '')}</textarea>
+    </div>
+    <div class="form-group">
+      <label>Observação</label>
+      <textarea rows="2" data-schedule-field="observacao" data-schedule-index="${index}" placeholder="Opcional">${escapeHTML(item.observacao || '')}</textarea>
+    </div>
+  </article>`;
+}
+
+function saveScheduleField(input) {
+  const index = Number(input.dataset.scheduleIndex);
+  const field = input.dataset.scheduleField;
+  const schedule = getSchedule();
+  if (!schedule[index] || !field) return;
+  schedule[index][field] = input.value;
+  saveDB();
+  renderCronograma();
+  toast('Cronograma atualizado.');
+}
+
+function formatScheduleDate(value) {
+  if (!value) return '';
+  const [year, month, day] = String(value).split('-');
+  if (year && month && day) return `${day}/${month}/${year}`;
+  return value;
 }
 
 function renderAulaSelect() {
-  $('#aulaProdutoSelect').innerHTML = db.produtos.map(p => `<option value="${p.id}">${escapeHTML(p.nome)}</option>`).join('');
-  if (db.configs.ultimoProdutoAula) $('#aulaProdutoSelect').value = db.configs.ultimoProdutoAula;
+  if (!$('#aulaProdutoSelect')) return;
+  $('#aulaProdutoSelect').innerHTML = db.produtos.map(p => `<option value="${escapeAttr(p.id)}">${escapeHTML(p.nome)}</option>`).join('');
+  if (db.configs.ultimoProdutoAula && db.produtos.some(p => p.id === db.configs.ultimoProdutoAula)) $('#aulaProdutoSelect').value = db.configs.ultimoProdutoAula;
 }
 
 function renderAulas() {
-  renderAulaSelect();
-  const id = $('#aulaProdutoSelect')?.value || db.produtos[0]?.id;
-  const p = findProduct(id);
-  if (!p) {
-    $('#aulaContent').innerHTML = emptyHTML('Cadastre um produto para montar o roteiro de aula.');
-    return;
-  }
-  const formulas = db.formulacoes.filter(f => f.produtoId === p.id);
-  const formulaCards = formulas.map(f => {
-    const a = analyzeFormula(f);
-    return `<div class="lesson-card"><h3>${escapeHTML(f.nome)}</h3>${analysisHTML(a)}<button class="secondary-btn full" data-edit-formula="${f.id}">Abrir formulação</button></div>`;
-  }).join('') || '<div class="notice-card">Nenhuma formulação cadastrada para este produto.</div>';
   $('#aulaContent').innerHTML = `
-    <div class="lesson-card">
-      <h3>${escapeHTML(p.nome)}</h3>
-      <p class="muted">${escapeHTML(p.objetivo || p.descricao || '')}</p>
-      <div class="item-meta">
-        <span class="badge info">${escapeHTML(p.categoria || 'Sem categoria')}</span>
-        ${p.tipo === 'hamburguer' ? '<span class="badge warn">validação legal ativada</span>' : ''}
-      </div>
-      ${p.fotos?.length ? `<div class="photo-strip">${p.fotos.map(src => `<img class="photo-thumb" src="${src}" alt="Foto do produto">`).join('')}</div>` : ''}
+    <div class="theory-grid">
+      ${THEORY_LESSONS.map(theoryLessonHTML).join('')}
     </div>
-    <div class="lesson-card"><h3>Fluxograma</h3>${orderedList(p.fluxo)}</div>
-    <div class="lesson-card"><h3>Pontos de controle</h3>${unorderedList(p.pontos)}</div>
-    <div class="lesson-card"><h3>Perguntas para discussão</h3>${unorderedList(p.perguntas)}</div>
-    <div class="section-header"><div><h2>Formulações da aula</h2><p>Use para cálculo e conferência técnica.</p></div></div>
-    ${formulaCards}`;
-  $('#aulaContent').querySelectorAll('[data-edit-formula]').forEach(el => el.addEventListener('click', () => openFormulaModal(el.dataset.editFormula)));
+    <div class="notice-card">
+      <strong>Uso didático.</strong> As referências legais ficam aqui como apoio às aulas. Para registro, rotulagem oficial ou inspeção, confira sempre a norma vigente no órgão competente.
+    </div>
+    <div class="section-header"><div><h2>Referências legais</h2><p>Normas úteis para conectar teoria, formulação e prática.</p></div></div>
+    <div class="stack-list">${db.legislacoes.map(lawCardHTML).join('')}</div>`;
+  bindInternalLinks($('#aulaContent'));
+  bindLawLinks($('#aulaContent'));
 }
 
 function renderLegislacao() {
-  $('#legislacaoList').innerHTML = db.legislacoes.map(law => {
-    const product = law.produtoId ? findProduct(law.produtoId) : null;
-    return `<div class="law-card">
-      <h3>${escapeHTML(law.titulo)}</h3>
-      <div class="item-subtitle">${escapeHTML(law.orgao || '')}${product ? ' · ' + escapeHTML(product.nome) : ' · Geral'}</div>
-      <p class="muted">${escapeHTML(law.resumo || '')}</p>
-      ${unorderedList(law.pontos || [])}
-      ${law.url ? `<button class="secondary-btn full" data-open-url="${escapeHTML(law.url)}">Abrir referência</button>` : ''}
-    </div>`;
-  }).join('') || emptyHTML('Nenhuma referência legal cadastrada.');
-  $('#legislacaoList').querySelectorAll('[data-open-url]').forEach(btn => btn.addEventListener('click', () => window.open(btn.dataset.openUrl, '_blank', 'noopener')));
+  if (!$('#legislacaoList')) return;
+  $('#legislacaoList').innerHTML = db.legislacoes.map(lawCardHTML).join('') || emptyHTML('Nenhuma referência legal cadastrada.');
+  bindLawLinks($('#legislacaoList'));
+}
+
+function theoryLessonHTML(lesson) {
+  return `<article class="theory-card">
+    <h3>${escapeHTML(lesson.titulo)}</h3>
+    <p>${escapeHTML(lesson.resumo)}</p>
+    <div class="theory-columns">
+      <div>
+        <h4>Tópicos</h4>
+        ${unorderedList(lesson.topicos)}
+      </div>
+      <div>
+        <h4>Perguntas</h4>
+        ${unorderedList(lesson.perguntas)}
+      </div>
+    </div>
+    <div class="linked-block">
+      <div class="linked-title">Roteiros disponíveis</div>
+      ${linkedProductsHTML(lesson.produtos)}
+    </div>
+    <div class="linked-block">
+      <div class="linked-title">Insumos citados</div>
+      ${linkedIngredientsHTML(lesson.insumos)}
+    </div>
+  </article>`;
+}
+
+function linkedProductsHTML(ids) {
+  return `<div class="link-chip-row">${ids.map(id => {
+    const p = findProduct(id);
+    return p ? `<button type="button" class="link-chip" data-open-product="${escapeAttr(id)}">${escapeHTML(p.nome)}</button>` : '';
+  }).join('')}</div>`;
+}
+
+function linkedIngredientsHTML(ids) {
+  return `<div class="link-chip-row">${ids.map(id => {
+    const i = findIngredient(id);
+    return i ? `<button type="button" class="link-chip" data-open-ingredient="${escapeAttr(id)}">${escapeHTML(i.nome)}</button>` : '';
+  }).join('')}</div>`;
+}
+
+function bindInternalLinks(root) {
+  root?.querySelectorAll('[data-open-product]').forEach(btn => btn.addEventListener('click', () => openProductWorkspace(btn.dataset.openProduct)));
+  root?.querySelectorAll('[data-open-ingredient]').forEach(btn => btn.addEventListener('click', () => openIngredientView(btn.dataset.openIngredient)));
+}
+
+function lawCardHTML(law) {
+  const product = law.produtoId ? findProduct(law.produtoId) : null;
+  return `<div class="law-card">
+    <h3>${escapeHTML(law.titulo)}</h3>
+    <div class="item-subtitle">${escapeHTML(law.orgao || '')}${product ? ' · ' + escapeHTML(product.nome) : ' · Geral'}</div>
+    <p class="muted">${escapeHTML(law.resumo || '')}</p>
+    ${unorderedList(law.pontos || [])}
+    ${law.url ? `<button type="button" class="secondary-btn full" data-open-url="${escapeAttr(law.url)}">Abrir referência</button>` : ''}
+  </div>`;
+}
+
+function bindLawLinks(root) {
+  root?.querySelectorAll('[data-open-url]').forEach(btn => btn.addEventListener('click', () => window.open(btn.dataset.openUrl, '_blank', 'noopener')));
 }
 
 function openProductModal(id = null) {
@@ -450,6 +1508,7 @@ function openProductModal(id = null) {
   $('#produtoId').value = p?.id || '';
   $('#produtoNome').value = p?.nome || '';
   $('#produtoCategoria').value = p?.categoria || '';
+  setMultiSelectValues($('#produtoCategoriaDidatica'), normalizeCategoryIds(p));
   $('#produtoEspecie').value = p?.especie || '';
   $('#produtoTipo').value = p?.tipo || 'geral';
   $('#produtoDescricao').value = p?.descricao || '';
@@ -462,6 +1521,7 @@ function openProductModal(id = null) {
   $('#paramMostrarValidacao').checked = p?.parametros?.mostrarValidacao !== false;
   $('#produtoFluxo').value = (p?.fluxo || []).join('\n');
   $('#produtoPontos').value = (p?.pontos || []).join('\n');
+  $('#produtoEquipamentos').value = (p?.equipamentos || []).join('\n');
   $('#produtoPerguntas').value = (p?.perguntas || []).join('\n');
   tempProductPhotos = clone(p?.fotos || []);
   $('#produtoFotos').value = '';
@@ -483,7 +1543,7 @@ async function handleProductPhotos(ev) {
 function renderProductPhotoPreview() {
   const wrap = $('#produtoFotosPreview');
   wrap.innerHTML = tempProductPhotos.map((src, index) => `
-    <div class="photo-wrap"><img class="photo-thumb" src="${src}" alt="Foto"><button class="photo-remove" data-remove-photo="${index}">×</button></div>
+    <div class="photo-wrap"><img class="photo-thumb" src="${escapeAttr(src)}" alt="Foto"><button type="button" class="photo-remove" data-remove-photo="${index}">×</button></div>
   `).join('');
   wrap.querySelectorAll('[data-remove-photo]').forEach(btn => btn.addEventListener('click', () => {
     tempProductPhotos.splice(Number(btn.dataset.removePhoto), 1);
@@ -493,10 +1553,13 @@ function renderProductPhotoPreview() {
 
 function saveProductFromModal() {
   const id = $('#produtoId').value || uid('prod');
+  const categoriaIds = multiSelectValues($('#produtoCategoriaDidatica'));
   const product = {
     id,
     nome: $('#produtoNome').value.trim(),
     categoria: $('#produtoCategoria').value.trim(),
+    categoriaId: categoriaIds[0] || '',
+    categoriaIds,
     especie: $('#produtoEspecie').value.trim(),
     tipo: $('#produtoTipo').value,
     descricao: $('#produtoDescricao').value.trim(),
@@ -512,12 +1575,17 @@ function saveProductFromModal() {
     fotos: tempProductPhotos,
     fluxo: linesFrom($('#produtoFluxo').value),
     pontos: linesFrom($('#produtoPontos').value),
+    equipamentos: linesFrom($('#produtoEquipamentos').value),
     perguntas: linesFrom($('#produtoPerguntas').value)
   };
   if (!product.nome) return toast('Informe o nome do produto.');
+  product.categoriaIds = product.categoriaIds.length ? product.categoriaIds : inferProductCategoryIds(product);
+  product.categoriaId = product.categoriaIds[0] || inferProductCategoryId(product);
   const idx = db.produtos.findIndex(p => p.id === id);
   if (idx >= 0) db.produtos[idx] = product; else db.produtos.push(product);
+  activeProductId = id;
   db.configs.ultimoProdutoAula = id;
+  db.configs.produtoSelecionado = id;
   saveDB();
   closeModal('modalProduto');
   renderAll();
@@ -532,6 +1600,8 @@ function deleteProductFromModal() {
   db.produtos = db.produtos.filter(p => p.id !== id);
   db.formulacoes = db.formulacoes.filter(f => f.produtoId !== id);
   db.legislacoes.forEach(l => { if (l.produtoId === id) l.produtoId = null; });
+  activeProductId = '';
+  db.configs.produtoSelecionado = '';
   saveDB();
   closeModal('modalProduto');
   renderAll();
@@ -539,7 +1609,13 @@ function deleteProductFromModal() {
 }
 
 function populateTypeOptions() {
-  $('#insumoTipo').innerHTML = TYPES.map(t => `<option value="${t.value}">${t.label}</option>`).join('');
+  $('#insumoTipo').innerHTML = TYPES.map(t => `<option value="${escapeAttr(t.value)}">${escapeHTML(t.label)}</option>`).join('');
+}
+
+function populateProductCategoryOptions() {
+  const select = $('#produtoCategoriaDidatica');
+  if (!select) return;
+  select.innerHTML = PRODUCT_CATEGORIES.map(category => `<option value="${escapeAttr(category.id)}">${escapeHTML(category.titulo)}</option>`).join('');
 }
 
 function openIngredientModal(id = null) {
@@ -558,6 +1634,31 @@ function openIngredientModal(id = null) {
   $('#insumoAlergeno').checked = Boolean(i?.alergeno);
   $('#btnExcluirInsumo').style.display = i ? 'inline-flex' : 'none';
   openModal('modalInsumo');
+}
+
+function openIngredientView(id = null) {
+  const i = findIngredient(id);
+  if (!i) return toast('Insumo não encontrado.');
+  $('#insumoViewTitle').textContent = i.nome;
+  $('#insumoViewContent').innerHTML = `
+    <div class="ingredient-view-card">
+      <div class="item-meta">
+        <span class="badge info">${escapeHTML(typeLabel(i.tipo))}</span>
+        ${i.alergeno ? '<span class="badge danger">alérgeno</span>' : ''}
+        ${i.proteinaNaoCarnea ? '<span class="badge warn">proteína agregada</span>' : ''}
+      </div>
+      <div class="ingredient-view-section">
+        <h3>Função tecnológica</h3>
+        <p>${escapeHTML(i.funcao || 'Função não cadastrada.')}</p>
+      </div>
+      ${i.obs ? `<div class="ingredient-view-section"><h3>Observação</h3><p>${escapeHTML(i.obs)}</p></div>` : ''}
+      <div class="analysis-grid ingredient-metrics">
+        <div class="analysis-metric"><strong>${fmt(i.gordura)}%</strong><span>Gordura</span></div>
+        <div class="analysis-metric"><strong>${fmt(i.proteina)}%</strong><span>Proteína</span></div>
+        <div class="analysis-metric"><strong>${fmt(i.carboidrato)}%</strong><span>Carboidrato</span></div>
+      </div>
+    </div>`;
+  openModal('modalInsumoView');
 }
 
 function saveIngredientFromModal() {
@@ -582,6 +1683,10 @@ function saveIngredientFromModal() {
   saveDB();
   closeModal('modalInsumo');
   renderAll();
+  if ($('#modalFormula')?.classList.contains('show')) {
+    renderFormulaFilters();
+    renderFormulaItems();
+  }
   toast('Insumo salvo.');
 }
 
@@ -597,13 +1702,16 @@ function deleteIngredientFromModal() {
   toast('Insumo excluído.');
 }
 
-function openFormulaModal(id = null) {
+function openFormulaModal(id = null, productId = null) {
   renderFormulaFilters();
   const f = id ? findFormula(id) : null;
+  const selectedProduct = productId || activeProductId || db.produtos[0]?.id || '';
+  const product = findProduct(f?.produtoId || selectedProduct);
   $('#formulaId').value = f?.id || '';
-  $('#formulaProduto').value = f?.produtoId || db.produtos[0]?.id || '';
+  $('#formulaProduto').value = f?.produtoId || selectedProduct;
   $('#formulaNome').value = f?.nome || '';
   $('#formulaPeso').value = f?.pesoReferencia || 1000;
+  $('#formulaBaseCalculo').value = f?.baseCalculo || defaultFormulaBase(product);
   $('#formulaRendimento').value = f?.rendimento ?? '';
   $('#formulaObs').value = f?.observacoes || '';
   formulaDraftItems = clone(f?.itens || [{ insumoId: db.insumos[0]?.id || '', percentual: 100 }]);
@@ -613,19 +1721,37 @@ function openFormulaModal(id = null) {
 }
 
 function renderFormulaItems() {
-  const weight = toNumber($('#formulaPeso').value) || 0;
+  const draft = getFormulaFromModal(false);
   $('#formulaItens').innerHTML = formulaDraftItems.map((item, idx) => {
-    const grams = weight * (toNumber(item.percentual) / 100);
+    const grams = formulaItemGrams(draft, item);
     return `<tr>
-      <td><select data-row-insumo="${idx}">${db.insumos.map(i => `<option value="${i.id}" ${i.id === item.insumoId ? 'selected' : ''}>${escapeHTML(i.nome)}</option>`).join('')}</select></td>
-      <td><input type="number" step="0.01" data-row-pct="${idx}" value="${item.percentual}"></td>
-      <td><strong>${fmt(grams)} g</strong></td>
-      <td><button class="tiny-btn" data-row-del="${idx}" title="Remover">×</button></td>
+      <td><select data-row-insumo="${idx}">${db.insumos.map(i => `<option value="${escapeAttr(i.id)}" ${i.id === item.insumoId ? 'selected' : ''}>${escapeHTML(i.nome)}</option>`).join('')}</select></td>
+      <td><input type="number" step="0.1" data-row-pct="${idx}" value="${escapeAttr(item.percentual)}"></td>
+      <td><strong data-row-grams="${idx}">${fmt(grams)} g</strong></td>
+      <td><button type="button" class="tiny-btn" data-row-del="${idx}" title="Remover">×</button></td>
     </tr>`;
   }).join('');
-  $('#formulaItens').querySelectorAll('[data-row-insumo]').forEach(el => el.addEventListener('change', () => { formulaDraftItems[Number(el.dataset.rowInsumo)].insumoId = el.value; renderFormulaItems(); }));
-  $('#formulaItens').querySelectorAll('[data-row-pct]').forEach(el => el.addEventListener('input', () => { formulaDraftItems[Number(el.dataset.rowPct)].percentual = toNumber(el.value); renderFormulaItems(); }));
-  $('#formulaItens').querySelectorAll('[data-row-del]').forEach(el => el.addEventListener('click', () => { formulaDraftItems.splice(Number(el.dataset.rowDel), 1); renderFormulaItems(); }));
+  $('#formulaItens').querySelectorAll('[data-row-insumo]').forEach(el => el.addEventListener('change', () => {
+    formulaDraftItems[Number(el.dataset.rowInsumo)].insumoId = el.value;
+    renderFormulaSummary();
+  }));
+  $('#formulaItens').querySelectorAll('[data-row-pct]').forEach(el => el.addEventListener('input', () => {
+    const idx = Number(el.dataset.rowPct);
+    formulaDraftItems[idx].percentual = toNumber(el.value);
+    const draft = getFormulaFromModal(false);
+    const grams = formulaItemGrams(draft, formulaDraftItems[idx]);
+    const gramsCell = $(`[data-row-grams="${idx}"]`);
+    if (gramsCell) gramsCell.textContent = `${fmt(grams)} g`;
+    renderFormulaSummary();
+  }));
+  $('#formulaItens').querySelectorAll('[data-row-del]').forEach(el => el.addEventListener('click', () => {
+    formulaDraftItems.splice(Number(el.dataset.rowDel), 1);
+    renderFormulaItems();
+  }));
+  renderFormulaSummary();
+}
+
+function renderFormulaSummary() {
   const draft = getFormulaFromModal(false);
   $('#formulaResumo').innerHTML = analysisHTML(analyzeFormula(draft));
 }
@@ -636,6 +1762,7 @@ function getFormulaFromModal(requireName = true) {
     produtoId: $('#formulaProduto').value,
     nome: $('#formulaNome').value.trim() || (requireName ? '' : 'Formulação em edição'),
     pesoReferencia: toNumber($('#formulaPeso').value) || 1000,
+    baseCalculo: $('#formulaBaseCalculo').value || defaultFormulaBase(findProduct($('#formulaProduto').value)),
     rendimento: numberOrBlank($('#formulaRendimento').value),
     itens: formulaDraftItems.map(item => ({ insumoId: item.insumoId, percentual: toNumber(item.percentual) })).filter(item => item.insumoId),
     observacoes: $('#formulaObs').value.trim()
@@ -649,6 +1776,9 @@ function saveFormulaFromModal() {
   if (!formula.itens.length) return toast('Adicione ao menos um insumo.');
   const idx = db.formulacoes.findIndex(f => f.id === formula.id);
   if (idx >= 0) db.formulacoes[idx] = formula; else db.formulacoes.push(formula);
+  activeProductId = formula.produtoId;
+  db.configs.produtoSelecionado = formula.produtoId;
+  db.configs.ultimoProdutoAula = formula.produtoId;
   saveDB();
   closeModal('modalFormula');
   renderAll();
@@ -666,38 +1796,261 @@ function deleteFormulaFromModal() {
   toast('Formulação excluída.');
 }
 
+function updateFormulaWeight(formulaId, value, options = {}) {
+  const formula = findFormula(formulaId);
+  if (!formula) return;
+  formula.pesoReferencia = Math.max(1, toNumber(value) || 1);
+  saveInlineFormulaEdit('Peso atualizado.', options);
+}
+
+function updateFormulaBase(formulaId, value, options = {}) {
+  const formula = findFormula(formulaId);
+  if (!formula) return;
+  formula.baseCalculo = value === 'produto_final' ? 'produto_final' : 'massa_carnea';
+  saveInlineFormulaEdit('Base de cálculo atualizada.', options);
+}
+
+function updateFormulaItemPercent(formulaId, insumoId, value, options = {}) {
+  const formula = findFormula(formulaId);
+  if (!formula || !insumoId) return;
+  const item = ensureFormulaItem(formula, insumoId);
+  item.percentual = Math.max(0, toNumber(value));
+  saveInlineFormulaEdit('Percentual atualizado.', options);
+}
+
+function addFormulaItemInline(formulaId, insumoId) {
+  const formula = findFormula(formulaId);
+  const ingredient = findIngredient(insumoId);
+  if (!formula || !ingredient) return;
+  if ((formula.itens || []).some(item => item.insumoId === insumoId)) return toast('Esse insumo já está na formulação.');
+  const suggestion = ingredientSuggestion(ingredient);
+  formula.itens.push({ insumoId, percentual: suggestion.suave });
+  saveInlineFormulaEdit('Insumo adicionado.');
+}
+
+function removeFormulaItemInline(formulaId, insumoId) {
+  const formula = findFormula(formulaId);
+  if (!formula) return;
+  formula.itens = (formula.itens || []).filter(item => item.insumoId !== insumoId);
+  saveInlineFormulaEdit('Insumo removido.');
+}
+
+function updateFormulaBlend(formulaId, changes = {}, options = {}) {
+  const formula = findFormula(formulaId);
+  if (!formula) return;
+  const lean = ensureFormulaItem(formula, 'ing_carne_bovina_magra');
+  const fat = ensureFormulaItem(formula, 'ing_gordura_bovina');
+  const previous = formulaBlendState(formula);
+  const useBlend = changes.useBlend ?? previous.useBlend;
+
+  if (!useBlend) {
+    const total = Math.max(1, toNumber(changes.blendGrams ?? previous.blendGrams ?? formula.pesoReferencia) || 1);
+    formula.usarBlend = false;
+    formula.pesoReferencia = total;
+    lean.percentual = 100;
+    fat.percentual = 0;
+    saveInlineFormulaEdit('Blend atualizado.', options);
+    return;
+  }
+
+  let leanGrams = Math.max(0, toNumber(changes.leanGrams ?? previous.leanGrams));
+  let fatGrams = Math.max(0, toNumber(changes.fatGrams ?? previous.fatGrams));
+  if (changes.useBlend === true && previous.useBlend === false) {
+    const total = Math.max(1, toNumber(previous.blendGrams || formula.pesoReferencia) || 1);
+    leanGrams = total * 0.85;
+    fatGrams = total * 0.15;
+  }
+  const total = Math.max(1, leanGrams + fatGrams);
+  formula.usarBlend = true;
+  formula.pesoReferencia = total;
+  lean.percentual = leanGrams / total * 100;
+  fat.percentual = fatGrams / total * 100;
+  saveInlineFormulaEdit('Blend atualizado.', options);
+}
+
+function queueInlineFormulaEdit(callback) {
+  clearTimeout(inlineEditTimer);
+  inlineEditTimer = setTimeout(callback, 650);
+}
+
+function saveInlineFormulaEdit(message, options = {}) {
+  const currentSlide = $('#produtoWorkspace .product-slide.active')?.dataset.slidePanel;
+  if (currentSlide) activeProductSlideId = currentSlide;
+  saveDB();
+  renderProdutos();
+  if (currentSlide) $('#produtoWorkspace [data-product-slide="' + cssEscape(currentSlide) + '"]')?.click();
+  if (!options.silent) toast(message);
+}
+
+function ensureFormulaItem(formula, insumoId) {
+  formula.itens = Array.isArray(formula.itens) ? formula.itens : [];
+  let item = formula.itens.find(row => row.insumoId === insumoId);
+  if (!item) {
+    item = { insumoId, percentual: 0 };
+    formula.itens.push(item);
+  }
+  return item;
+}
+
+function formulaHasBeefBlend(formula) {
+  return (formula?.itens || []).some(item => item.insumoId === 'ing_carne_bovina_magra' || item.insumoId === 'ing_gordura_bovina');
+}
+
+function isBlendItem(insumoId, formula) {
+  return formulaHasBeefBlend(formula) && (insumoId === 'ing_carne_bovina_magra' || insumoId === 'ing_gordura_bovina');
+}
+
+function formulaBlendState(formula) {
+  const leanItem = (formula.itens || []).find(item => item.insumoId === 'ing_carne_bovina_magra');
+  const fatItem = (formula.itens || []).find(item => item.insumoId === 'ing_gordura_bovina');
+  const useBlend = formula.usarBlend !== false;
+  const leanGrams = leanItem ? formulaItemGrams(formula, leanItem) : 0;
+  const fatGrams = fatItem ? formulaItemGrams(formula, fatItem) : 0;
+  const blendGrams = useBlend ? (leanGrams + fatGrams || toNumber(formula.pesoReferencia)) : toNumber(formula.pesoReferencia);
+  return { useBlend, leanGrams, fatGrams, blendGrams };
+}
+
+function ingredientSuggestion(ingredient) {
+  if (!ingredient || !['condimento', 'sal'].includes(ingredient.tipo) && ingredient.id !== 'ing_acucar') return null;
+  const byId = {
+    ing_sal: { suave: 1.5, acentuado: 2 },
+    ing_alho_po: { suave: 0.5, acentuado: 1.5 },
+    ing_pimenta_reino: { suave: 0.1, acentuado: 0.4 },
+    ing_pimenta_branca: { suave: 0.1, acentuado: 0.35 },
+    ing_paprica_doce: { suave: 0.2, acentuado: 0.7 },
+    ing_cebola_desidratada: { suave: 0.6, acentuado: 1.5 },
+    ing_salsa_desidratada: { suave: 0.2, acentuado: 0.8 },
+    ing_acucar: { suave: 0.2, acentuado: 0.8 }
+  };
+  if (byId[ingredient?.id]) return byId[ingredient.id];
+  const byType = {
+    sal: { suave: 1.5, acentuado: 2 },
+    condimento: { suave: 0.3, acentuado: 1 }
+  };
+  return byType[ingredient?.tipo] || null;
+}
+
+function productCategories(product) {
+  return normalizeCategoryIds(product).map(id => PRODUCT_CATEGORIES.find(category => category.id === id)).filter(Boolean);
+}
+
+function productCategory(product) {
+  return productCategories(product)[0] || PRODUCT_CATEGORIES.find(category => category.produtos.includes(product?.id));
+}
+
+function productCategoryLabel(product) {
+  const categories = productCategories(product);
+  if (!categories.length) return 'Categoria não definida';
+  return categories.map(category => category.titulo).join(' + ');
+}
+
+function normalizeCategoryIds(product, defaultProduct = null) {
+  const ids = [];
+  const add = (id) => {
+    if (id && PRODUCT_CATEGORIES.some(category => category.id === id) && !ids.includes(id)) ids.push(id);
+  };
+  (Array.isArray(product?.categoriaIds) ? product.categoriaIds : []).forEach(add);
+  add(product?.categoriaId);
+  (Array.isArray(defaultProduct?.categoriaIds) ? defaultProduct.categoriaIds : []).forEach(add);
+  add(defaultProduct?.categoriaId);
+  inferProductCategoryIds(product).forEach(add);
+  return ids;
+}
+
+function inferProductCategoryIds(product) {
+  const ids = PRODUCT_CATEGORIES.filter(category => category.produtos.includes(product?.id)).map(category => category.id);
+  if (product?.tipo === 'linguica_frescal') ids.push('embutidos');
+  const categoryText = String(product?.categoria || '').toLowerCase();
+  if (product?.tipo === 'hamburguer' || categoryText.includes('reestruturado')) ids.push('reestruturados');
+  if (categoryText.includes('emulsionado')) ids.push('emulsionados');
+  if (categoryText.includes('embutido')) ids.push('embutidos');
+  return Array.from(new Set(ids));
+}
+
+function inferProductCategoryId(product) {
+  return inferProductCategoryIds(product)[0] || '';
+}
+
+function defaultFormulaBase(product) {
+  const categoryIds = normalizeCategoryIds(product);
+  return categoryIds.includes('reestruturados') ? 'massa_carnea' : 'produto_final';
+}
+
+function formulaBaseMode(formula, product = findProduct(formula?.produtoId)) {
+  return formula?.baseCalculo || defaultFormulaBase(product);
+}
+
+function formulaBaseLabel(mode) {
+  return mode === 'massa_carnea' ? 'Massa cárnea/carne base' : 'Produto final';
+}
+
+function formulaItemGrams(formula, item) {
+  return (toNumber(formula?.pesoReferencia) || 0) * toNumber(item?.percentual) / 100;
+}
+
+function timelineHTML(items) {
+  return (items || []).map((item, index) => `<div class="timeline-step"><span>${index + 1}</span><p>${escapeHTML(item)}</p></div>`).join('');
+}
+
+function equipmentHTML(items) {
+  const list = Array.isArray(items) ? items : [];
+  if (!list.length) return '<div class="notice-card slim">Nenhum equipamento cadastrado para esta prática.</div>';
+  return list.map((item, index) => `<button type="button" class="equipment-item" data-equipment-check="${index}"><span></span>${escapeHTML(item)}</button>`).join('');
+}
+
+function toggleEquipmentCheck(btn) {
+  btn.classList.toggle('checked');
+  const mark = btn.querySelector('span');
+  if (mark) mark.textContent = btn.classList.contains('checked') ? '✓' : '';
+}
+
 function analyzeFormula(formula) {
   const product = findProduct(formula.produtoId);
+  const baseMode = formulaBaseMode(formula, product);
   const weight = toNumber(formula.pesoReferencia) || 1000;
   let totalPct = 0;
-  let fatPct = 0;
-  let proteinPct = 0;
-  let carbPct = 0;
-  let pncPct = 0;
+  let meatBasePct = 0;
+  let finalWeight = 0;
+  let fatGrams = 0;
+  let proteinGrams = 0;
+  let carbGrams = 0;
+  let pncGrams = 0;
   let costTotal = 0;
   formula.itens.forEach(item => {
     const ing = findIngredient(item.insumoId);
     const pct = toNumber(item.percentual);
     if (!ing) return;
+    const grams = formulaItemGrams(formula, item);
     totalPct += pct;
-    fatPct += pct * toNumber(ing.gordura) / 100;
-    proteinPct += pct * toNumber(ing.proteina) / 100;
-    carbPct += pct * toNumber(ing.carboidrato) / 100;
-    if (ing.proteinaNaoCarnea || ing.tipo === 'proteina_nao_carnea') pncPct += pct;
-    costTotal += (weight * pct / 100 / 1000) * toNumber(ing.custo);
+    if (ing.tipo === 'carne' || ing.tipo === 'gordura') meatBasePct += pct;
+    finalWeight += grams;
+    fatGrams += grams * toNumber(ing.gordura) / 100;
+    proteinGrams += grams * toNumber(ing.proteina) / 100;
+    carbGrams += grams * toNumber(ing.carboidrato) / 100;
+    if (ing.proteinaNaoCarnea || ing.tipo === 'proteina_nao_carnea') pncGrams += grams;
+    costTotal += (grams / 1000) * toNumber(ing.custo);
   });
+  const compositionWeight = finalWeight || weight;
+  const fatPct = compositionWeight ? fatGrams / compositionWeight * 100 : 0;
+  const proteinPct = compositionWeight ? proteinGrams / compositionWeight * 100 : 0;
+  const carbPct = compositionWeight ? carbGrams / compositionWeight * 100 : 0;
+  const pncPct = compositionWeight ? pncGrams / compositionWeight * 100 : 0;
   const alerts = [];
-  if (Math.abs(totalPct - 100) < 0.01) alerts.push({ type: 'ok', text: 'A soma da formulação está em 100%.' });
-  else alerts.push({ type: 'warn', text: `A soma está em ${fmt(totalPct)}%. Ajuste para 100%.` });
+  if (baseMode === 'produto_final') {
+    if (Math.abs(totalPct - 100) >= 0.01) alerts.push({ type: 'warn', text: `A soma está em ${fmt(totalPct)}%. Ajuste para 100% quando a base for produto final.` });
+  } else {
+    if (Math.abs(meatBasePct - 100) >= 0.01) alerts.push({ type: 'warn', text: `Carne + gordura somam ${fmt(meatBasePct)}% da base.` });
+  }
   const params = product?.parametros || {};
-  if (product?.tipo === 'hamburguer' && params.mostrarValidacao !== false) {
+  if (product && params.mostrarValidacao !== false) {
     addLimitAlert(alerts, fatPct, params.gorduraMax, 'Gordura', 'max');
     addLimitAlert(alerts, proteinPct, params.proteinaMin, 'Proteína estimada', 'min');
     addLimitAlert(alerts, carbPct, params.carbMax, 'Carboidratos estimados', 'max');
-    if (params.proibeProteinaNaoCarnea && pncPct > 0) alerts.push({ type: 'danger', text: 'Há proteína não cárnea, mas o produto foi marcado como denominação com corte específico.' });
-    else addLimitAlert(alerts, pncPct, params.proteinaNaoCarneaMax, 'Proteína não cárnea agregada', 'max');
+    const pncLabel = product.tipo === 'linguica_frescal' ? 'Proteína agregada' : 'Proteína não cárnea agregada';
+    if (params.proibeProteinaNaoCarnea && pncPct > 0) alerts.push({ type: 'danger', text: `${pncLabel}: há ingrediente marcado como proteína agregada, mas o produto não permite esse uso.` });
+    else addLimitAlert(alerts, pncPct, params.proteinaNaoCarneaMax, pncLabel, 'max');
   }
-  return { product, weight, totalPct, fatPct, proteinPct, carbPct, pncPct, costTotal, alerts };
+  return { product, baseMode, baseLabel: formulaBaseLabel(baseMode), weight, totalPct, meatBasePct, finalWeight, fatPct, proteinPct, carbPct, pncPct, costTotal, alerts };
 }
 
 function addLimitAlert(alerts, value, limit, label, mode) {
@@ -707,21 +2060,23 @@ function addLimitAlert(alerts, value, limit, label, mode) {
 }
 
 function analysisHTML(a) {
+  const importantAlerts = a.alerts.filter(alert => alert.type !== 'ok');
   return `<div class="analysis-grid">
-    <div class="analysis-metric"><strong>${fmt(a.totalPct)}%</strong><span>Soma da fórmula</span></div>
+    <div class="analysis-metric"><strong>${fmt(a.totalPct)}%</strong><span>${a.baseMode === 'massa_carnea' ? 'Total sobre base' : 'Soma da fórmula'}</span></div>
+    <div class="analysis-metric"><strong>${fmt(a.finalWeight)} g</strong><span>Massa final estimada</span></div>
     <div class="analysis-metric"><strong>${fmt(a.fatPct)}%</strong><span>Gordura estimada</span></div>
     <div class="analysis-metric"><strong>${fmt(a.proteinPct)}%</strong><span>Proteína estimada</span></div>
     <div class="analysis-metric"><strong>${fmt(a.carbPct)}%</strong><span>Carboidratos estimados</span></div>
-    <div class="analysis-metric"><strong>${fmt(a.pncPct)}%</strong><span>Prot. não cárnea</span></div>
+    <div class="analysis-metric"><strong>${fmt(a.pncPct)}%</strong><span>Prot. agregada</span></div>
     <div class="analysis-metric"><strong>${money(a.costTotal)}</strong><span>Custo estimado do lote</span></div>
   </div>
-  <div class="alert-list">${a.alerts.map(alert => `<div class="alert ${alert.type}">${escapeHTML(alert.text)}</div>`).join('')}</div>`;
+  ${importantAlerts.length ? `<div class="alert-list">${importantAlerts.map(alert => `<div class="alert ${alert.type}">${escapeHTML(alert.text)}</div>`).join('')}</div>` : ''}`;
 }
 
-function showFormulaReport() {
-  const formula = getFormulaFromModal(false);
-  const text = buildReport(formula);
-  $('#relatorioTexto').value = text;
+function showFormulaReport(formulaId = null) {
+  const formula = formulaId ? findFormula(formulaId) : getFormulaFromModal(false);
+  if (!formula) return toast('Formulação não encontrada.');
+  $('#relatorioTexto').value = buildReport(formula);
   openModal('modalRelatorio');
 }
 
@@ -729,26 +2084,28 @@ function buildReport(formula) {
   const product = findProduct(formula.produtoId);
   const analysis = analyzeFormula(formula);
   const lines = [];
-  lines.push('RELATÓRIO DA AULA PRÁTICA - PAOA LAB');
+  lines.push('RELATÓRIO DA AULA PRÁTICA - PROCESSAMENTO DE ALIMENTOS DE ORIGEM ANIMAL');
   lines.push('');
   lines.push(`Produto: ${product?.nome || 'Não informado'}`);
   lines.push(`Formulação: ${formula.nome}`);
-  lines.push(`Peso de cálculo: ${fmt(formula.pesoReferencia)} g`);
+  lines.push(`Base de cálculo: ${analysis.baseLabel}`);
+  lines.push(`Peso base: ${fmt(formula.pesoReferencia)} g`);
+  lines.push(`Massa final estimada: ${fmt(analysis.finalWeight)} g`);
   if (formula.rendimento !== '') lines.push(`Rendimento esperado: ${fmt(formula.rendimento)}%`);
   lines.push('');
   lines.push('Formulação:');
   formula.itens.forEach(item => {
     const ing = findIngredient(item.insumoId);
-    const grams = formula.pesoReferencia * item.percentual / 100;
+    const grams = formulaItemGrams(formula, item);
     lines.push(`- ${ing?.nome || 'Insumo'}: ${fmt(item.percentual)}% = ${fmt(grams)} g`);
   });
   lines.push('');
   lines.push('Resumo técnico estimado:');
-  lines.push(`- Soma da formulação: ${fmt(analysis.totalPct)}%`);
+  lines.push(`- ${analysis.baseMode === 'massa_carnea' ? 'Total sobre a base' : 'Soma da formulação'}: ${fmt(analysis.totalPct)}%`);
   lines.push(`- Gordura estimada: ${fmt(analysis.fatPct)}%`);
   lines.push(`- Proteína estimada: ${fmt(analysis.proteinPct)}%`);
   lines.push(`- Carboidratos estimados: ${fmt(analysis.carbPct)}%`);
-  lines.push(`- Proteína não cárnea agregada: ${fmt(analysis.pncPct)}%`);
+  lines.push(`- Proteína agregada: ${fmt(analysis.pncPct)}%`);
   lines.push(`- Custo estimado do lote: ${money(analysis.costTotal)}`);
   lines.push('');
   lines.push('Alertas:');
@@ -773,7 +2130,7 @@ async function copyReport() {
 }
 
 async function copyLesson() {
-  const p = findProduct($('#aulaProdutoSelect')?.value);
+  const p = findProduct(activeProductId || db.configs.ultimoProdutoAula || db.produtos[0]?.id);
   if (!p) return;
   const text = [
     `ROTEIRO DE AULA PRÁTICA - ${p.nome}`,
@@ -844,22 +2201,72 @@ function findIngredient(id) { return db.insumos.find(i => i.id === id); }
 function findFormula(id) { return db.formulacoes.find(f => f.id === id); }
 function toNumber(value) { const n = Number(String(value ?? '').replace(',', '.')); return Number.isFinite(n) ? n : 0; }
 function numberOrBlank(value) { if (String(value ?? '').trim() === '') return ''; return toNumber(value); }
-function fmt(n) { return (toNumber(n)).toLocaleString('pt-BR', { maximumFractionDigits: 2, minimumFractionDigits: Number.isInteger(toNumber(n)) ? 0 : 1 }); }
+function fmt(n) { return toNumber(n).toLocaleString('pt-BR', { maximumFractionDigits: 2, minimumFractionDigits: Number.isInteger(toNumber(n)) ? 0 : 1 }); }
+function fmtInput(n) {
+  const value = Math.round(toNumber(n) * 100) / 100;
+  return Number.isInteger(value) ? String(value) : String(value).replace(',', '.');
+}
 function money(n) { return toNumber(n).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
 function linesFrom(text) { return Array.isArray(text) ? text : String(text || '').split('\n').map(s => s.trim()).filter(Boolean); }
+function multiSelectValues(select) { return Array.from(select?.selectedOptions || []).map(option => option.value).filter(Boolean); }
+function setMultiSelectValues(select, values) {
+  const wanted = new Set(values || []);
+  Array.from(select?.options || []).forEach(option => { option.selected = wanted.has(option.value); });
+}
+function cssEscape(value) { return window.CSS?.escape ? CSS.escape(value) : String(value).replace(/["\\]/g, '\\$&'); }
 function uid(prefix) { return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`; }
+function capitalize(text) { return String(text || '').charAt(0).toUpperCase() + String(text || '').slice(1); }
 function typeLabel(value) { return TYPES.find(t => t.value === value)?.label || 'Outro'; }
-function ingredientIcon(type) { return ({ carne: '🥩', gordura: '🧈', agua: '🧊', sal: '🧂', condimento: '🌶️', carboidrato: '🌾', proteina_nao_carnea: '🌱', aditivo: '⚗️', lacteo: '🥛', outro: '📦' })[type] || '📦'; }
-function photoOrInitial(p) { return p.fotos?.[0] ? `<img src="${p.fotos[0]}" alt="${escapeHTML(p.nome)}">` : escapeHTML((p.nome || '?').slice(0, 1).toUpperCase()); }
+function productTypeLabel(value) {
+  return ({ hamburguer: 'RTIQ hambúrguer', linguica_frescal: 'RTIQ linguiça frescal', geral: 'Produto geral' })[value] || 'Produto geral';
+}
+function ingredientIcon(type) {
+  return ({ carne: 'MP', gordura: 'G', agua: 'H2O', sal: 'Na', condimento: 'C', carboidrato: 'CHO', proteina_nao_carnea: 'PNC', aditivo: 'AD', lacteo: 'L', outro: 'IN' })[type] || 'IN';
+}
+function photoOrInitial(p) {
+  return p.fotos?.[0] ? `<img src="${escapeAttr(p.fotos[0])}" alt="${escapeAttr(p.nome)}">` : escapeHTML((p.nome || '?').slice(0, 1).toUpperCase());
+}
 function emptyHTML(text) { return `<div class="notice-card">${escapeHTML(text)}</div>`; }
 function orderedList(items) { return `<ol class="lesson-list">${(items || []).map(i => `<li>${escapeHTML(i)}</li>`).join('')}</ol>`; }
 function unorderedList(items) { return `<ul class="lesson-list">${(items || []).map(i => `<li>${escapeHTML(i)}</li>`).join('')}</ul>`; }
-function dateStamp() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function dateStamp() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
 function escapeHTML(str) { return String(str ?? '').replace(/[&<>'"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[c])); }
-function toast(msg) { const el = $('#toast'); el.textContent = msg; el.classList.add('show'); clearTimeout(toast.timer); toast.timer = setTimeout(() => el.classList.remove('show'), 2200); }
-function downloadJSON(data, filename) { const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }); downloadBlob(blob, filename); }
-function downloadBlob(blob, filename) { const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = filename; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
-async function copyText(text) { if (navigator.clipboard?.writeText) return navigator.clipboard.writeText(text); const area = document.createElement('textarea'); area.value = text; document.body.appendChild(area); area.select(); document.execCommand('copy'); area.remove(); }
+function escapeAttr(str) { return escapeHTML(str); }
+function limitBadge(value, limit, mode) {
+  if (limit === '' || limit === null || limit === undefined || Number.isNaN(Number(limit))) return 'info';
+  return mode === 'max' ? (value <= Number(limit) + 0.0001 ? 'ok' : 'danger') : (value + 0.0001 >= Number(limit) ? 'ok' : 'danger');
+}
+function toast(msg) {
+  const el = $('#toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+function downloadJSON(data, filename) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  downloadBlob(blob, filename);
+}
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+async function copyText(text) {
+  if (navigator.clipboard?.writeText) return navigator.clipboard.writeText(text);
+  const area = document.createElement('textarea');
+  area.value = text;
+  document.body.appendChild(area);
+  area.select();
+  document.execCommand('copy');
+  area.remove();
+}
 
 function fileToDataURL(file, maxSize = 1200, quality = 0.86) {
   return new Promise((resolve, reject) => {

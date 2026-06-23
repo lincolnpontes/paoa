@@ -1,22 +1,36 @@
-# PAOA Lab
+# Processamento de Alimentos de Origem Animal
 
 App didático em formato PWA para a disciplina **Processamento de Alimentos de Origem Animal**.
 
 ## O que o app faz
 
-- Cadastra produtos, como hambúrguer, linguiça, mortadela, queijo, pescado e outros.
-- Cadastra insumos e a função tecnológica de cada um.
-- Monta formulações em porcentagem e calcula automaticamente os gramas para qualquer peso.
-- Estima gordura, proteína, carboidratos, proteína não cárnea e custo do lote.
-- Exibe alertas técnicos e legais para hambúrguer com base nos parâmetros cadastrados.
-- Guarda fotos dos produtos e das práticas no próprio navegador.
-- Organiza roteiro de aula prática, pontos de controle e perguntas para discussão.
-- Exporta e importa os dados em JSON.
+- Organiza a página inicial como um sumário visual de produtos.
+- Cadastra produtos, roteiros de aula, fluxogramas, pontos de controle e perguntas de discussão.
+- Mantém o cadastro de insumos dentro de Configurações.
+- Inclui cronograma de aulas no menu principal.
+- Monta formulações em porcentagem e calcula automaticamente os gramas para qualquer peso de lote.
+- Diferencia percentuais sobre massa cárnea/carne base e percentuais sobre 100% do produto final.
+- Permite abrir um produto como um roteiro em slides, com sumário interno e edição das formulações no painel.
+- Traz uma biblioteca de aulas teóricas por categoria de produto, com links internos para roteiros e insumos citados.
+- Estima gordura, proteína, carboidratos, proteína agregada e custo do lote.
+- Exibe alertas técnicos com base nos parâmetros cadastrados para cada produto.
+- Guarda uma ou mais fotos por produto.
+- Exporta e importa a base em JSON.
 - Funciona como PWA instalável e pode ser publicado no GitHub Pages.
+
+## Base demonstrativa
+
+A base inicial inclui:
+
+- Hambúrguer bovino com formulação base sobre massa cárnea e referência ao RTIQ da Portaria SDA/MAPA nº 724/2022.
+- Kafta bovina e almôndega bovina como roteiros demonstrativos de produtos reestruturados.
+- Linguiça frescal suína com formulação base, foto demonstrativa, roteiro de aula, limites de gordura/proteína e referência ao RTIQ da IN SDA/MAPA nº 4/2000.
+- Patê cárneo e salsicha como roteiros demonstrativos de produtos emulsionados.
+- Referências gerais para RIISPOA e rotulagem nutricional Anvisa.
 
 ## Como usar localmente
 
-Abra o arquivo `index.html` em um navegador moderno. Para testar o funcionamento como PWA/offline, é melhor usar um servidor local, por exemplo:
+Abra `index.html` em um navegador moderno ou use um servidor local para testar como PWA/offline:
 
 ```bash
 python -m http.server 8000
@@ -28,20 +42,18 @@ Depois acesse:
 http://localhost:8000
 ```
 
-## Como publicar no GitHub Pages
+Neste workspace, o servidor de teste foi iniciado em:
 
-1. Crie um novo repositório no GitHub.
-2. Envie todos os arquivos desta pasta para o repositório.
-3. Vá em **Settings > Pages**.
-4. Em **Build and deployment**, escolha **Deploy from a branch**.
-5. Selecione a branch `main` e a pasta `/root`.
-6. Salve e aguarde o link ser gerado.
+```text
+http://127.0.0.1:8767/?v=13
+```
 
 ## Arquivos principais
 
 - `index.html`: estrutura das telas e modais.
-- `style.css`: layout do app.
+- `style.css`: layout institucional e responsivo.
 - `app.js`: lógica de cadastro, cálculo, validação, backup e relatórios.
+- `assets/`: fotos demonstrativas usadas nos cards de produto.
 - `manifest.json`: configuração do PWA.
 - `service-worker.js`: cache offline básico.
 - `icon.png`: ícone do app.

@@ -5,103 +5,87 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="theme-color" content="#6B2F1A" />
+  <meta name="theme-color" content="#1F6F68" />
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon.png" />
   <link rel="apple-touch-icon" href="icon.png" />
-  <link rel="stylesheet" href="style.css" />
-  <title>PAOA Lab</title>
+  <link rel="stylesheet" href="style.css?v=13" />
+  <title>Processamento de Alimentos de Origem Animal</title>
 </head>
 <body>
   <div id="splashScreen" class="splash-screen">
-    <img src="icon.png" alt="PAOA Lab" class="splash-logo" />
-    <div class="splash-title">PAOA Lab</div>
-    <div class="splash-subtitle">Formulações, insumos e roteiros de aula prática</div>
+    <img src="icon.png" alt="Processamento de Alimentos de Origem Animal" class="splash-logo" />
+    <div class="splash-title">Processamento de Alimentos de Origem Animal</div>
+    <div class="splash-subtitle">Processamento de Alimentos de Origem Animal</div>
   </div>
 
   <div class="app-shell">
     <header class="topbar">
       <div>
-        <div class="app-title">PAOA Lab</div>
-        <div class="app-subtitle">Processamento de Alimentos de Origem Animal</div>
+        <div class="app-title">Processamento de Alimentos de Origem Animal</div>
       </div>
       <div class="top-actions">
-        <button class="icon-btn" id="btnInstall" title="Instalar app" hidden>⬇️</button>
-        <button class="icon-btn" id="btnConfig" title="Configurações">⚙️</button>
+        <button class="icon-btn" id="btnInstall" title="Instalar app" hidden>⇩</button>
+        <button class="icon-btn" id="btnConfig" title="Configurações">⚙</button>
       </div>
     </header>
 
     <main class="content">
       <section id="pageInicio" class="page active">
-        <div class="hero-card">
-          <div class="hero-label">Roteiro de aula prática em formato de app</div>
-          <h1>Cadastre produtos, insumos, formulações e legislação aplicada.</h1>
-          <p>Use em laboratório para calcular formulações por peso, registrar fotos, discutir a função tecnológica dos insumos e conferir parâmetros legais.</p>
-          <div class="hero-actions">
-            <button class="primary-btn" data-action="open-product">+ Produto</button>
-            <button class="secondary-btn" data-action="open-formula">+ Formulação</button>
+        <div class="summary-hero home-summary">
+          <div>
+            <h1>Processamento de Alimentos de Origem Animal</h1>
+          </div>
+          <div class="home-summary-actions">
+            <button class="summary-action primary" data-page-target="Aulas">Aulas</button>
+            <button class="summary-action" data-page-target="Produtos">Produtos</button>
+            <button class="summary-action" data-page-target="Cronograma">Cronograma de aulas</button>
+            <button class="summary-action external" data-open-url="https://www.ct.ufpb.br/lpdc/">Site do laboratório</button>
           </div>
         </div>
-
-        <div class="metric-grid" id="dashboardMetrics"></div>
 
         <div class="section-header">
           <div>
-            <h2>Produtos cadastrados</h2>
-            <p>Toque em um produto para abrir o roteiro, as formulações e os alertas técnicos.</p>
+            <h2>Produtos</h2>
           </div>
         </div>
-        <div id="homeProductCards" class="card-grid"></div>
+        <div id="homeProductCards" class="product-summary-grid"></div>
       </section>
 
       <section id="pageProdutos" class="page">
-        <div class="toolbar">
-          <input id="searchProdutos" type="search" placeholder="Buscar produto..." />
-          <button class="primary-btn compact" data-action="open-product">+ Novo</button>
+        <div id="produtosOverview">
+          <div class="toolbar">
+            <input id="searchProdutos" type="search" placeholder="Buscar produto..." />
+          </div>
+          <div id="produtosList" class="stack-list"></div>
         </div>
-        <div id="produtosList" class="stack-list"></div>
+        <div id="produtoWorkspace" class="product-workspace" hidden></div>
       </section>
 
-      <section id="pageInsumos" class="page">
-        <div class="toolbar">
-          <input id="searchInsumos" type="search" placeholder="Buscar insumo ou função..." />
-          <button class="primary-btn compact" data-action="open-ingredient">+ Novo</button>
+      <section id="pageCronograma" class="page">
+        <div class="section-header page-heading">
+          <div>
+            <h2>Cronograma de aulas</h2>
+          </div>
         </div>
-        <div class="chips" id="ingredientTypeFilters"></div>
-        <div id="insumosList" class="stack-list"></div>
-      </section>
-
-      <section id="pageFormulas" class="page">
-        <div class="toolbar">
-          <select id="formulaProductFilter"></select>
-          <button class="primary-btn compact" data-action="open-formula">+ Nova</button>
-        </div>
-        <div id="formulasList" class="stack-list"></div>
+        <div id="cronogramaContent"></div>
       </section>
 
       <section id="pageAulas" class="page">
-        <div class="toolbar">
-          <select id="aulaProdutoSelect"></select>
-          <button class="secondary-btn compact" id="btnCopiarRoteiro">Copiar roteiro</button>
+        <div class="section-header page-heading">
+          <div>
+            <h2>Aulas teóricas</h2>
+          </div>
         </div>
         <div id="aulaContent"></div>
-      </section>
-
-      <section id="pageLegislacao" class="page">
-        <div class="notice-card">
-          <strong>Uso didático.</strong> A base legal cadastrada serve como apoio para aula prática. Antes de usar em processo oficial, confira sempre a norma vigente no órgão competente.
-        </div>
-        <div id="legislacaoList" class="stack-list"></div>
       </section>
     </main>
 
     <nav class="bottom-nav" aria-label="Navegação principal">
-      <button class="nav-btn active" data-page="Inicio">🏠<span>Início</span></button>
-      <button class="nav-btn" data-page="Produtos">🍔<span>Produtos</span></button>
-      <button class="nav-btn" data-page="Insumos">🧂<span>Insumos</span></button>
-      <button class="nav-btn" data-page="Formulas">🧮<span>Fórmulas</span></button>
-      <button class="nav-btn" data-page="Aulas">📋<span>Aulas</span></button>
-      <button class="nav-btn" data-page="Legislacao">⚖️<span>Legislação</span></button>
+      <button class="nav-btn active" data-page="Inicio"><span class="nav-icon">🏠︎</span><span>Início</span></button>
+      <button class="nav-btn" data-page="Aulas"><span class="nav-icon">▤</span><span>Aulas</span></button>
+      <button class="nav-btn" data-page="Produtos"><span class="nav-icon">◻︎</span><span>Produtos</span></button>
+      <button class="nav-btn" data-page="Cronograma"><span class="nav-icon">🗓️</span><span>Cronograma</span></button>
     </nav>
   </div>
 
@@ -111,31 +95,43 @@
       <input type="hidden" id="produtoId" />
       <div class="form-grid two-cols">
         <div class="form-group"><label>Nome do produto</label><input id="produtoNome" type="text" placeholder="Ex: Hambúrguer bovino" /></div>
-        <div class="form-group"><label>Categoria</label><input id="produtoCategoria" type="text" placeholder="Ex: Produto cárneo reestruturado" /></div>
+        <div class="form-group"><label>Categoria</label><input id="produtoCategoria" type="text" placeholder="Ex: Embutido cárneo fresco" /></div>
       </div>
       <div class="form-grid two-cols">
-        <div class="form-group"><label>Espécie ou matéria-prima principal</label><input id="produtoEspecie" type="text" placeholder="Ex: bovina" /></div>
-        <div class="form-group"><label>Tipo de validação</label><select id="produtoTipo"><option value="geral">Geral</option><option value="hamburguer">Hambúrguer</option></select></div>
+        <div class="form-group"><label>Categorias didáticas</label><select id="produtoCategoriaDidatica" multiple size="3"></select></div>
+        <div class="form-group"><label>Espécie ou matéria-prima principal</label><input id="produtoEspecie" type="text" placeholder="Ex: suína" /></div>
+      </div>
+      <div class="form-grid two-cols">
+        <div class="form-group">
+          <label>Tipo de validação</label>
+          <select id="produtoTipo">
+            <option value="geral">Geral</option>
+            <option value="hamburguer">Hambúrguer</option>
+            <option value="linguica_frescal">Linguiça frescal</option>
+          </select>
+        </div>
+        <div class="form-group"></div>
       </div>
       <div class="form-group"><label>Descrição didática</label><textarea id="produtoDescricao" rows="3"></textarea></div>
       <div class="form-group"><label>Objetivo da prática</label><textarea id="produtoObjetivo" rows="3"></textarea></div>
 
       <div class="collapsible-box">
-        <button type="button" class="collapsible-title" data-toggle="produtoParametros">Parâmetros e alertas legais</button>
+        <button type="button" class="collapsible-title" data-toggle="produtoParametros">Parâmetros e alertas</button>
         <div id="produtoParametros" class="collapsible-content open">
           <div class="form-grid four-cols">
-            <div class="form-group"><label>Gordura máxima (%)</label><input id="paramGorduraMax" type="number" step="0.01" /></div>
-            <div class="form-group"><label>Proteína mínima (%)</label><input id="paramProteinaMin" type="number" step="0.01" /></div>
+            <div class="form-group"><label>Gordura máx. (%)</label><input id="paramGorduraMax" type="number" step="0.01" /></div>
+            <div class="form-group"><label>Proteína mín. (%)</label><input id="paramProteinaMin" type="number" step="0.01" /></div>
             <div class="form-group"><label>Carboidratos máx. (%)</label><input id="paramCarbMax" type="number" step="0.01" /></div>
-            <div class="form-group"><label>Prot. não cárnea máx. (%)</label><input id="paramPncMax" type="number" step="0.01" /></div>
+            <div class="form-group"><label>Prot. agregada máx. (%)</label><input id="paramPncMax" type="number" step="0.01" /></div>
           </div>
-          <label class="check-row"><input id="paramProibePnc" type="checkbox" /> Denominação com corte específico, sem proteína não cárnea</label>
+          <label class="check-row"><input id="paramProibePnc" type="checkbox" /> Denominação sem proteína agregada permitida</label>
           <label class="check-row"><input id="paramMostrarValidacao" type="checkbox" checked /> Mostrar validação automática nas formulações</label>
         </div>
       </div>
 
       <div class="form-group"><label>Fluxograma de processamento, uma etapa por linha</label><textarea id="produtoFluxo" rows="5"></textarea></div>
       <div class="form-group"><label>Pontos de controle, um por linha</label><textarea id="produtoPontos" rows="5"></textarea></div>
+      <div class="form-group"><label>Equipamentos e utensílios, um por linha</label><textarea id="produtoEquipamentos" rows="4"></textarea></div>
       <div class="form-group"><label>Perguntas para discussão, uma por linha</label><textarea id="produtoPerguntas" rows="4"></textarea></div>
       <div class="form-group"><label>Fotos do produto ou da prática</label><input id="produtoFotos" type="file" accept="image/*" multiple /></div>
       <div id="produtoFotosPreview" class="photo-strip"></div>
@@ -164,12 +160,22 @@
         <div class="form-group"><label>Carboidrato (%)</label><input id="insumoCarbo" type="number" step="0.01" /></div>
         <div class="form-group"><label>Custo/kg (R$)</label><input id="insumoCusto" type="number" step="0.01" /></div>
       </div>
-      <label class="check-row"><input id="insumoPnc" type="checkbox" /> Contabilizar como proteína não cárnea</label>
+      <label class="check-row"><input id="insumoPnc" type="checkbox" /> Contabilizar como proteína agregada não cárnea</label>
       <label class="check-row"><input id="insumoAlergeno" type="checkbox" /> Pode envolver alérgeno ou declaração em rótulo</label>
       <div class="modal-actions">
         <button class="danger-btn" id="btnExcluirInsumo">Excluir</button>
         <button class="secondary-btn" data-close="modalInsumo">Cancelar</button>
         <button class="primary-btn" id="btnSalvarInsumo">Salvar insumo</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalInsumoView">
+    <div class="modal">
+      <div class="modal-title" id="insumoViewTitle">Insumo</div>
+      <div id="insumoViewContent"></div>
+      <div class="modal-actions">
+        <button class="primary-btn" data-close="modalInsumoView">Fechar</button>
       </div>
     </div>
   </div>
@@ -183,8 +189,18 @@
         <div class="form-group"><label>Nome da formulação</label><input id="formulaNome" type="text" placeholder="Ex: Formulação base" /></div>
       </div>
       <div class="form-grid two-cols">
-        <div class="form-group"><label>Peso para cálculo (g)</label><input id="formulaPeso" type="number" step="1" value="1000" /></div>
+        <div class="form-group"><label>Peso base para cálculo (g)</label><input id="formulaPeso" type="number" step="1" value="1000" /></div>
+        <div class="form-group">
+          <label>Base dos percentuais</label>
+          <select id="formulaBaseCalculo">
+            <option value="massa_carnea">Massa cárnea / carne base</option>
+            <option value="produto_final">Produto final fechado em 100%</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-grid two-cols">
         <div class="form-group"><label>Rendimento esperado (%)</label><input id="formulaRendimento" type="number" step="0.01" placeholder="Opcional" /></div>
+        <div class="formula-help">Ex.: alho em pó a 1,5% sobre 1.000 g de carne = 15 g de alho.</div>
       </div>
       <div class="formula-table-wrap">
         <table class="formula-table">
@@ -192,7 +208,7 @@
           <tbody id="formulaItens"></tbody>
         </table>
       </div>
-      <button class="secondary-btn full" id="btnAddFormulaItem">+ Adicionar insumo</button>
+      <button class="secondary-btn full" id="btnAddFormulaItem">Adicionar insumo</button>
       <div id="formulaResumo" class="analysis-box"></div>
       <div class="form-group"><label>Observações da prática</label><textarea id="formulaObs" rows="4"></textarea></div>
       <div class="modal-actions">
@@ -216,21 +232,48 @@
   </div>
 
   <div class="modal-overlay" id="modalConfig">
-    <div class="modal">
-      <div class="modal-title">Configurações e dados</div>
-      <p class="muted">Os dados ficam salvos neste navegador. Faça backup com frequência usando a exportação JSON.</p>
-      <div class="config-grid">
-        <button class="secondary-btn full" id="btnExportar">⬇️ Exportar dados JSON</button>
-        <button class="secondary-btn full" id="btnImportar">⬆️ Importar dados JSON</button>
-        <input id="fileImportar" type="file" accept="application/json,.json" hidden />
-        <button class="secondary-btn full" id="btnBaixarModelo">📄 Baixar modelo de dados</button>
-        <button class="danger-btn full" id="btnResetDemo">Restaurar base demonstrativa</button>
+    <div class="modal large-modal">
+      <div class="modal-title">Configurações</div>
+      <div class="config-tabs">
+        <button type="button" class="config-tab active" data-config-tab="produtos">Produtos</button>
+        <button type="button" class="config-tab" data-config-tab="insumos">Insumos</button>
+        <button type="button" class="config-tab" data-config-tab="cronograma">Cronograma</button>
+        <button type="button" class="config-tab" data-config-tab="avancadas">Configurações avançadas</button>
       </div>
+      <div class="config-panel active" id="configPanelProdutos">
+        <div class="toolbar in-modal">
+          <input id="searchConfigProdutos" type="search" placeholder="Buscar produto..." />
+          <button class="primary-btn compact" data-action="open-product">Novo produto</button>
+        </div>
+        <div id="configProdutosList" class="stack-list compact-list"></div>
+      </div>
+      <div class="config-panel" id="configPanelInsumos">
+        <div class="toolbar in-modal">
+          <input id="searchInsumos" type="search" placeholder="Buscar insumo ou função..." />
+          <button class="primary-btn compact" data-action="open-ingredient">Novo insumo</button>
+        </div>
+        <div class="chips" id="ingredientTypeFilters"></div>
+        <div id="insumosList" class="stack-list compact-list"></div>
+      </div>
+      <div class="config-panel" id="configPanelCronograma">
+        <div id="configCronogramaList" class="config-schedule-list"></div>
+      </div>
+      <div class="config-panel" id="configPanelAvancadas">
+        <p class="muted">Os dados ficam salvos neste navegador. Use exportação JSON para backup e para levar a base para outro computador.</p>
+        <div class="config-grid">
+          <button class="secondary-btn full" id="btnExportar">Exportar dados JSON</button>
+          <button class="secondary-btn full" id="btnImportar">Importar dados JSON</button>
+          <input id="fileImportar" type="file" accept="application/json,.json" hidden />
+          <button class="secondary-btn full" id="btnBaixarModelo">Baixar modelo de dados</button>
+          <button class="danger-btn full" id="btnResetDemo">Restaurar base demonstrativa</button>
+        </div>
+      </div>
+
       <div class="modal-actions"><button class="primary-btn" data-close="modalConfig">Fechar</button></div>
     </div>
   </div>
 
   <div id="toast" class="toast"></div>
-  <script src="app.js"></script>
+  <script src="app.js?v=13"></script>
 </body>
 </html>
