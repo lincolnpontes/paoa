@@ -1,19 +1,40 @@
 'use strict';
 
 const STORAGE_KEY = 'paoa_lab_v1';
-const APP_VERSION = '1.3.1';
+const APP_VERSION = '1.4.1';
 
 const TYPES = [
-  { value: 'carne', label: 'Carne / matéria-prima cárnea' },
-  { value: 'gordura', label: 'Gordura' },
-  { value: 'agua', label: 'Água / gelo' },
-  { value: 'sal', label: 'Sal / sais' },
-  { value: 'condimento', label: 'Condimento / especiaria' },
-  { value: 'carboidrato', label: 'Carboidrato / amido / açúcar' },
-  { value: 'proteina_nao_carnea', label: 'Proteína não cárnea' },
-  { value: 'aditivo', label: 'Aditivo / coadjuvante' },
-  { value: 'lacteo', label: 'Lácteo' },
-  { value: 'outro', label: 'Outro' }
+  { value: 'materia_prima_carnea', label: 'Matéria-prima cárnea', subtipos: [], exemplos: 'carne bovina, frango, pernil, toucinho, pele suína' },
+  { value: 'basico_nao_carneo', label: 'Ingredientes básicos não cárneos', subtipos: [], exemplos: 'água, gelo, sal, açúcar, dextrose' },
+  { value: 'condimento_especiaria', label: 'Condimentos e especiarias', subtipos: ['naturais', 'desidratados', 'em pó', 'extratos'], exemplos: 'alho em pó, cebola, pimenta, páprica, noz-moscada' },
+  { value: 'funcional_nao_aditivo', label: 'Ingredientes funcionais não aditivos', subtipos: ['proteínas', 'amidos/farinhas', 'fibras', 'hidrocoloides usados como ingrediente', 'lácteos', 'ovos'], exemplos: 'proteína de soja, fécula, amido, farinha de rosca, leite em pó, ovo' },
+  { value: 'aditivo_alimentar', label: 'Aditivos alimentares', subtipos: ['conservadores', 'antioxidantes', 'estabilizantes', 'emulsificantes', 'espessantes', 'corantes', 'reguladores de acidez', 'realçadores de sabor', 'aromatizantes'], exemplos: 'nitrito, nitrato, eritorbato, fosfato, corante, glutamato' },
+  { value: 'coadjuvante_tecnologia', label: 'Coadjuvantes de tecnologia', subtipos: [], exemplos: 'enzimas, agentes de cura/processo, nitrogênio/CO2' },
+  { value: 'cultura_fermento', label: 'Culturas e fermentos', subtipos: [], exemplos: 'culturas para salame, fermentação/maturação' },
+  { value: 'envoltorio_apresentacao', label: 'Envoltórios e insumos de apresentação', subtipos: ['envoltório comestível', 'envoltório não comestível', 'embalagem', 'clips', 'barbante', 'rótulo'], exemplos: 'tripa natural, tripa de colágeno, embalagem a vácuo' },
+  { value: 'mistura_comercial', label: 'Misturas/preparados comerciais', subtipos: ['mistura de cura', 'blend de condimentos', 'preparado funcional'], exemplos: 'condimento para linguiça, sal de cura, mix para hambúrguer' }
+];
+
+const LEGACY_TYPE_MAP = {
+  carne: 'materia_prima_carnea',
+  gordura: 'materia_prima_carnea',
+  agua: 'basico_nao_carneo',
+  sal: 'basico_nao_carneo',
+  condimento: 'condimento_especiaria',
+  carboidrato: 'funcional_nao_aditivo',
+  proteina_nao_carnea: 'funcional_nao_aditivo',
+  aditivo: 'aditivo_alimentar',
+  lacteo: 'funcional_nao_aditivo',
+  outro: 'funcional_nao_aditivo'
+};
+
+const DEFAULT_RULES = [
+  { id: 'regra_entrada', numero: '01', titulo: 'Entrada no laboratório', texto: 'Usar jaleco claro fechado, touca sanfonada, calçado fechado e mãos higienizadas antes de iniciar a prática.' },
+  { id: 'regra_higiene', numero: '02', titulo: 'Higiene e EPI', texto: 'Manter luvas limpas, prender cabelos sob a touca e evitar adornos, relógios, perfumes fortes ou objetos soltos.' },
+  { id: 'regra_bancada', numero: '03', titulo: 'Bancada e utensílios', texto: 'Sanitizar superfícies, separar utensílios por etapa e manter apenas o material necessário sobre a bancada.' },
+  { id: 'regra_temperatura', numero: '04', titulo: 'Temperatura e matéria-prima', texto: 'Controlar tempo fora de refrigeração, pesar rapidamente e registrar qualquer alteração observada no produto.' },
+  { id: 'regra_equipamentos', numero: '05', titulo: 'Equipamentos', texto: 'Operar moedor, cutter, embutidora e demais equipamentos apenas com autorização e supervisão do professor ou técnico.' },
+  { id: 'regra_encerramento', numero: '06', titulo: 'Encerramento', texto: 'Identificar amostras, descartar resíduos corretamente, lavar utensílios e deixar a bancada pronta para a próxima turma.' }
 ];
 
 const IMAGE_MIGRATIONS = {
@@ -82,7 +103,7 @@ const PRODUCT_CATEGORIES = [
 const DEFAULT_DB = {
   app_id: 'paoa_lab',
   version: APP_VERSION,
-  configs: { ultimoProdutoAula: 'prod_hamburguer', produtoSelecionado: '', filtroInsumo: 'todos' },
+  configs: { ultimoProdutoAula: 'prod_hamburguer', produtoSelecionado: '', filtroInsumo: 'todos', periodoAtivoId: 'periodo_demo', periodos: [], regrasLaboratorio: clone(DEFAULT_RULES) },
   produtos: [
     {
       id: 'prod_hamburguer',
@@ -681,9 +702,11 @@ let selectedIngredientFilter = db.configs.filtroInsumo || 'todos';
 let activeProductId = db.configs.produtoSelecionado || '';
 let pendingInstallPrompt = null;
 let tempProductPhotos = [];
+let tempIngredientPhoto = '';
 let formulaDraftItems = [];
 let activeProductSlideId = 'visao';
 let inlineEditTimer = null;
+let modalZIndex = 1000;
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => Array.from(document.querySelectorAll(selector));
@@ -706,6 +729,14 @@ function setupEvents() {
   $$('[data-action="open-product"]').forEach(btn => btn.addEventListener('click', () => openProductModal()));
   $$('[data-action="open-ingredient"]').forEach(btn => btn.addEventListener('click', () => openIngredientModal()));
   $$('[data-action="open-formula"]').forEach(btn => btn.addEventListener('click', () => openFormulaModal()));
+  $$('[data-open-config-modal]').forEach(btn => btn.addEventListener('click', () => {
+    closeModal('modalConfig');
+    openModal(btn.dataset.openConfigModal);
+    if (btn.dataset.openConfigModal === 'modalConfigProdutos') renderConfigProdutos();
+    if (btn.dataset.openConfigModal === 'modalConfigInsumos') renderInsumos();
+    if (btn.dataset.openConfigModal === 'modalConfigCronograma') renderScheduleConfig();
+    if (btn.dataset.openConfigModal === 'modalConfigRegras') renderRulesConfig();
+  }));
   $$('[data-config-tab]').forEach(btn => btn.addEventListener('click', () => setConfigTab(btn.dataset.configTab)));
   $$('[data-close]').forEach(btn => btn.addEventListener('click', () => closeModal(btn.dataset.close)));
   $$('[data-toggle]').forEach(btn => btn.addEventListener('click', () => $('#' + btn.dataset.toggle)?.classList.toggle('open')));
@@ -721,6 +752,8 @@ function setupEvents() {
   $('#produtoFotos')?.addEventListener('change', handleProductPhotos);
   $('#btnSalvarInsumo')?.addEventListener('click', saveIngredientFromModal);
   $('#btnExcluirInsumo')?.addEventListener('click', deleteIngredientFromModal);
+  $('#insumoFoto')?.addEventListener('change', handleIngredientPhoto);
+  $('#insumoTipo')?.addEventListener('change', () => populateSubtypeOptions($('#insumoTipo').value));
   $('#btnSalvarFormula')?.addEventListener('click', saveFormulaFromModal);
   $('#btnExcluirFormula')?.addEventListener('click', deleteFormulaFromModal);
   $('#btnAddFormulaItem')?.addEventListener('click', () => {
@@ -737,9 +770,17 @@ function setupEvents() {
   $('#btnCopiarRelatorio')?.addEventListener('click', copyReport);
   $('#btnCopiarRoteiro')?.addEventListener('click', copyLesson);
   $('#btnConfig')?.addEventListener('click', () => {
-    setConfigTab('produtos');
     openModal('modalConfig');
   });
+  $('#periodoAtivoSelect')?.addEventListener('change', () => setActivePeriod($('#periodoAtivoSelect').value));
+  $('#periodoNome')?.addEventListener('change', () => savePeriodField('nome', $('#periodoNome').value));
+  $('#periodoInicio')?.addEventListener('change', () => savePeriodField('inicio', $('#periodoInicio').value));
+  $('#periodoFim')?.addEventListener('change', () => savePeriodField('fim', $('#periodoFim').value));
+  $('#btnNovoPeriodo')?.addEventListener('click', () => createPeriod(false));
+  $('#btnArquivarPeriodo')?.addEventListener('click', archiveActivePeriod);
+  $('#btnArquivarNovoPeriodo')?.addEventListener('click', () => createPeriod(true));
+  $('#btnAdicionarAula')?.addEventListener('click', addScheduleLesson);
+  $('#btnAddRule')?.addEventListener('click', addLabRule);
   $('#btnExportar')?.addEventListener('click', exportData);
   $('#btnImportar')?.addEventListener('click', () => $('#fileImportar').click());
   $('#fileImportar')?.addEventListener('change', importData);
@@ -766,7 +807,7 @@ function clone(obj) { return JSON.parse(JSON.stringify(obj)); }
 function loadDB() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return clone(DEFAULT_DB);
+    if (!raw) return normalizeDB(clone(DEFAULT_DB));
     return normalizeDB(JSON.parse(raw));
   } catch (err) {
     console.error(err);
@@ -778,7 +819,13 @@ function normalizeDB(data) {
   const source = data && typeof data === 'object' ? data : {};
   const merged = Object.assign(clone(DEFAULT_DB), source);
   merged.configs = Object.assign(clone(DEFAULT_DB.configs), source.configs || {});
-  merged.configs.cronograma = normalizeSchedule(source.configs?.cronograma || merged.configs.cronograma);
+  merged.configs.regrasLaboratorio = normalizeLabRules(source.configs?.regrasLaboratorio || source.configs?.regras || DEFAULT_RULES);
+  if (merged.configs.filtroInsumo !== 'todos' && !TYPES.some(type => type.value === merged.configs.filtroInsumo)) merged.configs.filtroInsumo = 'todos';
+  merged.configs.periodos = normalizeSchedulePeriods(source.configs?.periodos || source.configs?.cronogramaPeriodos, source.configs?.cronograma);
+  if (!merged.configs.periodos.some(period => period.id === merged.configs.periodoAtivoId)) {
+    merged.configs.periodoAtivoId = (merged.configs.periodos.find(period => !period.arquivado) || merged.configs.periodos[0])?.id || '';
+  }
+  merged.configs.cronograma = getPeriodById(merged.configs.periodos, merged.configs.periodoAtivoId)?.aulas || normalizeSchedule();
   merged.produtos = mergeDefaults(Array.isArray(source.produtos) ? source.produtos : clone(DEFAULT_DB.produtos), DEFAULT_DB.produtos);
   merged.insumos = mergeDefaults(Array.isArray(source.insumos) ? source.insumos : clone(DEFAULT_DB.insumos), DEFAULT_DB.insumos);
   merged.formulacoes = mergeDefaults(Array.isArray(source.formulacoes) ? source.formulacoes : clone(DEFAULT_DB.formulacoes), DEFAULT_DB.formulacoes);
@@ -801,10 +848,14 @@ function normalizeDB(data) {
     p.perguntas = Array.isArray(p.perguntas) ? p.perguntas : linesFrom(p.perguntas);
   });
   merged.insumos.forEach(i => {
+    i.tipo = normalizeIngredientType(i);
+    i.subtipo = normalizeIngredientSubtype(i);
+    i.categoria = i.categoria || typeLabel(i.tipo);
     i.gordura = toNumber(i.gordura);
     i.proteina = toNumber(i.proteina);
     i.carboidrato = toNumber(i.carboidrato);
     i.custo = toNumber(i.custo);
+    i.proteinaNaoCarnea = Boolean(i.proteinaNaoCarnea || isFunctionalProtein(i));
   });
   merged.formulacoes.forEach(f => {
     const product = merged.produtos.find(p => p.id === f.produtoId);
@@ -844,12 +895,15 @@ function saveDB() {
 }
 
 function renderAll() {
+  renderActivePeriodLabel();
   renderHomeProducts();
   renderProdutos();
   renderConfigProdutos();
   renderInsumos();
   renderCronograma();
   renderScheduleConfig();
+  renderRules();
+  renderRulesConfig();
   renderAulas();
 }
 
@@ -873,9 +927,18 @@ function setConfigTab(tab) {
   if (tab === 'cronograma') renderScheduleConfig();
 }
 
+function renderActivePeriodLabel() {
+  const el = $('#activePeriodLabel');
+  if (!el) return;
+  const period = getActivePeriod();
+  el.textContent = period?.nome ? `Período ${period.nome}` : '';
+}
+
 function renderHomeProducts() {
-  $('#homeProductCards').innerHTML = db.produtos.map(productCardHTML).join('') || emptyHTML('Nenhum produto cadastrado.');
-  $('#homeProductCards').querySelectorAll('[data-product-card]').forEach(card => card.addEventListener('click', () => {
+  const root = $('#homeProductCards');
+  if (!root) return;
+  root.innerHTML = db.produtos.map(productCardHTML).join('') || emptyHTML('Nenhum produto cadastrado.');
+  root.querySelectorAll('[data-product-card]').forEach(card => card.addEventListener('click', () => {
     openProductWorkspace(card.dataset.productCard);
   }));
 }
@@ -890,7 +953,7 @@ function productCardHTML(p) {
       <div class="product-tile-media"${mediaStyle}>${mediaText}</div>
       <div class="product-tile-body">
         <div class="product-tile-title">${escapeHTML(p.nome)}</div>
-        <div class="product-tile-subtitle">${escapeHTML(categoryLabel)} · ${escapeHTML(p.especie || 'espécie não informada')}</div>
+        <div class="product-tile-subtitle">${escapeHTML(categoryLabel)}</div>
       </div>
     </button>`;
 }
@@ -922,7 +985,7 @@ function productListHTML(p) {
       <div class="item-avatar">${photoOrInitial(p)}</div>
       <div>
         <div class="item-title">${escapeHTML(p.nome)}</div>
-        <div class="item-subtitle">${escapeHTML(categoryLabel || p.categoria || 'Sem categoria')} · ${escapeHTML(p.descricao || '')}</div>
+        <div class="item-subtitle">${escapeHTML(categoryLabel || p.categoria || 'Sem categoria')}</div>
       </div>
     </button>`;
 }
@@ -943,10 +1006,6 @@ function productConfigHTML(p) {
       <div>
         <div class="item-title">${escapeHTML(p.nome)}</div>
         <div class="item-subtitle">${escapeHTML(productCategoryLabel(p))}</div>
-        <div class="item-meta">
-          <span class="badge info">Editar cadastro</span>
-          <span class="badge">${(p.equipamentos || []).length} equipamento(s)</span>
-        </div>
       </div>
     </button>`;
 }
@@ -1079,7 +1138,6 @@ function productFormulaHTML(f) {
   const analysis = analyzeFormula(f);
   const danger = analysis.alerts.some(a => a.type === 'danger');
   const warn = analysis.alerts.some(a => a.type === 'warn');
-  const hasBlend = formulaHasBeefBlend(f);
   return `
     <div class="formula-work-card">
       <div class="formula-work-head">
@@ -1089,12 +1147,6 @@ function productFormulaHTML(f) {
         </div>
         <span class="badge ${danger ? 'danger' : warn ? 'warn' : 'ok'}">${danger ? 'corrigir' : warn ? 'atenção' : 'ok'}</span>
       </div>
-      ${hasBlend ? '' : `<div class="formula-base-panel single">
-        <div class="form-group">
-          <label>Peso de referência (g)</label>
-          <input type="number" min="1" step="1" value="${escapeAttr(f.pesoReferencia)}" data-inline-weight="${escapeAttr(f.id)}">
-        </div>
-      </div>`}
       ${blendEditorHTML(f)}
       ${inlineFormulaEditorHTML(f)}
       ${analysisHTML(analysis)}
@@ -1105,29 +1157,26 @@ function productFormulaHTML(f) {
 }
 
 function blendEditorHTML(f) {
-  if (!formulaHasBeefBlend(f)) return '';
   const state = formulaBlendState(f);
+  const label = state.items.length ? state.items.map(item => item.nome).join(' + ') : 'Massa cárnea';
   return `<div class="blend-editor">
     <div class="blend-switch-row">
       <div>
         <strong>Blend</strong>
-        <span>Carne bovina magra + gordura bovina</span>
+        <span>${escapeHTML(label)}</span>
       </div>
       <label class="switch-control">
         <input type="checkbox" data-toggle-blend="${escapeAttr(f.id)}" ${state.useBlend ? 'checked' : ''}>
         <span></span>
       </label>
     </div>
-    ${state.useBlend ? `
-      <div class="blend-grid">
-        <div class="form-group">
-          <label>Carne bovina magra (g)</label>
-          <input type="number" min="0" step="1" value="${escapeAttr(fmtInput(state.leanGrams))}" data-blend-lean="${escapeAttr(f.id)}">
-        </div>
-        <div class="form-group">
-          <label>Gordura bovina (g)</label>
-          <input type="number" min="0" step="1" value="${escapeAttr(fmtInput(state.fatGrams))}" data-blend-fat="${escapeAttr(f.id)}">
-        </div>
+    ${state.useBlend && state.items.length ? `
+      <div class="blend-grid ${state.items.length > 2 ? 'multi' : ''}">
+        ${state.items.map(item => `
+          <div class="form-group">
+            <label>${escapeHTML(item.nome)} (g)</label>
+            <input type="number" min="0" step="1" value="${escapeAttr(fmtInput(item.grams))}" data-blend-item-formula="${escapeAttr(f.id)}" data-blend-item-insumo="${escapeAttr(item.insumoId)}">
+          </div>`).join('')}
         <div class="blend-total">
           <span>Blend</span>
           <strong>${fmt(state.blendGrams)} g</strong>
@@ -1135,7 +1184,7 @@ function blendEditorHTML(f) {
       </div>` : `
       <div class="blend-grid single">
         <div class="form-group">
-          <label>Carne bovina magra (g)</label>
+          <label>Carne/massa cárnea base (g)</label>
           <input type="number" min="1" step="1" value="${escapeAttr(fmtInput(state.blendGrams || f.pesoReferencia))}" data-meat-total="${escapeAttr(f.id)}">
         </div>
       </div>`}
@@ -1189,13 +1238,9 @@ function bindProductWorkspace(root) {
   });
   root.querySelectorAll('[data-suggestion-formula]').forEach(btn => btn.addEventListener('click', () => updateFormulaItemPercent(btn.dataset.suggestionFormula, btn.dataset.suggestionInsumo, btn.dataset.suggestionValue)));
   root.querySelectorAll('[data-toggle-blend]').forEach(input => input.addEventListener('change', () => updateFormulaBlend(input.dataset.toggleBlend, { useBlend: input.checked })));
-  root.querySelectorAll('[data-blend-lean]').forEach(input => {
-    input.addEventListener('input', () => queueInlineFormulaEdit(() => updateFormulaBlend(input.dataset.blendLean, { leanGrams: input.value }, { silent: true })));
-    input.addEventListener('change', () => updateFormulaBlend(input.dataset.blendLean, { leanGrams: input.value }));
-  });
-  root.querySelectorAll('[data-blend-fat]').forEach(input => {
-    input.addEventListener('input', () => queueInlineFormulaEdit(() => updateFormulaBlend(input.dataset.blendFat, { fatGrams: input.value }, { silent: true })));
-    input.addEventListener('change', () => updateFormulaBlend(input.dataset.blendFat, { fatGrams: input.value }));
+  root.querySelectorAll('[data-blend-item-formula]').forEach(input => {
+    input.addEventListener('input', () => queueInlineFormulaEdit(() => updateFormulaBlendItem(input.dataset.blendItemFormula, input.dataset.blendItemInsumo, input.value, { silent: true })));
+    input.addEventListener('change', () => updateFormulaBlendItem(input.dataset.blendItemFormula, input.dataset.blendItemInsumo, input.value));
   });
   root.querySelectorAll('[data-meat-total]').forEach(input => {
     input.addEventListener('input', () => queueInlineFormulaEdit(() => updateFormulaBlend(input.dataset.meatTotal, { useBlend: false, blendGrams: input.value }, { silent: true })));
@@ -1229,7 +1274,7 @@ function renderInsumos() {
   const term = ($('#searchInsumos')?.value || '').toLowerCase().trim();
   const list = db.insumos.filter(i => {
     const okFilter = selectedIngredientFilter === 'todos' || i.tipo === selectedIngredientFilter;
-    const okSearch = [i.nome, i.categoria, i.funcao, i.obs].join(' ').toLowerCase().includes(term);
+    const okSearch = [i.nome, i.categoria, typeLabel(i.tipo), i.subtipo, i.funcao, i.obs].join(' ').toLowerCase().includes(term);
     return okFilter && okSearch;
   });
   $('#insumosList').innerHTML = list.map(ingredientHTML).join('') || emptyHTML('Nenhum insumo encontrado.');
@@ -1248,14 +1293,16 @@ function renderIngredientFilters() {
 }
 
 function ingredientHTML(i) {
+  const avatar = i.foto ? `<img src="${escapeAttr(i.foto)}" alt="">` : escapeHTML(ingredientIcon(i.tipo));
   return `
     <button type="button" class="item-card" data-edit-ingredient="${escapeAttr(i.id)}">
-      <div class="item-avatar">${escapeHTML(ingredientIcon(i.tipo))}</div>
+      <div class="item-avatar">${avatar}</div>
       <div>
         <div class="item-title">${escapeHTML(i.nome)}</div>
         <div class="item-subtitle">${escapeHTML(i.funcao || 'Sem função tecnológica cadastrada')}</div>
         <div class="item-meta">
           <span class="badge info">${escapeHTML(typeLabel(i.tipo))}</span>
+          ${i.subtipo ? `<span class="badge">${escapeHTML(i.subtipo)}</span>` : ''}
           ${i.proteinaNaoCarnea ? '<span class="badge warn">proteína agregada</span>' : ''}
           ${i.alergeno ? '<span class="badge danger">alérgeno</span>' : ''}
           <span class="badge">G ${fmt(i.gordura)}% · P ${fmt(i.proteina)}% · C ${fmt(i.carboidrato)}%</span>
@@ -1299,13 +1346,33 @@ function formulaHTML(f) {
     </button>`;
 }
 
+function renderRules() {
+  const root = $('#rulesGrid');
+  if (!root) return;
+  const rules = normalizeLabRules(db.configs.regrasLaboratorio);
+  root.innerHTML = rules.map(ruleCardHTML).join('') || emptyHTML('Nenhuma regra cadastrada.');
+}
+
+function ruleCardHTML(rule, index) {
+  return `<article class="rule-card">
+    <span>${escapeHTML(rule.numero || String(index + 1).padStart(2, '0'))}</span>
+    <strong>${escapeHTML(rule.titulo || 'Regra')}</strong>
+    <p>${escapeHTML(rule.texto || '')}</p>
+  </article>`;
+}
+
 function renderCronograma() {
   const root = $('#cronogramaContent');
   if (!root) return;
+  const period = getActivePeriod();
   const schedule = getSchedule();
   root.innerHTML = `
+    ${period ? `<div class="period-banner">
+      <strong>${escapeHTML(period.nome)}</strong>
+      <span>${periodDateLabel(period)}</span>
+    </div>` : ''}
     <div class="calendar-list">
-      ${schedule.map(scheduleCardHTML).join('')}
+      ${schedule.length ? schedule.map(scheduleCardHTML).join('') : emptyHTML('Nenhuma aula cadastrada para este período.')}
     </div>
     <div class="notice-card">
       O cronograma pode ser ajustado conforme a oferta da disciplina. Os roteiros e as aulas teóricas permanecem conectados para consulta rápida durante a prática.
@@ -1341,53 +1408,135 @@ function scheduleCardHTML(item) {
   </article>`;
 }
 
-function getSchedule() {
-  if (!Array.isArray(db.configs.cronograma)) db.configs.cronograma = normalizeSchedule();
-  return db.configs.cronograma;
+function getSchedulePeriods() {
+  if (!Array.isArray(db.configs.periodos) || !db.configs.periodos.length) {
+    db.configs.periodos = normalizeSchedulePeriods([], db.configs.cronograma);
+  }
+  if (!db.configs.periodos.some(period => period.id === db.configs.periodoAtivoId)) {
+    db.configs.periodoAtivoId = (db.configs.periodos.find(period => !period.arquivado) || db.configs.periodos[0])?.id || '';
+  }
+  return db.configs.periodos;
 }
 
-function normalizeSchedule(source = []) {
+function getPeriodById(periods, id) {
+  return (periods || []).find(period => period.id === id);
+}
+
+function getActivePeriod() {
+  const periods = getSchedulePeriods();
+  return getPeriodById(periods, db.configs.periodoAtivoId) || periods[0] || null;
+}
+
+function getSchedule() {
+  const period = getActivePeriod();
+  if (!period) return [];
+  period.aulas = normalizeSchedule(period.aulas || [], false);
+  db.configs.cronograma = period.aulas;
+  return period.aulas;
+}
+
+function normalizeSchedulePeriods(source = [], legacySchedule = []) {
+  const hasSourcePeriods = Array.isArray(source) && source.length;
+  const current = hasSourcePeriods ? source : [{
+    id: 'periodo_demo',
+    nome: 'Período atual',
+    inicio: '',
+    fim: '',
+    arquivado: false,
+    aulas: legacySchedule
+  }];
+  return current.map((period, index) => ({
+    id: period.id || uid('periodo'),
+    nome: period.nome || period.titulo || `Período ${index + 1}`,
+    inicio: period.inicio || '',
+    fim: period.fim || '',
+    arquivado: Boolean(period.arquivado),
+    aulas: normalizeSchedule(period.aulas || period.cronograma || (index === 0 ? legacySchedule : []), !hasSourcePeriods && index === 0)
+  }));
+}
+
+function normalizeSchedule(source = [], fillDefaults = true) {
   const current = Array.isArray(source) ? source : [];
-  return CLASS_SCHEDULE.map((item, index) => {
-    const saved = current.find(row => row.id === item.id) || current[index] || {};
-    return Object.assign({}, item, {
-      id: item.id || `aula_${index + 1}`,
-      dia: saved.dia || item.dia || '',
-      tema: saved.tema || item.tema,
-      foco: saved.foco || item.foco,
-      local: saved.local || item.local || '',
-      observacao: saved.observacao || item.observacao || ''
-    });
-  });
+  if (fillDefaults) {
+    return CLASS_SCHEDULE.map((item, index) => normalizeScheduleItem(current.find(row => row.id === item.id) || current[index] || {}, item, index));
+  }
+  return current.map((item, index) => normalizeScheduleItem(item, {}, index));
+}
+
+function normalizeScheduleItem(saved = {}, fallback = {}, index = 0) {
+  return {
+    id: saved.id || fallback.id || uid('aula'),
+    aula: saved.aula || fallback.aula || `Aula ${index + 1}`,
+    dia: saved.dia || fallback.dia || '',
+    tema: saved.tema || fallback.tema || '',
+    foco: saved.foco || fallback.foco || '',
+    local: saved.local || fallback.local || '',
+    observacao: saved.observacao || fallback.observacao || '',
+    produtos: Array.isArray(saved.produtos) ? saved.produtos : clone(fallback.produtos || []),
+    categorias: Array.isArray(saved.categorias) ? saved.categorias : clone(fallback.categorias || [])
+  };
+}
+
+function normalizeLabRules(source = []) {
+  const list = Array.isArray(source) && source.length ? source : DEFAULT_RULES;
+  return list.map((rule, index) => ({
+    id: rule.id || uid('regra'),
+    numero: rule.numero || String(index + 1).padStart(2, '0'),
+    titulo: rule.titulo || rule.nome || `Regra ${index + 1}`,
+    texto: rule.texto || rule.descricao || ''
+  }));
 }
 
 function renderScheduleConfig() {
   const root = $('#configCronogramaList');
   if (!root) return;
+  const period = getActivePeriod();
+  renderPeriodControls(period);
   const schedule = getSchedule();
-  root.innerHTML = schedule.map(scheduleConfigHTML).join('');
+  root.innerHTML = schedule.map(scheduleConfigHTML).join('') || emptyHTML('Nenhuma aula cadastrada neste período.');
   root.querySelectorAll('[data-schedule-field]').forEach(input => input.addEventListener('change', () => saveScheduleField(input)));
+  root.querySelectorAll('[data-schedule-product]').forEach(input => input.addEventListener('change', () => saveScheduleLinkField(input, 'produtos')));
+  root.querySelectorAll('[data-schedule-category]').forEach(input => input.addEventListener('change', () => saveScheduleLinkField(input, 'categorias')));
+  root.querySelectorAll('[data-delete-schedule]').forEach(btn => btn.addEventListener('click', () => deleteScheduleLesson(Number(btn.dataset.deleteSchedule))));
+}
+
+function renderPeriodControls(period) {
+  const select = $('#periodoAtivoSelect');
+  if (!select || !period) return;
+  const periods = getSchedulePeriods();
+  select.innerHTML = periods.map(p => `<option value="${escapeAttr(p.id)}" ${p.id === period.id ? 'selected' : ''}>${escapeHTML(p.nome)}${p.arquivado ? ' (arquivado)' : ''}</option>`).join('');
+  $('#periodoNome').value = period.nome || '';
+  $('#periodoInicio').value = period.inicio || '';
+  $('#periodoFim').value = period.fim || '';
+  const archiveBtn = $('#btnArquivarPeriodo');
+  if (archiveBtn) archiveBtn.textContent = period.arquivado ? 'Reativar período' : 'Arquivar período';
 }
 
 function scheduleConfigHTML(item, index) {
   return `<article class="config-schedule-card">
     <div class="config-schedule-head">
       <strong>${escapeHTML(item.aula)}</strong>
-      <span>${escapeHTML(item.tema)}</span>
+      <button type="button" class="tiny-btn" data-delete-schedule="${index}" title="Excluir aula">×</button>
     </div>
     <div class="form-grid two-cols">
       <div class="form-group">
+        <label>Nome da aula</label>
+        <input type="text" value="${escapeAttr(item.aula || `Aula ${index + 1}`)}" data-schedule-field="aula" data-schedule-index="${index}">
+      </div>
+      <div class="form-group">
         <label>Dia da aula</label>
         <input type="date" value="${escapeAttr(item.dia || '')}" data-schedule-field="dia" data-schedule-index="${index}">
+      </div>
+    </div>
+    <div class="form-grid two-cols">
+      <div class="form-group">
+        <label>Tema</label>
+        <input type="text" value="${escapeAttr(item.tema || '')}" data-schedule-field="tema" data-schedule-index="${index}">
       </div>
       <div class="form-group">
         <label>Local</label>
         <input type="text" value="${escapeAttr(item.local || '')}" data-schedule-field="local" data-schedule-index="${index}" placeholder="Ex: Laboratório">
       </div>
-    </div>
-    <div class="form-group">
-      <label>Tema</label>
-      <input type="text" value="${escapeAttr(item.tema || '')}" data-schedule-field="tema" data-schedule-index="${index}">
     </div>
     <div class="form-group">
       <label>Foco da aula</label>
@@ -1397,7 +1546,89 @@ function scheduleConfigHTML(item, index) {
       <label>Observação</label>
       <textarea rows="2" data-schedule-field="observacao" data-schedule-index="${index}" placeholder="Opcional">${escapeHTML(item.observacao || '')}</textarea>
     </div>
+    <div class="schedule-link-grid">
+      <div>
+        <div class="linked-title">Produtos vinculados</div>
+        <div class="check-pill-grid">${scheduleProductChecks(item, index)}</div>
+      </div>
+      <div>
+        <div class="linked-title">Aulas teóricas vinculadas</div>
+        <div class="check-pill-grid">${scheduleCategoryChecks(item, index)}</div>
+      </div>
+    </div>
   </article>`;
+}
+
+function scheduleProductChecks(item, index) {
+  const selected = new Set(item.produtos || []);
+  return db.produtos.map(p => `<label class="check-pill"><input type="checkbox" ${selected.has(p.id) ? 'checked' : ''} data-schedule-product="${escapeAttr(p.id)}" data-schedule-index="${index}"><span>${escapeHTML(p.nome)}</span></label>`).join('');
+}
+
+function scheduleCategoryChecks(item, index) {
+  const selected = new Set(item.categorias || []);
+  return PRODUCT_CATEGORIES.map(category => `<label class="check-pill"><input type="checkbox" ${selected.has(category.id) ? 'checked' : ''} data-schedule-category="${escapeAttr(category.id)}" data-schedule-index="${index}"><span>${escapeHTML(category.titulo)}</span></label>`).join('');
+}
+
+function renderRulesConfig() {
+  const root = $('#configRulesList');
+  if (!root) return;
+  db.configs.regrasLaboratorio = normalizeLabRules(db.configs.regrasLaboratorio);
+  root.innerHTML = db.configs.regrasLaboratorio.map(labRuleConfigHTML).join('') || emptyHTML('Nenhuma regra cadastrada.');
+  root.querySelectorAll('[data-rule-field]').forEach(input => input.addEventListener('change', () => saveLabRuleField(input)));
+  root.querySelectorAll('[data-delete-rule]').forEach(btn => btn.addEventListener('click', () => deleteLabRule(btn.dataset.deleteRule)));
+}
+
+function labRuleConfigHTML(rule, index) {
+  return `<article class="config-rule-card">
+    <div class="config-schedule-head">
+      <strong>${escapeHTML(rule.numero || String(index + 1).padStart(2, '0'))} · ${escapeHTML(rule.titulo || 'Regra')}</strong>
+      <button type="button" class="tiny-btn" data-delete-rule="${escapeAttr(rule.id)}" title="Excluir regra">×</button>
+    </div>
+    <div class="form-grid two-cols">
+      <div class="form-group">
+        <label>Número</label>
+        <input type="text" value="${escapeAttr(rule.numero || '')}" data-rule-field="numero" data-rule-id="${escapeAttr(rule.id)}">
+      </div>
+      <div class="form-group">
+        <label>Título</label>
+        <input type="text" value="${escapeAttr(rule.titulo || '')}" data-rule-field="titulo" data-rule-id="${escapeAttr(rule.id)}">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Texto da regra</label>
+      <textarea rows="3" data-rule-field="texto" data-rule-id="${escapeAttr(rule.id)}">${escapeHTML(rule.texto || '')}</textarea>
+    </div>
+  </article>`;
+}
+
+function saveLabRuleField(input) {
+  const rule = db.configs.regrasLaboratorio.find(item => item.id === input.dataset.ruleId);
+  if (!rule) return;
+  rule[input.dataset.ruleField] = input.value;
+  saveDB();
+  renderRules();
+  renderRulesConfig();
+  toast('Regra atualizada.');
+}
+
+function addLabRule() {
+  db.configs.regrasLaboratorio = normalizeLabRules(db.configs.regrasLaboratorio);
+  const next = db.configs.regrasLaboratorio.length + 1;
+  db.configs.regrasLaboratorio.push({ id: uid('regra'), numero: String(next).padStart(2, '0'), titulo: 'Nova regra', texto: '' });
+  saveDB();
+  renderRules();
+  renderRulesConfig();
+  toast('Regra adicionada.');
+}
+
+function deleteLabRule(id) {
+  if (!id) return;
+  if (!confirm('Excluir esta regra?')) return;
+  db.configs.regrasLaboratorio = db.configs.regrasLaboratorio.filter(rule => rule.id !== id);
+  saveDB();
+  renderRules();
+  renderRulesConfig();
+  toast('Regra excluída.');
 }
 
 function saveScheduleField(input) {
@@ -1409,6 +1640,93 @@ function saveScheduleField(input) {
   saveDB();
   renderCronograma();
   toast('Cronograma atualizado.');
+}
+
+function saveScheduleLinkField(input, field) {
+  const index = Number(input.dataset.scheduleIndex);
+  const schedule = getSchedule();
+  if (!schedule[index]) return;
+  const selector = field === 'produtos' ? `[data-schedule-product][data-schedule-index="${index}"]` : `[data-schedule-category][data-schedule-index="${index}"]`;
+  const attr = field === 'produtos' ? 'scheduleProduct' : 'scheduleCategory';
+  schedule[index][field] = $$(selector).filter(el => el.checked).map(el => el.dataset[attr]);
+  saveDB();
+  renderCronograma();
+  toast('Vínculo atualizado.');
+}
+
+function setActivePeriod(id) {
+  if (!getSchedulePeriods().some(period => period.id === id)) return;
+  db.configs.periodoAtivoId = id;
+  saveDB();
+  renderActivePeriodLabel();
+  renderScheduleConfig();
+  renderCronograma();
+}
+
+function savePeriodField(field, value) {
+  const period = getActivePeriod();
+  if (!period) return;
+  period[field] = value;
+  saveDB();
+  renderActivePeriodLabel();
+  renderCronograma();
+  renderScheduleConfig();
+  toast('Período atualizado.');
+}
+
+function createPeriod(archiveCurrent = false) {
+  const current = getActivePeriod();
+  if (archiveCurrent && current) current.arquivado = true;
+  const year = new Date().getFullYear();
+  const period = { id: uid('periodo'), nome: `Novo período ${year}`, inicio: '', fim: '', arquivado: false, aulas: [] };
+  getSchedulePeriods().push(period);
+  db.configs.periodoAtivoId = period.id;
+  saveDB();
+  renderActivePeriodLabel();
+  renderScheduleConfig();
+  renderCronograma();
+  toast(archiveCurrent ? 'Período arquivado e novo período criado.' : 'Novo período criado.');
+}
+
+function archiveActivePeriod() {
+  const period = getActivePeriod();
+  if (!period) return;
+  period.arquivado = !period.arquivado;
+  saveDB();
+  renderActivePeriodLabel();
+  renderScheduleConfig();
+  renderCronograma();
+  toast(period.arquivado ? 'Período arquivado.' : 'Período reativado.');
+}
+
+function addScheduleLesson() {
+  const period = getActivePeriod();
+  if (!period) return;
+  period.aulas.push(normalizeScheduleItem({ aula: `Aula ${period.aulas.length + 1}`, tema: '', foco: '', produtos: [], categorias: [] }, {}, period.aulas.length));
+  saveDB();
+  renderScheduleConfig();
+  renderCronograma();
+  toast('Aula adicionada.');
+}
+
+function deleteScheduleLesson(index) {
+  const period = getActivePeriod();
+  if (!period?.aulas?.[index]) return;
+  if (!confirm('Excluir esta aula do cronograma?')) return;
+  period.aulas.splice(index, 1);
+  saveDB();
+  renderScheduleConfig();
+  renderCronograma();
+  toast('Aula excluída.');
+}
+
+function periodDateLabel(period) {
+  const start = formatScheduleDate(period?.inicio);
+  const end = formatScheduleDate(period?.fim);
+  if (start && end) return `${start} a ${end}${period.arquivado ? ' · arquivado' : ''}`;
+  if (start) return `Início ${start}${period.arquivado ? ' · arquivado' : ''}`;
+  if (period?.arquivado) return 'Arquivado';
+  return 'Período ativo';
 }
 
 function formatScheduleDate(value) {
@@ -1509,8 +1827,6 @@ function openProductModal(id = null) {
   $('#produtoNome').value = p?.nome || '';
   $('#produtoCategoria').value = p?.categoria || '';
   setMultiSelectValues($('#produtoCategoriaDidatica'), normalizeCategoryIds(p));
-  $('#produtoEspecie').value = p?.especie || '';
-  $('#produtoTipo').value = p?.tipo || 'geral';
   $('#produtoDescricao').value = p?.descricao || '';
   $('#produtoObjetivo').value = p?.objetivo || '';
   $('#paramGorduraMax').value = p?.parametros?.gorduraMax ?? '';
@@ -1560,8 +1876,8 @@ function saveProductFromModal() {
     categoria: $('#produtoCategoria').value.trim(),
     categoriaId: categoriaIds[0] || '',
     categoriaIds,
-    especie: $('#produtoEspecie').value.trim(),
-    tipo: $('#produtoTipo').value,
+    especie: findProduct(id)?.especie || '',
+    tipo: findProduct(id)?.tipo || inferProductTypeFromName($('#produtoNome').value),
     descricao: $('#produtoDescricao').value.trim(),
     objetivo: $('#produtoObjetivo').value.trim(),
     parametros: {
@@ -1610,6 +1926,15 @@ function deleteProductFromModal() {
 
 function populateTypeOptions() {
   $('#insumoTipo').innerHTML = TYPES.map(t => `<option value="${escapeAttr(t.value)}">${escapeHTML(t.label)}</option>`).join('');
+  populateSubtypeOptions($('#insumoTipo')?.value || TYPES[0]?.value);
+}
+
+function populateSubtypeOptions(type, selected = '') {
+  const select = $('#insumoSubtipo');
+  if (!select) return;
+  const options = ingredientSubtypes(type);
+  select.innerHTML = [`<option value="">Sem subdivisão</option>`, ...options.map(value => `<option value="${escapeAttr(value)}">${escapeHTML(value)}</option>`)].join('');
+  if (selected && options.includes(selected)) select.value = selected;
 }
 
 function populateProductCategoryOptions() {
@@ -1623,7 +1948,8 @@ function openIngredientModal(id = null) {
   $('#insumoId').value = i?.id || '';
   $('#insumoNome').value = i?.nome || '';
   $('#insumoCategoria').value = i?.categoria || '';
-  $('#insumoTipo').value = i?.tipo || 'outro';
+  $('#insumoTipo').value = i ? normalizeIngredientType(i) : TYPES[0].value;
+  populateSubtypeOptions($('#insumoTipo').value, i?.subtipo || '');
   $('#insumoFuncao').value = i?.funcao || '';
   $('#insumoObs').value = i?.obs || '';
   $('#insumoGordura').value = i?.gordura ?? 0;
@@ -1632,8 +1958,31 @@ function openIngredientModal(id = null) {
   $('#insumoCusto').value = i?.custo ?? 0;
   $('#insumoPnc').checked = Boolean(i?.proteinaNaoCarnea);
   $('#insumoAlergeno').checked = Boolean(i?.alergeno);
+  tempIngredientPhoto = i?.foto || '';
+  $('#insumoFoto').value = '';
+  renderIngredientPhotoPreview();
   $('#btnExcluirInsumo').style.display = i ? 'inline-flex' : 'none';
   openModal('modalInsumo');
+}
+
+async function handleIngredientPhoto(ev) {
+  const file = Array.from(ev.target.files || []).find(item => item.type.startsWith('image/'));
+  if (!file) return;
+  tempIngredientPhoto = await fileToDataURL(file, 1000, 0.82);
+  renderIngredientPhotoPreview();
+}
+
+function renderIngredientPhotoPreview() {
+  const wrap = $('#insumoFotoPreview');
+  if (!wrap) return;
+  wrap.innerHTML = tempIngredientPhoto ? `
+    <div class="photo-wrap"><img class="photo-thumb" src="${escapeAttr(tempIngredientPhoto)}" alt="Foto"><button type="button" class="photo-remove" data-remove-ingredient-photo>×</button></div>
+  ` : '';
+  wrap.querySelector('[data-remove-ingredient-photo]')?.addEventListener('click', () => {
+    tempIngredientPhoto = '';
+    $('#insumoFoto').value = '';
+    renderIngredientPhotoPreview();
+  });
 }
 
 function openIngredientView(id = null) {
@@ -1642,8 +1991,10 @@ function openIngredientView(id = null) {
   $('#insumoViewTitle').textContent = i.nome;
   $('#insumoViewContent').innerHTML = `
     <div class="ingredient-view-card">
+      ${i.foto ? `<img class="ingredient-view-photo" src="${escapeAttr(i.foto)}" alt="">` : ''}
       <div class="item-meta">
         <span class="badge info">${escapeHTML(typeLabel(i.tipo))}</span>
+        ${i.subtipo ? `<span class="badge">${escapeHTML(i.subtipo)}</span>` : ''}
         ${i.alergeno ? '<span class="badge danger">alérgeno</span>' : ''}
         ${i.proteinaNaoCarnea ? '<span class="badge warn">proteína agregada</span>' : ''}
       </div>
@@ -1668,14 +2019,16 @@ function saveIngredientFromModal() {
     nome: $('#insumoNome').value.trim(),
     categoria: $('#insumoCategoria').value.trim(),
     tipo: $('#insumoTipo').value,
+    subtipo: $('#insumoSubtipo').value,
     funcao: $('#insumoFuncao').value.trim(),
     obs: $('#insumoObs').value.trim(),
     gordura: toNumber($('#insumoGordura').value),
     proteina: toNumber($('#insumoProteina').value),
     carboidrato: toNumber($('#insumoCarbo').value),
     custo: toNumber($('#insumoCusto').value),
-    proteinaNaoCarnea: $('#insumoPnc').checked || $('#insumoTipo').value === 'proteina_nao_carnea',
-    alergeno: $('#insumoAlergeno').checked
+    proteinaNaoCarnea: $('#insumoPnc').checked || isFunctionalProtein({ tipo: $('#insumoTipo').value, subtipo: $('#insumoSubtipo').value, nome: $('#insumoNome').value }),
+    alergeno: $('#insumoAlergeno').checked,
+    foto: tempIngredientPhoto
   };
   if (!ingredient.nome) return toast('Informe o nome do insumo.');
   const idx = db.insumos.findIndex(i => i.id === id);
@@ -1838,33 +2191,40 @@ function removeFormulaItemInline(formulaId, insumoId) {
 function updateFormulaBlend(formulaId, changes = {}, options = {}) {
   const formula = findFormula(formulaId);
   if (!formula) return;
-  const lean = ensureFormulaItem(formula, 'ing_carne_bovina_magra');
-  const fat = ensureFormulaItem(formula, 'ing_gordura_bovina');
   const previous = formulaBlendState(formula);
   const useBlend = changes.useBlend ?? previous.useBlend;
 
   if (!useBlend) {
     const total = Math.max(1, toNumber(changes.blendGrams ?? previous.blendGrams ?? formula.pesoReferencia) || 1);
     formula.usarBlend = false;
-    formula.pesoReferencia = total;
-    lean.percentual = 100;
-    fat.percentual = 0;
+    setFormulaWeightFromBlendTotal(formula, total);
     saveInlineFormulaEdit('Blend atualizado.', options);
     return;
   }
 
-  let leanGrams = Math.max(0, toNumber(changes.leanGrams ?? previous.leanGrams));
-  let fatGrams = Math.max(0, toNumber(changes.fatGrams ?? previous.fatGrams));
-  if (changes.useBlend === true && previous.useBlend === false) {
-    const total = Math.max(1, toNumber(previous.blendGrams || formula.pesoReferencia) || 1);
-    leanGrams = total * 0.85;
-    fatGrams = total * 0.15;
-  }
-  const total = Math.max(1, leanGrams + fatGrams);
   formula.usarBlend = true;
-  formula.pesoReferencia = total;
-  lean.percentual = leanGrams / total * 100;
-  fat.percentual = fatGrams / total * 100;
+  if (!formulaBlendSourceItems(formula).length) ensureFormulaItem(formula, 'ing_carne_bovina_magra').percentual = 100;
+  saveInlineFormulaEdit('Blend atualizado.', options);
+}
+
+function updateFormulaBlendItem(formulaId, insumoId, grams, options = {}) {
+  const formula = findFormula(formulaId);
+  if (!formula || !insumoId) return;
+  const state = formulaBlendState(formula);
+  const gramsById = {};
+  state.items.forEach(item => { gramsById[item.insumoId] = item.insumoId === insumoId ? Math.max(0, toNumber(grams)) : Math.max(0, toNumber(item.grams)); });
+  if (!Object.prototype.hasOwnProperty.call(gramsById, insumoId)) gramsById[insumoId] = Math.max(0, toNumber(grams));
+  const blendTotal = Object.values(gramsById).reduce((sum, value) => sum + value, 0);
+  if (blendTotal <= 0) return;
+  const baseMode = formulaBaseMode(formula);
+  const nonBlendPct = (formula.itens || []).reduce((sum, item) => isBlendItem(item.insumoId, formula) ? sum : sum + toNumber(item.percentual), 0);
+  const finalBase = baseMode === 'produto_final' && nonBlendPct < 99.99 ? blendTotal / ((100 - nonBlendPct) / 100) : blendTotal;
+  formula.usarBlend = true;
+  formula.pesoReferencia = Math.max(1, finalBase);
+  Object.entries(gramsById).forEach(([id, value]) => {
+    const item = ensureFormulaItem(formula, id);
+    item.percentual = value / formula.pesoReferencia * 100;
+  });
   saveInlineFormulaEdit('Blend atualizado.', options);
 }
 
@@ -1892,26 +2252,39 @@ function ensureFormulaItem(formula, insumoId) {
   return item;
 }
 
-function formulaHasBeefBlend(formula) {
-  return (formula?.itens || []).some(item => item.insumoId === 'ing_carne_bovina_magra' || item.insumoId === 'ing_gordura_bovina');
+function formulaBlendSourceItems(formula) {
+  return (formula?.itens || []).filter(item => isMeatIngredient(findIngredient(item.insumoId)));
+}
+
+function setFormulaWeightFromBlendTotal(formula, blendTotal) {
+  const meatPct = formulaBlendSourceItems(formula).reduce((sum, item) => sum + toNumber(item.percentual), 0);
+  if (formulaBaseMode(formula) === 'produto_final' && meatPct > 0 && meatPct < 100) {
+    formula.pesoReferencia = Math.max(1, blendTotal / (meatPct / 100));
+    return;
+  }
+  formula.pesoReferencia = Math.max(1, blendTotal);
 }
 
 function isBlendItem(insumoId, formula) {
-  return formulaHasBeefBlend(formula) && (insumoId === 'ing_carne_bovina_magra' || insumoId === 'ing_gordura_bovina');
+  const item = (formula?.itens || []).find(row => row.insumoId === insumoId);
+  return Boolean(item && isMeatIngredient(findIngredient(insumoId)));
 }
 
 function formulaBlendState(formula) {
-  const leanItem = (formula.itens || []).find(item => item.insumoId === 'ing_carne_bovina_magra');
-  const fatItem = (formula.itens || []).find(item => item.insumoId === 'ing_gordura_bovina');
   const useBlend = formula.usarBlend !== false;
-  const leanGrams = leanItem ? formulaItemGrams(formula, leanItem) : 0;
-  const fatGrams = fatItem ? formulaItemGrams(formula, fatItem) : 0;
-  const blendGrams = useBlend ? (leanGrams + fatGrams || toNumber(formula.pesoReferencia)) : toNumber(formula.pesoReferencia);
-  return { useBlend, leanGrams, fatGrams, blendGrams };
+  const items = formulaBlendSourceItems(formula).map(item => {
+    const ingredient = findIngredient(item.insumoId);
+    return { insumoId: item.insumoId, nome: ingredient?.nome || 'Matéria-prima cárnea', grams: formulaItemGrams(formula, item) };
+  });
+  const blendGrams = items.reduce((sum, item) => sum + toNumber(item.grams), 0) || toNumber(formula.pesoReferencia);
+  return { useBlend, items, blendGrams };
 }
 
 function ingredientSuggestion(ingredient) {
-  if (!ingredient || !['condimento', 'sal'].includes(ingredient.tipo) && ingredient.id !== 'ing_acucar') return null;
+  const name = String(ingredient?.nome || '').toLowerCase();
+  const isSeasoning = ingredient?.tipo === 'condimento_especiaria';
+  const isSaltOrSugar = ['ing_sal', 'ing_acucar'].includes(ingredient?.id) || /\bsal\b/.test(name) || name.includes('açúcar') || name.includes('acucar') || name.includes('dextrose');
+  if (!ingredient || (!isSeasoning && !isSaltOrSugar)) return null;
   const byId = {
     ing_sal: { suave: 1.5, acentuado: 2 },
     ing_alho_po: { suave: 0.5, acentuado: 1.5 },
@@ -1924,8 +2297,8 @@ function ingredientSuggestion(ingredient) {
   };
   if (byId[ingredient?.id]) return byId[ingredient.id];
   const byType = {
-    sal: { suave: 1.5, acentuado: 2 },
-    condimento: { suave: 0.3, acentuado: 1 }
+    basico_nao_carneo: { suave: 1.5, acentuado: 2 },
+    condimento_especiaria: { suave: 0.3, acentuado: 1 }
   };
   return byType[ingredient?.tipo] || null;
 }
@@ -2022,12 +2395,12 @@ function analyzeFormula(formula) {
     if (!ing) return;
     const grams = formulaItemGrams(formula, item);
     totalPct += pct;
-    if (ing.tipo === 'carne' || ing.tipo === 'gordura') meatBasePct += pct;
+    if (isMeatIngredient(ing)) meatBasePct += pct;
     finalWeight += grams;
     fatGrams += grams * toNumber(ing.gordura) / 100;
     proteinGrams += grams * toNumber(ing.proteina) / 100;
     carbGrams += grams * toNumber(ing.carboidrato) / 100;
-    if (ing.proteinaNaoCarnea || ing.tipo === 'proteina_nao_carnea') pncGrams += grams;
+    if (ing.proteinaNaoCarnea || isFunctionalProtein(ing)) pncGrams += grams;
     costTotal += (grams / 1000) * toNumber(ing.custo);
   });
   const compositionWeight = finalWeight || weight;
@@ -2181,7 +2554,7 @@ async function importData(ev) {
 
 function resetDemo() {
   if (!confirm('Restaurar a base demonstrativa? Seus dados atuais serão substituídos neste navegador.')) return;
-  db = clone(DEFAULT_DB);
+  db = normalizeDB(clone(DEFAULT_DB));
   saveDB();
   renderAll();
   closeModal('modalConfig');
@@ -2194,7 +2567,12 @@ function registerServiceWorker() {
   }
 }
 
-function openModal(id) { $('#' + id)?.classList.add('show'); }
+function openModal(id) {
+  const modal = $('#' + id);
+  if (!modal) return;
+  modal.style.zIndex = String(++modalZIndex);
+  modal.classList.add('show');
+}
 function closeModal(id) { $('#' + id)?.classList.remove('show'); }
 function findProduct(id) { return db.produtos.find(p => p.id === id); }
 function findIngredient(id) { return db.insumos.find(i => i.id === id); }
@@ -2216,12 +2594,58 @@ function setMultiSelectValues(select, values) {
 function cssEscape(value) { return window.CSS?.escape ? CSS.escape(value) : String(value).replace(/["\\]/g, '\\$&'); }
 function uid(prefix) { return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`; }
 function capitalize(text) { return String(text || '').charAt(0).toUpperCase() + String(text || '').slice(1); }
+function ingredientSubtypes(type) { return TYPES.find(t => t.value === type)?.subtipos || []; }
+function normalizeIngredientType(ingredient = {}) {
+  const id = ingredient.id || '';
+  const text = [ingredient.nome, ingredient.categoria, ingredient.tipo].join(' ').toLowerCase();
+  if (id === 'ing_tripa_suina' || text.includes('tripa') || text.includes('envoltório') || text.includes('embalagem')) return 'envoltorio_apresentacao';
+  if (id === 'ing_fosfato' || text.includes('nitrito') || text.includes('nitrato') || text.includes('fosfato') || text.includes('eritorbato')) return 'aditivo_alimentar';
+  if (id === 'ing_agua_gelada' || id === 'ing_sal' || id === 'ing_acucar' || text.includes('água') || text.includes('gelo') || /\bsal\b/.test(text) || text.includes('açúcar') || text.includes('acucar') || text.includes('dextrose')) return 'basico_nao_carneo';
+  if (id.includes('carne') || id.includes('gordura') || id.includes('pernil') || id.includes('toucinho') || id.includes('figado') || id.includes('fígado') || text.includes('matéria-prima cárnea') || text.includes('gordura animal')) return 'materia_prima_carnea';
+  if (text.includes('condimento') || text.includes('pimenta') || text.includes('alho') || text.includes('cebola') || text.includes('páprica') || text.includes('salsa')) return 'condimento_especiaria';
+  if (text.includes('cultura') || text.includes('fermento')) return 'cultura_fermento';
+  if (text.includes('mix') || text.includes('mistura') || text.includes('preparado')) return 'mistura_comercial';
+  return LEGACY_TYPE_MAP[ingredient.tipo] || (TYPES.some(t => t.value === ingredient.tipo) ? ingredient.tipo : 'funcional_nao_aditivo');
+}
+function normalizeIngredientSubtype(ingredient = {}) {
+  const type = normalizeIngredientType(ingredient);
+  const existing = ingredient.subtipo;
+  if (existing && ingredientSubtypes(type).includes(existing)) return existing;
+  const text = [ingredient.nome, ingredient.categoria, ingredient.tipo].join(' ').toLowerCase();
+  if (type === 'condimento_especiaria') {
+    if (text.includes('pó') || text.includes('po')) return 'em pó';
+    if (text.includes('desidrat')) return 'desidratados';
+  }
+  if (type === 'funcional_nao_aditivo') {
+    if (text.includes('proteína') || text.includes('proteina')) return 'proteínas';
+    if (text.includes('amido') || text.includes('farinha') || text.includes('fécula') || text.includes('fecula')) return 'amidos/farinhas';
+    if (text.includes('leite') || text.includes('lácteo') || text.includes('lacteo')) return 'lácteos';
+    if (text.includes('ovo')) return 'ovos';
+  }
+  if (type === 'envoltorio_apresentacao') {
+    if (text.includes('tripa') || text.includes('comestível') || text.includes('comestivel')) return 'envoltório comestível';
+    if (text.includes('embalagem')) return 'embalagem';
+  }
+  return '';
+}
+function isMeatIngredient(ingredient) { return normalizeIngredientType(ingredient || {}) === 'materia_prima_carnea'; }
+function isFunctionalProtein(ingredient = {}) {
+  const type = normalizeIngredientType(ingredient);
+  const subtype = ingredient.subtipo || normalizeIngredientSubtype(ingredient);
+  return type === 'funcional_nao_aditivo' && subtype === 'proteínas';
+}
 function typeLabel(value) { return TYPES.find(t => t.value === value)?.label || 'Outro'; }
+function inferProductTypeFromName(name = '') {
+  const text = String(name).toLowerCase();
+  if (text.includes('hamb')) return 'hamburguer';
+  if (text.includes('lingui')) return 'linguica_frescal';
+  return 'geral';
+}
 function productTypeLabel(value) {
   return ({ hamburguer: 'RTIQ hambúrguer', linguica_frescal: 'RTIQ linguiça frescal', geral: 'Produto geral' })[value] || 'Produto geral';
 }
 function ingredientIcon(type) {
-  return ({ carne: 'MP', gordura: 'G', agua: 'H2O', sal: 'Na', condimento: 'C', carboidrato: 'CHO', proteina_nao_carnea: 'PNC', aditivo: 'AD', lacteo: 'L', outro: 'IN' })[type] || 'IN';
+  return ({ materia_prima_carnea: 'MP', basico_nao_carneo: 'B', condimento_especiaria: 'CE', funcional_nao_aditivo: 'FN', aditivo_alimentar: 'AD', coadjuvante_tecnologia: 'CT', cultura_fermento: 'CF', envoltorio_apresentacao: 'EA', mistura_comercial: 'MC' })[type] || 'IN';
 }
 function photoOrInitial(p) {
   return p.fotos?.[0] ? `<img src="${escapeAttr(p.fotos[0])}" alt="${escapeAttr(p.nome)}">` : escapeHTML((p.nome || '?').slice(0, 1).toUpperCase());

@@ -9,47 +9,63 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon.png" />
   <link rel="apple-touch-icon" href="icon.png" />
-  <link rel="stylesheet" href="style.css?v=13" />
+  <link rel="stylesheet" href="style.css?v=17" />
   <title>Processamento de Alimentos de Origem Animal</title>
 </head>
 <body>
   <div id="splashScreen" class="splash-screen">
     <img src="icon.png" alt="Processamento de Alimentos de Origem Animal" class="splash-logo" />
     <div class="splash-title">Processamento de Alimentos de Origem Animal</div>
-    <div class="splash-subtitle">Processamento de Alimentos de Origem Animal</div>
   </div>
 
   <div class="app-shell">
     <header class="topbar">
       <div>
         <div class="app-title">Processamento de Alimentos de Origem Animal</div>
+        <div class="app-period" id="activePeriodLabel"></div>
       </div>
       <div class="top-actions">
         <button class="icon-btn" id="btnInstall" title="Instalar app" hidden>⇩</button>
-        <button class="icon-btn" id="btnConfig" title="Configurações">⚙</button>
+        <button class="icon-btn" id="btnConfig" title="Configurações">⚙️</button>
       </div>
     </header>
 
     <main class="content">
       <section id="pageInicio" class="page active">
         <div class="summary-hero home-summary">
-          <div>
-            <h1>Processamento de Alimentos de Origem Animal</h1>
-          </div>
           <div class="home-summary-actions">
-            <button class="summary-action primary" data-page-target="Aulas">Aulas</button>
-            <button class="summary-action" data-page-target="Produtos">Produtos</button>
-            <button class="summary-action" data-page-target="Cronograma">Cronograma de aulas</button>
-            <button class="summary-action external" data-open-url="https://www.ct.ufpb.br/lpdc/">Site do laboratório</button>
+            <button class="summary-action primary" data-page-target="Aulas">
+              <span class="summary-action-copy">
+                <strong>Aulas</strong>
+              </span>
+              <span class="summary-action-media" style="background-image: url('assets/home-aulas.png')"></span>
+            </button>
+            <button class="summary-action" data-page-target="Produtos">
+              <span class="summary-action-copy">
+                <strong>Produtos</strong>
+              </span>
+              <span class="summary-action-media" style="background-image: url('assets/home-produtos.png')"></span>
+            </button>
+            <button class="summary-action" data-page-target="Cronograma">
+              <span class="summary-action-copy">
+                <strong>Cronograma de aulas</strong>
+              </span>
+              <span class="summary-action-media" style="background-image: url('assets/home-cronograma.png')"></span>
+            </button>
+            <button class="summary-action" data-page-target="Regras">
+              <span class="summary-action-copy">
+                <strong>Regras do laboratório</strong>
+              </span>
+              <span class="summary-action-media" style="background-image: url('assets/home-regras.png')"></span>
+            </button>
+          </div>
+          <div class="home-external-links">
+            <a class="lpdc-link" href="https://www.ct.ufpb.br/lpdc/" target="_blank" rel="noopener">🌐 LPDC</a>
+            <a class="instagram-link" href="https://www.instagram.com/eng.alimentos.ufpb/" target="_blank" rel="noopener" aria-label="Instagram Engenharia de Alimentos UFPB">
+              <img src="assets/instagram.png" alt="" />
+            </a>
           </div>
         </div>
-
-        <div class="section-header">
-          <div>
-            <h2>Produtos</h2>
-          </div>
-        </div>
-        <div id="homeProductCards" class="product-summary-grid"></div>
       </section>
 
       <section id="pageProdutos" class="page">
@@ -79,39 +95,39 @@
         </div>
         <div id="aulaContent"></div>
       </section>
+
+      <section id="pageRegras" class="page">
+        <div class="rules-page">
+          <div class="rules-hero">
+            <div>
+              <div class="hero-label">Conduta e segurança</div>
+              <h2>Regras do laboratório</h2>
+              <p>Orientações para manter a prática organizada, higiênica e segura durante as aulas de Processamento de Alimentos de Origem Animal.</p>
+            </div>
+          </div>
+          <div class="rules-grid" id="rulesGrid"></div>
+        </div>
+      </section>
     </main>
 
     <nav class="bottom-nav" aria-label="Navegação principal">
       <button class="nav-btn active" data-page="Inicio"><span class="nav-icon">🏠︎</span><span>Início</span></button>
-      <button class="nav-btn" data-page="Aulas"><span class="nav-icon">▤</span><span>Aulas</span></button>
-      <button class="nav-btn" data-page="Produtos"><span class="nav-icon">◻︎</span><span>Produtos</span></button>
+      <button class="nav-btn" data-page="Aulas"><span class="nav-icon">📚</span><span>Aulas</span></button>
+      <button class="nav-btn" data-page="Produtos"><span class="nav-icon">🍔</span><span>Produtos</span></button>
       <button class="nav-btn" data-page="Cronograma"><span class="nav-icon">🗓️</span><span>Cronograma</span></button>
     </nav>
   </div>
 
   <div class="modal-overlay" id="modalProduto">
     <div class="modal large-modal">
+      <button type="button" class="modal-close" data-close="modalProduto" aria-label="Fechar">×</button>
       <div class="modal-title">Produto</div>
       <input type="hidden" id="produtoId" />
       <div class="form-grid two-cols">
         <div class="form-group"><label>Nome do produto</label><input id="produtoNome" type="text" placeholder="Ex: Hambúrguer bovino" /></div>
         <div class="form-group"><label>Categoria</label><input id="produtoCategoria" type="text" placeholder="Ex: Embutido cárneo fresco" /></div>
       </div>
-      <div class="form-grid two-cols">
-        <div class="form-group"><label>Categorias didáticas</label><select id="produtoCategoriaDidatica" multiple size="3"></select></div>
-        <div class="form-group"><label>Espécie ou matéria-prima principal</label><input id="produtoEspecie" type="text" placeholder="Ex: suína" /></div>
-      </div>
-      <div class="form-grid two-cols">
-        <div class="form-group">
-          <label>Tipo de validação</label>
-          <select id="produtoTipo">
-            <option value="geral">Geral</option>
-            <option value="hamburguer">Hambúrguer</option>
-            <option value="linguica_frescal">Linguiça frescal</option>
-          </select>
-        </div>
-        <div class="form-group"></div>
-      </div>
+      <div class="form-group"><label>Categorias didáticas</label><select id="produtoCategoriaDidatica" multiple size="3"></select></div>
       <div class="form-group"><label>Descrição didática</label><textarea id="produtoDescricao" rows="3"></textarea></div>
       <div class="form-group"><label>Objetivo da prática</label><textarea id="produtoObjetivo" rows="3"></textarea></div>
 
@@ -145,15 +161,19 @@
 
   <div class="modal-overlay" id="modalInsumo">
     <div class="modal">
+      <button type="button" class="modal-close" data-close="modalInsumo" aria-label="Fechar">×</button>
       <div class="modal-title">Insumo</div>
       <input type="hidden" id="insumoId" />
       <div class="form-group"><label>Nome</label><input id="insumoNome" type="text" placeholder="Ex: Sal" /></div>
       <div class="form-grid two-cols">
         <div class="form-group"><label>Categoria</label><input id="insumoCategoria" type="text" placeholder="Ex: Condimento" /></div>
-        <div class="form-group"><label>Tipo tecnológico</label><select id="insumoTipo"></select></div>
+        <div class="form-group"><label>Categoria principal</label><select id="insumoTipo"></select></div>
       </div>
+      <div class="form-group"><label>Subdivisão</label><select id="insumoSubtipo"></select></div>
       <div class="form-group"><label>Função tecnológica</label><textarea id="insumoFuncao" rows="4" placeholder="Diga para que serve na formulação"></textarea></div>
       <div class="form-group"><label>Observação didática</label><textarea id="insumoObs" rows="3"></textarea></div>
+      <div class="form-group"><label>Foto do insumo</label><input id="insumoFoto" type="file" accept="image/*" /></div>
+      <div id="insumoFotoPreview" class="photo-strip"></div>
       <div class="form-grid four-cols">
         <div class="form-group"><label>Gordura (%)</label><input id="insumoGordura" type="number" step="0.01" /></div>
         <div class="form-group"><label>Proteína (%)</label><input id="insumoProteina" type="number" step="0.01" /></div>
@@ -172,6 +192,7 @@
 
   <div class="modal-overlay" id="modalInsumoView">
     <div class="modal">
+      <button type="button" class="modal-close" data-close="modalInsumoView" aria-label="Fechar">×</button>
       <div class="modal-title" id="insumoViewTitle">Insumo</div>
       <div id="insumoViewContent"></div>
       <div class="modal-actions">
@@ -182,6 +203,7 @@
 
   <div class="modal-overlay" id="modalFormula">
     <div class="modal large-modal">
+      <button type="button" class="modal-close" data-close="modalFormula" aria-label="Fechar">×</button>
       <div class="modal-title">Formulação</div>
       <input type="hidden" id="formulaId" />
       <div class="form-grid two-cols">
@@ -222,6 +244,7 @@
 
   <div class="modal-overlay" id="modalRelatorio">
     <div class="modal">
+      <button type="button" class="modal-close" data-close="modalRelatorio" aria-label="Fechar">×</button>
       <div class="modal-title">Relatório da prática</div>
       <div class="form-group"><textarea id="relatorioTexto" rows="15"></textarea></div>
       <div class="modal-actions">
@@ -232,33 +255,88 @@
   </div>
 
   <div class="modal-overlay" id="modalConfig">
-    <div class="modal large-modal">
+    <div class="modal config-menu-modal">
+      <button type="button" class="modal-close" data-close="modalConfig" aria-label="Fechar">×</button>
       <div class="modal-title">Configurações</div>
-      <div class="config-tabs">
-        <button type="button" class="config-tab active" data-config-tab="produtos">Produtos</button>
-        <button type="button" class="config-tab" data-config-tab="insumos">Insumos</button>
-        <button type="button" class="config-tab" data-config-tab="cronograma">Cronograma</button>
-        <button type="button" class="config-tab" data-config-tab="avancadas">Configurações avançadas</button>
+      <div class="config-menu-grid">
+        <button type="button" class="config-menu-card" data-open-config-modal="modalConfigProdutos">Produtos</button>
+        <button type="button" class="config-menu-card" data-open-config-modal="modalConfigInsumos">Insumos</button>
+        <button type="button" class="config-menu-card" data-open-config-modal="modalConfigCronograma">Cronograma</button>
+        <button type="button" class="config-menu-card" data-open-config-modal="modalConfigRegras">Regras do laboratório</button>
+        <button type="button" class="config-menu-card" data-open-config-modal="modalConfigAvancadas">Configurações avançadas</button>
       </div>
-      <div class="config-panel active" id="configPanelProdutos">
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalConfigProdutos">
+    <div class="modal large-modal">
+      <button type="button" class="modal-close" data-close="modalConfigProdutos" aria-label="Fechar">×</button>
+      <div class="modal-title">Produtos</div>
         <div class="toolbar in-modal">
           <input id="searchConfigProdutos" type="search" placeholder="Buscar produto..." />
           <button class="primary-btn compact" data-action="open-product">Novo produto</button>
         </div>
         <div id="configProdutosList" class="stack-list compact-list"></div>
-      </div>
-      <div class="config-panel" id="configPanelInsumos">
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalConfigInsumos">
+    <div class="modal large-modal">
+      <button type="button" class="modal-close" data-close="modalConfigInsumos" aria-label="Fechar">×</button>
+      <div class="modal-title">Insumos</div>
         <div class="toolbar in-modal">
           <input id="searchInsumos" type="search" placeholder="Buscar insumo ou função..." />
           <button class="primary-btn compact" data-action="open-ingredient">Novo insumo</button>
         </div>
         <div class="chips" id="ingredientTypeFilters"></div>
         <div id="insumosList" class="stack-list compact-list"></div>
-      </div>
-      <div class="config-panel" id="configPanelCronograma">
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalConfigCronograma">
+    <div class="modal large-modal">
+      <button type="button" class="modal-close" data-close="modalConfigCronograma" aria-label="Fechar">×</button>
+      <div class="modal-title">Cronograma</div>
+        <div class="period-panel">
+          <div class="form-grid two-cols">
+            <div class="form-group">
+              <label>Período</label>
+              <select id="periodoAtivoSelect"></select>
+            </div>
+            <div class="period-actions">
+              <button type="button" class="secondary-btn compact" id="btnNovoPeriodo">Novo período</button>
+              <button type="button" class="secondary-btn compact" id="btnArquivarNovoPeriodo">Arquivar e criar novo</button>
+            </div>
+          </div>
+          <div class="form-grid three-cols">
+            <div class="form-group"><label>Nome do período</label><input id="periodoNome" type="text" placeholder="Ex: 2026.1" /></div>
+            <div class="form-group"><label>Início</label><input id="periodoInicio" type="date" /></div>
+            <div class="form-group"><label>Fim</label><input id="periodoFim" type="date" /></div>
+          </div>
+          <div class="period-actions">
+            <button type="button" class="secondary-btn compact" id="btnArquivarPeriodo">Arquivar período</button>
+            <button type="button" class="primary-btn compact" id="btnAdicionarAula">Adicionar aula</button>
+          </div>
+        </div>
         <div id="configCronogramaList" class="config-schedule-list"></div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalConfigRegras">
+    <div class="modal large-modal">
+      <button type="button" class="modal-close" data-close="modalConfigRegras" aria-label="Fechar">×</button>
+      <div class="modal-title">Regras do laboratório</div>
+      <div class="toolbar in-modal">
+        <button type="button" class="primary-btn compact" id="btnAddRule">Nova regra</button>
       </div>
-      <div class="config-panel" id="configPanelAvancadas">
+      <div id="configRulesList" class="config-rules-list"></div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalConfigAvancadas">
+    <div class="modal">
+      <button type="button" class="modal-close" data-close="modalConfigAvancadas" aria-label="Fechar">×</button>
+      <div class="modal-title">Configurações avançadas</div>
         <p class="muted">Os dados ficam salvos neste navegador. Use exportação JSON para backup e para levar a base para outro computador.</p>
         <div class="config-grid">
           <button class="secondary-btn full" id="btnExportar">Exportar dados JSON</button>
@@ -267,13 +345,10 @@
           <button class="secondary-btn full" id="btnBaixarModelo">Baixar modelo de dados</button>
           <button class="danger-btn full" id="btnResetDemo">Restaurar base demonstrativa</button>
         </div>
-      </div>
-
-      <div class="modal-actions"><button class="primary-btn" data-close="modalConfig">Fechar</button></div>
     </div>
   </div>
 
   <div id="toast" class="toast"></div>
-  <script src="app.js?v=13"></script>
+  <script src="app.js?v=17"></script>
 </body>
 </html>
