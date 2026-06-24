@@ -1,7 +1,31 @@
 'use strict';
 
 const STORAGE_KEY = 'paoa_lab_v1';
-const APP_VERSION = '1.4.1';
+const APP_VERSION = '1.5.0';
+const MEAT_CUTS_SOURCE_URL = 'https://nepa.unicamp.br/publicacoes/tabela-taco-pdf/';
+
+const MEAT_CUTS = [
+  { id: 'acem', nome: 'Acém bovino', gorduraMagra: 6.1, gorduraNormal: 15.5, fonteMagra: 'Acém sem gordura, cru', fonteNormal: '90% do corte aparado + 10% de gordura adicionada' },
+  { id: 'fraldinha', nome: 'Fraldinha bovina', gorduraMagra: 6.2, gorduraNormal: 16.1, fonteMagra: 'Flanco sem gordura, cru', fonteNormal: 'Fraldinha com gordura, crua' },
+  { id: 'peito_bovino', nome: 'Peito bovino', gorduraMagra: 20.4, gorduraNormal: 28.4, fonteMagra: 'Peito sem gordura, cru', fonteNormal: '90% do corte aparado + 10% de gordura adicionada' },
+  { id: 'alcatra', nome: 'Alcatra bovina', gorduraMagra: 7.8, gorduraNormal: 17, fonteMagra: 'Alcatra sem gordura, crua', fonteNormal: '90% do corte aparado + 10% de gordura adicionada' },
+  { id: 'coxao_mole', nome: 'Coxão mole bovino', gorduraMagra: 8.7, gorduraNormal: 17.8, fonteMagra: 'Coxão mole sem gordura, cru', fonteNormal: '90% do corte aparado + 10% de gordura adicionada' },
+  { id: 'patinho', nome: 'Patinho bovino', gorduraMagra: 4.5, gorduraNormal: 14.1, fonteMagra: 'Patinho sem gordura, cru', fonteNormal: '90% do corte aparado + 10% de gordura adicionada' },
+  { id: 'lagarto', nome: 'Lagarto bovino', gorduraMagra: 5.2, gorduraNormal: 14.7, fonteMagra: 'Lagarto bovino, cru', fonteNormal: '90% do corte aparado + 10% de gordura adicionada' },
+  { id: 'maminha', nome: 'Maminha bovina', gorduraMagra: 7, gorduraNormal: 16.3, fonteMagra: 'Alcatra, maminha, sem gordura, crua', fonteNormal: '90% do corte aparado + 10% de gordura adicionada' },
+  { id: 'musculo', nome: 'Músculo bovino', gorduraMagra: 5.5, gorduraNormal: 15, fonteMagra: 'Músculo sem gordura, cru', fonteNormal: '90% do corte aparado + 10% de gordura adicionada' },
+  { id: 'paleta', nome: 'Paleta bovina', gorduraMagra: 7.4, gorduraNormal: 16.7, fonteMagra: 'Paleta sem gordura, crua', fonteNormal: '90% do corte aparado + 10% de gordura adicionada' },
+  { id: 'contrafile', nome: 'Contrafilé bovino', gorduraMagra: 4.5, gorduraNormal: 12.8, fonteMagra: 'Contrafilé sem gordura, cru', fonteNormal: 'Contrafilé com gordura, cru' },
+  { id: 'file_mignon', nome: 'Filé mignon bovino', gorduraMagra: 5.6, gorduraNormal: 15, fonteMagra: 'Filé mignon sem gordura, cru', fonteNormal: '90% do corte aparado + 10% de gordura adicionada' },
+  { id: 'picanha', nome: 'Picanha bovina', gorduraMagra: 4.7, gorduraNormal: 14.7, fonteMagra: 'Picanha sem gordura, crua', fonteNormal: 'Picanha com gordura, crua' },
+  { id: 'pernil_suino', nome: 'Pernil suíno', gorduraMagra: 11.1, gorduraNormal: 20, fonteMagra: 'Pernil suíno cru, referência TACO', fonteNormal: '90% do corte magro + 10% de gordura adicionada' },
+  { id: 'lombo_suino', nome: 'Lombo suíno', gorduraMagra: 8.8, gorduraNormal: 17.9, fonteMagra: 'Lombo suíno cru, referência TACO', fonteNormal: '90% do corte magro + 10% de gordura adicionada' },
+  { id: 'peito_frango', nome: 'Peito de frango sem pele', gorduraMagra: 3, gorduraNormal: 12.7, fonteMagra: 'Peito de frango sem pele, cru, referência TACO', fonteNormal: '90% do corte magro + 10% de gordura adicionada' },
+  { id: 'coxa_frango', nome: 'Coxa de frango sem pele', gorduraMagra: 9.6, gorduraNormal: 18.6, fonteMagra: 'Coxa de frango sem pele, crua, referência TACO', fonteNormal: '90% do corte magro + 10% de gordura adicionada' },
+  { id: 'gordura_bovina', nome: 'Gordura bovina adicionada', gorduraMagra: 100, gorduraNormal: 100, fonteMagra: 'Gordura de formulação', fonteNormal: 'Gordura de formulação' },
+  { id: 'toucinho_suino', nome: 'Toucinho suíno', gorduraMagra: 99, gorduraNormal: 99, fonteMagra: 'Gordura de formulação', fonteNormal: 'Gordura de formulação' },
+  { id: 'outro', nome: 'Outro corte ou matéria-prima', gorduraMagra: 0, gorduraNormal: 0, fonteMagra: 'Informe o teor analisado ou consultado', fonteNormal: 'Informe o teor analisado ou consultado' }
+];
 
 const TYPES = [
   { value: 'materia_prima_carnea', label: 'Matéria-prima cárnea', subtipos: [], exemplos: 'carne bovina, frango, pernil, toucinho, pele suína' },
@@ -705,6 +729,8 @@ let tempProductPhotos = [];
 let tempIngredientPhoto = '';
 let formulaDraftItems = [];
 let activeProductSlideId = 'visao';
+let activeTheoryLessonIndex = 0;
+let activeTheoryImageIndex = 0;
 let inlineEditTimer = null;
 let modalZIndex = 1000;
 
@@ -736,6 +762,7 @@ function setupEvents() {
     if (btn.dataset.openConfigModal === 'modalConfigInsumos') renderInsumos();
     if (btn.dataset.openConfigModal === 'modalConfigCronograma') renderScheduleConfig();
     if (btn.dataset.openConfigModal === 'modalConfigRegras') renderRulesConfig();
+    if (btn.dataset.openConfigModal === 'modalConfigConteudos') renderContentConfig();
   }));
   $$('[data-config-tab]').forEach(btn => btn.addEventListener('click', () => setConfigTab(btn.dataset.configTab)));
   $$('[data-close]').forEach(btn => btn.addEventListener('click', () => closeModal(btn.dataset.close)));
@@ -868,6 +895,7 @@ function normalizeDB(data) {
     f.baseCalculo = f.baseCalculo || defaultFormula?.baseCalculo || defaultFormulaBase(product);
     f.pesoReferencia = toNumber(f.pesoReferencia) || 1000;
     f.itens = Array.isArray(f.itens) ? f.itens : [];
+    f.blendComponentes = normalizeBlendComponents(f.blendComponentes, f, merged.insumos);
     if (String(f.observacoes || '').startsWith('Percentuais calculados sobre')) f.observacoes = '';
   });
   merged.legislacoes.forEach(law => {
@@ -902,6 +930,7 @@ function renderAll() {
   renderInsumos();
   renderCronograma();
   renderScheduleConfig();
+  renderContentConfig();
   renderRules();
   renderRulesConfig();
   renderAulas();
@@ -1158,7 +1187,7 @@ function productFormulaHTML(f) {
 
 function blendEditorHTML(f) {
   const state = formulaBlendState(f);
-  const label = state.items.length ? state.items.map(item => item.nome).join(' + ') : 'Massa cárnea';
+  const label = state.components.length ? state.components.map(item => item.cut.nome).join(' + ') : 'Massa cárnea';
   return `<div class="blend-editor">
     <div class="blend-switch-row">
       <div>
@@ -1170,17 +1199,15 @@ function blendEditorHTML(f) {
         <span></span>
       </label>
     </div>
-    ${state.useBlend && state.items.length ? `
-      <div class="blend-grid ${state.items.length > 2 ? 'multi' : ''}">
-        ${state.items.map(item => `
-          <div class="form-group">
-            <label>${escapeHTML(item.nome)} (g)</label>
-            <input type="number" min="0" step="1" value="${escapeAttr(fmtInput(item.grams))}" data-blend-item-formula="${escapeAttr(f.id)}" data-blend-item-insumo="${escapeAttr(item.insumoId)}">
-          </div>`).join('')}
-        <div class="blend-total">
-          <span>Blend</span>
-          <strong>${fmt(state.blendGrams)} g</strong>
+    ${state.useBlend ? `
+      <div class="blend-components">
+        ${state.components.map((component, index) => blendComponentHTML(f, component, index)).join('')}
+        <button type="button" class="secondary-btn compact blend-add" data-add-blend-component="${escapeAttr(f.id)}">Adicionar componente</button>
+        <div class="blend-summary">
+          <div><span>Peso do blend</span><strong>${fmt(state.blendGrams)} g</strong></div>
+          <div><span>Gordura estimada</span><strong>${fmt(state.fatPct)}%</strong></div>
         </div>
+        <a href="${MEAT_CUTS_SOURCE_URL}" class="blend-source" target="_blank" rel="noopener">Referência de composição: TACO/NEPA/UNICAMP. Valores editáveis conforme a matéria-prima utilizada.</a>
       </div>` : `
       <div class="blend-grid single">
         <div class="form-group">
@@ -1188,6 +1215,38 @@ function blendEditorHTML(f) {
           <input type="number" min="1" step="1" value="${escapeAttr(fmtInput(state.blendGrams || f.pesoReferencia))}" data-meat-total="${escapeAttr(f.id)}">
         </div>
       </div>`}
+  </div>`;
+}
+
+function blendComponentHTML(formula, component, index) {
+  const fat = blendComponentFat(component);
+  const source = blendComponentSource(component);
+  return `<div class="blend-component-row">
+    <div class="blend-component-main">
+      <div class="form-group">
+        <label>Matéria-prima</label>
+        <select data-blend-cut="${escapeAttr(formula.id)}" data-blend-index="${index}">
+          ${MEAT_CUTS.map(cut => `<option value="${escapeAttr(cut.id)}" ${cut.id === component.corteId ? 'selected' : ''}>${escapeHTML(cut.nome)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Perfil</label>
+        <select data-blend-profile="${escapeAttr(formula.id)}" data-blend-index="${index}">
+          <option value="magra" ${component.perfil === 'magra' ? 'selected' : ''}>Magra</option>
+          <option value="normal" ${component.perfil === 'normal' ? 'selected' : ''}>Normal</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Peso (g)</label>
+        <input type="number" min="0" step="1" value="${escapeAttr(fmtInput(component.gramas))}" data-blend-grams="${escapeAttr(formula.id)}" data-blend-index="${index}">
+      </div>
+      <div class="form-group">
+        <label>Gordura (%)</label>
+        <input type="number" min="0" max="100" step="0.1" value="${escapeAttr(fmtInput(fat))}" data-blend-fat="${escapeAttr(formula.id)}" data-blend-index="${index}">
+      </div>
+      <button type="button" class="tiny-btn blend-remove" data-remove-blend-component="${escapeAttr(formula.id)}" data-blend-index="${index}" title="Remover componente">×</button>
+    </div>
+    <small>${escapeHTML(source)}</small>
   </div>`;
 }
 
@@ -1238,10 +1297,15 @@ function bindProductWorkspace(root) {
   });
   root.querySelectorAll('[data-suggestion-formula]').forEach(btn => btn.addEventListener('click', () => updateFormulaItemPercent(btn.dataset.suggestionFormula, btn.dataset.suggestionInsumo, btn.dataset.suggestionValue)));
   root.querySelectorAll('[data-toggle-blend]').forEach(input => input.addEventListener('change', () => updateFormulaBlend(input.dataset.toggleBlend, { useBlend: input.checked })));
-  root.querySelectorAll('[data-blend-item-formula]').forEach(input => {
-    input.addEventListener('input', () => queueInlineFormulaEdit(() => updateFormulaBlendItem(input.dataset.blendItemFormula, input.dataset.blendItemInsumo, input.value, { silent: true })));
-    input.addEventListener('change', () => updateFormulaBlendItem(input.dataset.blendItemFormula, input.dataset.blendItemInsumo, input.value));
+  root.querySelectorAll('[data-blend-cut]').forEach(input => input.addEventListener('change', () => updateBlendComponent(input.dataset.blendCut, Number(input.dataset.blendIndex), { corteId: input.value, gorduraCustom: '' })));
+  root.querySelectorAll('[data-blend-profile]').forEach(input => input.addEventListener('change', () => updateBlendComponent(input.dataset.blendProfile, Number(input.dataset.blendIndex), { perfil: input.value, gorduraCustom: '' })));
+  root.querySelectorAll('[data-blend-grams]').forEach(input => {
+    input.addEventListener('input', () => queueInlineFormulaEdit(() => updateBlendComponent(input.dataset.blendGrams, Number(input.dataset.blendIndex), { gramas: input.value }, { silent: true })));
+    input.addEventListener('change', () => updateBlendComponent(input.dataset.blendGrams, Number(input.dataset.blendIndex), { gramas: input.value }));
   });
+  root.querySelectorAll('[data-blend-fat]').forEach(input => input.addEventListener('change', () => updateBlendComponent(input.dataset.blendFat, Number(input.dataset.blendIndex), { gorduraCustom: input.value })));
+  root.querySelectorAll('[data-add-blend-component]').forEach(btn => btn.addEventListener('click', () => addBlendComponent(btn.dataset.addBlendComponent)));
+  root.querySelectorAll('[data-remove-blend-component]').forEach(btn => btn.addEventListener('click', () => removeBlendComponent(btn.dataset.removeBlendComponent, Number(btn.dataset.blendIndex))));
   root.querySelectorAll('[data-meat-total]').forEach(input => {
     input.addEventListener('input', () => queueInlineFormulaEdit(() => updateFormulaBlend(input.dataset.meatTotal, { useBlend: false, blendGrams: input.value }, { silent: true })));
     input.addEventListener('change', () => updateFormulaBlend(input.dataset.meatTotal, { useBlend: false, blendGrams: input.value }));
@@ -1302,7 +1366,7 @@ function ingredientHTML(i) {
         <div class="item-subtitle">${escapeHTML(i.funcao || 'Sem função tecnológica cadastrada')}</div>
         <div class="item-meta">
           <span class="badge info">${escapeHTML(typeLabel(i.tipo))}</span>
-          ${i.subtipo ? `<span class="badge">${escapeHTML(i.subtipo)}</span>` : ''}
+          ${i.subtipo ? `<span class="badge">${escapeHTML(capitalizeFirst(i.subtipo))}</span>` : ''}
           ${i.proteinaNaoCarnea ? '<span class="badge warn">proteína agregada</span>' : ''}
           ${i.alergeno ? '<span class="badge danger">alérgeno</span>' : ''}
           <span class="badge">G ${fmt(i.gordura)}% · P ${fmt(i.proteina)}% · C ${fmt(i.carboidrato)}%</span>
@@ -1381,17 +1445,18 @@ function renderCronograma() {
   root.querySelectorAll('[data-open-category]').forEach(btn => btn.addEventListener('click', () => setPage('Aulas')));
 }
 
-function scheduleCardHTML(item) {
+function scheduleCardHTML(item, index) {
   const categoryChips = (item.categorias || []).map(id => {
     const category = PRODUCT_CATEGORIES.find(c => c.id === id);
     return category ? `<button type="button" class="link-chip soft" data-open-category="${escapeAttr(id)}">${escapeHTML(category.titulo)}</button>` : '';
   }).join('');
+  const date = scheduleDateParts(item.dia);
   return `<article class="calendar-card">
-    <div class="calendar-index">
-      <strong>${escapeHTML(item.aula)}</strong>
-      ${item.dia ? `<span>${escapeHTML(formatScheduleDate(item.dia))}</span>` : ''}
+    <div class="calendar-index ${item.dia ? 'has-date' : ''}">
+      ${item.dia ? `<span>${escapeHTML(date.weekday)}</span><strong>${escapeHTML(date.day)}</strong><b>${escapeHTML(date.monthYear)}</b>` : '<span>Data</span><strong>--</strong><b>A definir</b>'}
     </div>
     <div class="calendar-body">
+      <div class="calendar-lesson-label">${lessonNumberLabel(index)}</div>
       <h3>${escapeHTML(item.tema)}</h3>
       <p>${escapeHTML(item.foco)}</p>
       ${item.local ? `<div class="calendar-local">${escapeHTML(item.local)}</div>` : ''}
@@ -1464,7 +1529,7 @@ function normalizeSchedule(source = [], fillDefaults = true) {
 }
 
 function normalizeScheduleItem(saved = {}, fallback = {}, index = 0) {
-  return {
+  const item = {
     id: saved.id || fallback.id || uid('aula'),
     aula: saved.aula || fallback.aula || `Aula ${index + 1}`,
     dia: saved.dia || fallback.dia || '',
@@ -1474,6 +1539,19 @@ function normalizeScheduleItem(saved = {}, fallback = {}, index = 0) {
     observacao: saved.observacao || fallback.observacao || '',
     produtos: Array.isArray(saved.produtos) ? saved.produtos : clone(fallback.produtos || []),
     categorias: Array.isArray(saved.categorias) ? saved.categorias : clone(fallback.categorias || [])
+  };
+  item.conteudo = normalizeLessonContent(saved.conteudo || saved.conteudoTeorico, fallback.conteudo, item);
+  return item;
+}
+
+function normalizeLessonContent(source = {}, fallback = {}, lesson = {}) {
+  const content = source && typeof source === 'object' ? source : {};
+  const base = fallback && typeof fallback === 'object' ? fallback : {};
+  return {
+    modo: content.modo === 'slides' ? 'slides' : 'texto',
+    titulo: content.titulo || base.titulo || lesson.tema || '',
+    texto: content.texto || content.corpo || base.texto || '',
+    imagens: Array.isArray(content.imagens) ? content.imagens : clone(base.imagens || [])
   };
 }
 
@@ -1500,6 +1578,86 @@ function renderScheduleConfig() {
   root.querySelectorAll('[data-delete-schedule]').forEach(btn => btn.addEventListener('click', () => deleteScheduleLesson(Number(btn.dataset.deleteSchedule))));
 }
 
+function renderContentConfig() {
+  const root = $('#configConteudosList');
+  if (!root) return;
+  const schedule = getSchedule();
+  root.innerHTML = schedule.length ? schedule.map(contentConfigHTML).join('') : emptyHTML('Cadastre aulas no cronograma deste período antes de adicionar conteúdos.');
+  root.querySelectorAll('[data-content-field]').forEach(input => input.addEventListener('change', () => saveLessonContentField(input)));
+  root.querySelectorAll('[data-content-images]').forEach(input => input.addEventListener('change', () => addLessonContentImages(input)));
+  root.querySelectorAll('[data-remove-content-image]').forEach(btn => btn.addEventListener('click', () => removeLessonContentImage(Number(btn.dataset.contentIndex), Number(btn.dataset.removeContentImage))));
+}
+
+function contentConfigHTML(item, index) {
+  const content = normalizeLessonContent(item.conteudo, {}, item);
+  return `<article class="config-content-card">
+    <div class="config-schedule-head">
+      <strong>${lessonNumberLabel(index)} · ${escapeHTML(item.tema || 'Sem tema definido')}</strong>
+      ${item.dia ? `<span>${escapeHTML(formatScheduleDate(item.dia))}</span>` : ''}
+    </div>
+    <div class="form-grid two-cols">
+      <div class="form-group">
+        <label>Formato do conteúdo</label>
+        <select data-content-field="modo" data-content-index="${index}">
+          <option value="texto" ${content.modo === 'texto' ? 'selected' : ''}>Texto e teoria vinculada</option>
+          <option value="slides" ${content.modo === 'slides' ? 'selected' : ''}>Imagens de slides</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Título da aula teórica</label>
+        <input type="text" value="${escapeAttr(content.titulo)}" data-content-field="titulo" data-content-index="${index}">
+      </div>
+    </div>
+    <div class="form-group content-text-field ${content.modo === 'slides' ? 'is-muted' : ''}">
+      <label>Conteúdo em texto</label>
+      <textarea rows="5" data-content-field="texto" data-content-index="${index}" placeholder="Digite o conteúdo teórico da aula.">${escapeHTML(content.texto)}</textarea>
+    </div>
+    <div class="form-group">
+      <label>Imagens ou slides da aula</label>
+      <input type="file" accept="image/*" multiple data-content-images data-content-index="${index}">
+    </div>
+    <div class="content-image-preview">
+      ${content.imagens.map((src, imageIndex) => `<div class="photo-wrap content-photo-wrap">
+        <img class="content-photo-thumb" src="${escapeAttr(src)}" alt="Slide ${imageIndex + 1}">
+        <button type="button" class="photo-remove" data-remove-content-image="${imageIndex}" data-content-index="${index}" aria-label="Remover imagem">×</button>
+      </div>`).join('')}
+    </div>
+  </article>`;
+}
+
+function saveLessonContentField(input) {
+  const lesson = getSchedule()[Number(input.dataset.contentIndex)];
+  if (!lesson) return;
+  lesson.conteudo = normalizeLessonContent(lesson.conteudo, {}, lesson);
+  lesson.conteudo[input.dataset.contentField] = input.value;
+  saveDB();
+  renderAulas();
+  if (input.dataset.contentField === 'modo') renderContentConfig();
+  toast('Conteúdo atualizado.');
+}
+
+async function addLessonContentImages(input) {
+  const lesson = getSchedule()[Number(input.dataset.contentIndex)];
+  if (!lesson) return;
+  lesson.conteudo = normalizeLessonContent(lesson.conteudo, {}, lesson);
+  const files = Array.from(input.files || []).filter(file => file.type.startsWith('image/'));
+  for (const file of files) lesson.conteudo.imagens.push(await fileToDataURL(file, 1800, 0.88));
+  saveDB();
+  renderContentConfig();
+  renderAulas();
+  toast(files.length === 1 ? 'Slide adicionado.' : 'Slides adicionados.');
+}
+
+function removeLessonContentImage(lessonIndex, imageIndex) {
+  const lesson = getSchedule()[lessonIndex];
+  if (!lesson?.conteudo?.imagens?.[imageIndex]) return;
+  lesson.conteudo.imagens.splice(imageIndex, 1);
+  saveDB();
+  renderContentConfig();
+  renderAulas();
+  toast('Imagem removida.');
+}
+
 function renderPeriodControls(period) {
   const select = $('#periodoAtivoSelect');
   if (!select || !period) return;
@@ -1515,18 +1673,8 @@ function renderPeriodControls(period) {
 function scheduleConfigHTML(item, index) {
   return `<article class="config-schedule-card">
     <div class="config-schedule-head">
-      <strong>${escapeHTML(item.aula)}</strong>
+      <strong>${lessonNumberLabel(index)}</strong>
       <button type="button" class="tiny-btn" data-delete-schedule="${index}" title="Excluir aula">×</button>
-    </div>
-    <div class="form-grid two-cols">
-      <div class="form-group">
-        <label>Nome da aula</label>
-        <input type="text" value="${escapeAttr(item.aula || `Aula ${index + 1}`)}" data-schedule-field="aula" data-schedule-index="${index}">
-      </div>
-      <div class="form-group">
-        <label>Dia da aula</label>
-        <input type="date" value="${escapeAttr(item.dia || '')}" data-schedule-field="dia" data-schedule-index="${index}">
-      </div>
     </div>
     <div class="form-grid two-cols">
       <div class="form-group">
@@ -1534,9 +1682,13 @@ function scheduleConfigHTML(item, index) {
         <input type="text" value="${escapeAttr(item.tema || '')}" data-schedule-field="tema" data-schedule-index="${index}">
       </div>
       <div class="form-group">
-        <label>Local</label>
-        <input type="text" value="${escapeAttr(item.local || '')}" data-schedule-field="local" data-schedule-index="${index}" placeholder="Ex: Laboratório">
+        <label>Dia da aula</label>
+        <input type="date" value="${escapeAttr(item.dia || '')}" data-schedule-field="dia" data-schedule-index="${index}">
       </div>
+    </div>
+    <div class="form-group">
+      <label>Local</label>
+      <input type="text" value="${escapeAttr(item.local || '')}" data-schedule-field="local" data-schedule-index="${index}" placeholder="Ex: Laboratório">
     </div>
     <div class="form-group">
       <label>Foco da aula</label>
@@ -1639,6 +1791,8 @@ function saveScheduleField(input) {
   schedule[index][field] = input.value;
   saveDB();
   renderCronograma();
+  renderContentConfig();
+  renderAulas();
   toast('Cronograma atualizado.');
 }
 
@@ -1651,6 +1805,7 @@ function saveScheduleLinkField(input, field) {
   schedule[index][field] = $$(selector).filter(el => el.checked).map(el => el.dataset[attr]);
   saveDB();
   renderCronograma();
+  renderAulas();
   toast('Vínculo atualizado.');
 }
 
@@ -1660,7 +1815,9 @@ function setActivePeriod(id) {
   saveDB();
   renderActivePeriodLabel();
   renderScheduleConfig();
+  renderContentConfig();
   renderCronograma();
+  renderAulas();
 }
 
 function savePeriodField(field, value) {
@@ -1684,7 +1841,9 @@ function createPeriod(archiveCurrent = false) {
   saveDB();
   renderActivePeriodLabel();
   renderScheduleConfig();
+  renderContentConfig();
   renderCronograma();
+  renderAulas();
   toast(archiveCurrent ? 'Período arquivado e novo período criado.' : 'Novo período criado.');
 }
 
@@ -1695,16 +1854,20 @@ function archiveActivePeriod() {
   saveDB();
   renderActivePeriodLabel();
   renderScheduleConfig();
+  renderContentConfig();
   renderCronograma();
+  renderAulas();
   toast(period.arquivado ? 'Período arquivado.' : 'Período reativado.');
 }
 
 function addScheduleLesson() {
   const period = getActivePeriod();
   if (!period) return;
-  period.aulas.push(normalizeScheduleItem({ aula: `Aula ${period.aulas.length + 1}`, tema: '', foco: '', produtos: [], categorias: [] }, {}, period.aulas.length));
+  period.aulas.push(normalizeScheduleItem({ aula: lessonNumberLabel(period.aulas.length), tema: '', foco: '', produtos: [], categorias: [] }, {}, period.aulas.length));
   saveDB();
   renderScheduleConfig();
+  renderContentConfig();
+  renderAulas();
   renderCronograma();
   toast('Aula adicionada.');
 }
@@ -1716,6 +1879,8 @@ function deleteScheduleLesson(index) {
   period.aulas.splice(index, 1);
   saveDB();
   renderScheduleConfig();
+  renderContentConfig();
+  renderAulas();
   renderCronograma();
   toast('Aula excluída.');
 }
@@ -1736,6 +1901,21 @@ function formatScheduleDate(value) {
   return value;
 }
 
+function scheduleDateParts(value) {
+  if (!value) return { day: '--', weekday: 'Data', monthYear: 'A definir' };
+  const date = new Date(`${value}T12:00:00`);
+  if (Number.isNaN(date.getTime())) return { day: value, weekday: 'Data', monthYear: '' };
+  return {
+    day: String(date.getDate()).padStart(2, '0'),
+    weekday: capitalizeFirst(date.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '')),
+    monthYear: capitalizeFirst(date.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }).replace('.', ''))
+  };
+}
+
+function lessonNumberLabel(index) {
+  return `Aula ${String(Number(index) + 1).padStart(2, '0')}`;
+}
+
 function renderAulaSelect() {
   if (!$('#aulaProdutoSelect')) return;
   $('#aulaProdutoSelect').innerHTML = db.produtos.map(p => `<option value="${escapeAttr(p.id)}">${escapeHTML(p.nome)}</option>`).join('');
@@ -1743,17 +1923,86 @@ function renderAulaSelect() {
 }
 
 function renderAulas() {
-  $('#aulaContent').innerHTML = `
-    <div class="theory-grid">
-      ${THEORY_LESSONS.map(theoryLessonHTML).join('')}
+  const root = $('#aulaContent');
+  const schedule = getSchedule();
+  if (!schedule.length) {
+    root.innerHTML = emptyHTML('Nenhuma aula cadastrada no período ativo.');
+    return;
+  }
+  activeTheoryLessonIndex = Math.max(0, Math.min(schedule.length - 1, activeTheoryLessonIndex));
+  root.innerHTML = `
+    <div class="lesson-tabs" role="tablist">
+      ${schedule.map((item, index) => `<button type="button" class="lesson-tab ${index === activeTheoryLessonIndex ? 'active' : ''}" data-theory-lesson="${index}">${lessonNumberLabel(index)}</button>`).join('')}
+    </div>
+    <div class="theory-lesson-list">
+      ${schedule.map((item, index) => theoryScheduleLessonHTML(item, index)).join('')}
     </div>
     <div class="notice-card">
       <strong>Uso didático.</strong> As referências legais ficam aqui como apoio às aulas. Para registro, rotulagem oficial ou inspeção, confira sempre a norma vigente no órgão competente.
     </div>
-    <div class="section-header"><div><h2>Referências legais</h2><p>Normas úteis para conectar teoria, formulação e prática.</p></div></div>
+    <div class="section-header"><div><h2>Referências legais</h2></div></div>
     <div class="stack-list">${db.legislacoes.map(lawCardHTML).join('')}</div>`;
-  bindInternalLinks($('#aulaContent'));
-  bindLawLinks($('#aulaContent'));
+  root.querySelectorAll('[data-theory-lesson]').forEach(btn => btn.addEventListener('click', () => {
+    activeTheoryLessonIndex = Number(btn.dataset.theoryLesson);
+    activeTheoryImageIndex = 0;
+    renderAulas();
+  }));
+  bindTheorySlides(root);
+  bindInternalLinks(root);
+  bindLawLinks(root);
+}
+
+function theoryScheduleLessonHTML(item, index) {
+  const content = normalizeLessonContent(item.conteudo, {}, item);
+  const categories = (item.categorias || []).map(id => PRODUCT_CATEGORIES.find(category => category.id === id)).filter(Boolean);
+  const slides = content.imagens || [];
+  const showSlides = content.modo === 'slides' && slides.length;
+  return `<article class="theory-lesson-panel ${index === activeTheoryLessonIndex ? 'active' : ''}" data-theory-panel="${index}">
+    <header class="theory-lesson-header">
+      <div>
+        <span>${lessonNumberLabel(index)}${item.dia ? ` · ${escapeHTML(formatScheduleDate(item.dia))}` : ''}</span>
+        <h3>${escapeHTML(content.titulo || item.tema || lessonNumberLabel(index))}</h3>
+      </div>
+    </header>
+    ${showSlides ? theorySlidesHTML(slides) : `
+      ${content.texto ? `<div class="theory-rich-text">${escapeHTML(content.texto).replace(/\n/g, '<br>')}</div>` : ''}
+      <div class="theory-grid lesson-theory-grid">
+        ${categories.map(theoryLessonHTML).join('') || (!content.texto ? '<div class="notice-card slim">Nenhum conteúdo teórico vinculado a esta aula.</div>' : '')}
+      </div>`}
+    <div class="lesson-links">
+      ${(item.produtos || []).length ? `<div class="linked-block"><div class="linked-title">Roteiros desta aula</div>${linkedProductsHTML(item.produtos)}</div>` : ''}
+      ${categories.length ? `<div class="linked-block"><div class="linked-title">Categorias relacionadas</div><div class="link-chip-row">${categories.map(category => `<span class="link-chip static">${escapeHTML(category.titulo)}</span>`).join('')}</div></div>` : ''}
+    </div>
+  </article>`;
+}
+
+function theorySlidesHTML(images) {
+  const index = Math.max(0, Math.min(images.length - 1, activeTheoryImageIndex));
+  activeTheoryImageIndex = index;
+  return `<div class="theory-slides" data-theory-slides>
+    <div class="theory-slide-frame">
+      ${images.map((src, imageIndex) => `<img src="${escapeAttr(src)}" alt="Slide ${imageIndex + 1}" class="${imageIndex === index ? 'active' : ''}" data-theory-image="${imageIndex}">`).join('')}
+    </div>
+    <div class="theory-slide-controls">
+      <button type="button" class="secondary-btn compact" data-theory-slide-prev>Voltar</button>
+      <strong data-theory-slide-position>${index + 1} / ${images.length}</strong>
+      <button type="button" class="primary-btn compact" data-theory-slide-next>Avançar</button>
+    </div>
+  </div>`;
+}
+
+function bindTheorySlides(root) {
+  const wrap = root.querySelector('[data-theory-slides]');
+  if (!wrap) return;
+  const images = Array.from(wrap.querySelectorAll('[data-theory-image]'));
+  const position = wrap.querySelector('[data-theory-slide-position]');
+  const show = next => {
+    activeTheoryImageIndex = Math.max(0, Math.min(images.length - 1, next));
+    images.forEach((image, index) => image.classList.toggle('active', index === activeTheoryImageIndex));
+    if (position) position.textContent = `${activeTheoryImageIndex + 1} / ${images.length}`;
+  };
+  wrap.querySelector('[data-theory-slide-prev]')?.addEventListener('click', () => show(activeTheoryImageIndex - 1));
+  wrap.querySelector('[data-theory-slide-next]')?.addEventListener('click', () => show(activeTheoryImageIndex + 1));
 }
 
 function renderLegislacao() {
@@ -1933,7 +2182,7 @@ function populateSubtypeOptions(type, selected = '') {
   const select = $('#insumoSubtipo');
   if (!select) return;
   const options = ingredientSubtypes(type);
-  select.innerHTML = [`<option value="">Sem subdivisão</option>`, ...options.map(value => `<option value="${escapeAttr(value)}">${escapeHTML(value)}</option>`)].join('');
+  select.innerHTML = [`<option value="">Sem subdivisão</option>`, ...options.map(value => `<option value="${escapeAttr(value)}">${escapeHTML(capitalizeFirst(value))}</option>`)].join('');
   if (selected && options.includes(selected)) select.value = selected;
 }
 
@@ -1947,7 +2196,6 @@ function openIngredientModal(id = null) {
   const i = id ? findIngredient(id) : null;
   $('#insumoId').value = i?.id || '';
   $('#insumoNome').value = i?.nome || '';
-  $('#insumoCategoria').value = i?.categoria || '';
   $('#insumoTipo').value = i ? normalizeIngredientType(i) : TYPES[0].value;
   populateSubtypeOptions($('#insumoTipo').value, i?.subtipo || '');
   $('#insumoFuncao').value = i?.funcao || '';
@@ -1994,7 +2242,7 @@ function openIngredientView(id = null) {
       ${i.foto ? `<img class="ingredient-view-photo" src="${escapeAttr(i.foto)}" alt="">` : ''}
       <div class="item-meta">
         <span class="badge info">${escapeHTML(typeLabel(i.tipo))}</span>
-        ${i.subtipo ? `<span class="badge">${escapeHTML(i.subtipo)}</span>` : ''}
+        ${i.subtipo ? `<span class="badge">${escapeHTML(capitalizeFirst(i.subtipo))}</span>` : ''}
         ${i.alergeno ? '<span class="badge danger">alérgeno</span>' : ''}
         ${i.proteinaNaoCarnea ? '<span class="badge warn">proteína agregada</span>' : ''}
       </div>
@@ -2017,7 +2265,7 @@ function saveIngredientFromModal() {
   const ingredient = {
     id,
     nome: $('#insumoNome').value.trim(),
-    categoria: $('#insumoCategoria').value.trim(),
+    categoria: typeLabel($('#insumoTipo').value),
     tipo: $('#insumoTipo').value,
     subtipo: $('#insumoSubtipo').value,
     funcao: $('#insumoFuncao').value.trim(),
@@ -2110,6 +2358,7 @@ function renderFormulaSummary() {
 }
 
 function getFormulaFromModal(requireName = true) {
+  const existing = findFormula($('#formulaId').value);
   return {
     id: $('#formulaId').value || uid('form'),
     produtoId: $('#formulaProduto').value,
@@ -2118,7 +2367,9 @@ function getFormulaFromModal(requireName = true) {
     baseCalculo: $('#formulaBaseCalculo').value || defaultFormulaBase(findProduct($('#formulaProduto').value)),
     rendimento: numberOrBlank($('#formulaRendimento').value),
     itens: formulaDraftItems.map(item => ({ insumoId: item.insumoId, percentual: toNumber(item.percentual) })).filter(item => item.insumoId),
-    observacoes: $('#formulaObs').value.trim()
+    observacoes: $('#formulaObs').value.trim(),
+    usarBlend: existing?.usarBlend !== false,
+    blendComponentes: clone(existing?.blendComponentes || [])
   };
 }
 
@@ -2203,29 +2454,44 @@ function updateFormulaBlend(formulaId, changes = {}, options = {}) {
   }
 
   formula.usarBlend = true;
-  if (!formulaBlendSourceItems(formula).length) ensureFormulaItem(formula, 'ing_carne_bovina_magra').percentual = 100;
+  if (!formula.blendComponentes?.length) formula.blendComponentes = normalizeBlendComponents([], formula);
   saveInlineFormulaEdit('Blend atualizado.', options);
 }
 
-function updateFormulaBlendItem(formulaId, insumoId, grams, options = {}) {
+function updateBlendComponent(formulaId, index, changes = {}, options = {}) {
   const formula = findFormula(formulaId);
-  if (!formula || !insumoId) return;
-  const state = formulaBlendState(formula);
-  const gramsById = {};
-  state.items.forEach(item => { gramsById[item.insumoId] = item.insumoId === insumoId ? Math.max(0, toNumber(grams)) : Math.max(0, toNumber(item.grams)); });
-  if (!Object.prototype.hasOwnProperty.call(gramsById, insumoId)) gramsById[insumoId] = Math.max(0, toNumber(grams));
-  const blendTotal = Object.values(gramsById).reduce((sum, value) => sum + value, 0);
-  if (blendTotal <= 0) return;
-  const baseMode = formulaBaseMode(formula);
-  const nonBlendPct = (formula.itens || []).reduce((sum, item) => isBlendItem(item.insumoId, formula) ? sum : sum + toNumber(item.percentual), 0);
-  const finalBase = baseMode === 'produto_final' && nonBlendPct < 99.99 ? blendTotal / ((100 - nonBlendPct) / 100) : blendTotal;
+  if (!formula) return;
+  formula.blendComponentes = normalizeBlendComponents(formula.blendComponentes, formula);
+  const component = formula.blendComponentes[index];
+  if (!component) return;
+  if (Object.prototype.hasOwnProperty.call(changes, 'corteId')) component.corteId = MEAT_CUTS.some(cut => cut.id === changes.corteId) ? changes.corteId : 'outro';
+  if (Object.prototype.hasOwnProperty.call(changes, 'perfil')) component.perfil = changes.perfil === 'normal' ? 'normal' : 'magra';
+  if (Object.prototype.hasOwnProperty.call(changes, 'gramas')) component.gramas = Math.max(0, toNumber(changes.gramas));
+  if (Object.prototype.hasOwnProperty.call(changes, 'gorduraCustom')) component.gorduraCustom = changes.gorduraCustom === '' ? '' : Math.max(0, Math.min(100, toNumber(changes.gorduraCustom)));
   formula.usarBlend = true;
-  formula.pesoReferencia = Math.max(1, finalBase);
-  Object.entries(gramsById).forEach(([id, value]) => {
-    const item = ensureFormulaItem(formula, id);
-    item.percentual = value / formula.pesoReferencia * 100;
-  });
+  const total = formula.blendComponentes.reduce((sum, item) => sum + toNumber(item.gramas), 0);
+  if (total > 0) setFormulaWeightFromBlendTotal(formula, total);
   saveInlineFormulaEdit('Blend atualizado.', options);
+}
+
+function addBlendComponent(formulaId) {
+  const formula = findFormula(formulaId);
+  if (!formula) return;
+  formula.blendComponentes = normalizeBlendComponents(formula.blendComponentes, formula);
+  formula.blendComponentes.push({ id: uid('blend'), corteId: 'acem', perfil: 'magra', gramas: 0, gorduraCustom: '' });
+  formula.usarBlend = true;
+  saveInlineFormulaEdit('Componente adicionado.');
+}
+
+function removeBlendComponent(formulaId, index) {
+  const formula = findFormula(formulaId);
+  if (!formula) return;
+  formula.blendComponentes = normalizeBlendComponents(formula.blendComponentes, formula);
+  if (formula.blendComponentes.length <= 1) return toast('O blend precisa manter ao menos um componente.');
+  formula.blendComponentes.splice(index, 1);
+  const total = formula.blendComponentes.reduce((sum, item) => sum + toNumber(item.gramas), 0);
+  if (total > 0) setFormulaWeightFromBlendTotal(formula, total);
+  saveInlineFormulaEdit('Componente removido.');
 }
 
 function queueInlineFormulaEdit(callback) {
@@ -2252,8 +2518,8 @@ function ensureFormulaItem(formula, insumoId) {
   return item;
 }
 
-function formulaBlendSourceItems(formula) {
-  return (formula?.itens || []).filter(item => isMeatIngredient(findIngredient(item.insumoId)));
+function formulaBlendSourceItems(formula, ingredients = db.insumos) {
+  return (formula?.itens || []).filter(item => isMeatIngredient((ingredients || []).find(ingredient => ingredient.id === item.insumoId)));
 }
 
 function setFormulaWeightFromBlendTotal(formula, blendTotal) {
@@ -2272,12 +2538,54 @@ function isBlendItem(insumoId, formula) {
 
 function formulaBlendState(formula) {
   const useBlend = formula.usarBlend !== false;
-  const items = formulaBlendSourceItems(formula).map(item => {
-    const ingredient = findIngredient(item.insumoId);
-    return { insumoId: item.insumoId, nome: ingredient?.nome || 'Matéria-prima cárnea', grams: formulaItemGrams(formula, item) };
+  const components = normalizeBlendComponents(formula.blendComponentes, formula).map(component => ({
+    ...component,
+    cut: MEAT_CUTS.find(cut => cut.id === component.corteId) || MEAT_CUTS[MEAT_CUTS.length - 1]
+  }));
+  const blendGrams = components.reduce((sum, item) => sum + toNumber(item.gramas), 0) || toNumber(formula.pesoReferencia);
+  const fatGrams = components.reduce((sum, item) => sum + toNumber(item.gramas) * blendComponentFat(item) / 100, 0);
+  return { useBlend, components, blendGrams, fatGrams, fatPct: blendGrams ? fatGrams / blendGrams * 100 : 0 };
+}
+
+function normalizeBlendComponents(source, formula, ingredients = db.insumos) {
+  if (Array.isArray(source) && source.length) {
+    return source.map(component => ({
+      id: component.id || uid('blend'),
+      corteId: MEAT_CUTS.some(cut => cut.id === component.corteId) ? component.corteId : 'outro',
+      perfil: component.perfil === 'normal' ? 'normal' : 'magra',
+      gramas: Math.max(0, toNumber(component.gramas)),
+      gorduraCustom: component.gorduraCustom === '' || component.gorduraCustom === undefined ? '' : Math.max(0, Math.min(100, toNumber(component.gorduraCustom)))
+    }));
+  }
+  const inferred = formulaBlendSourceItems(formula, ingredients).map(item => {
+    const ingredient = (ingredients || []).find(row => row.id === item.insumoId);
+    const mapping = {
+      ing_carne_bovina_magra: 'acem',
+      ing_gordura_bovina: 'gordura_bovina',
+      ing_pernil_suino: 'pernil_suino',
+      ing_toucinho_suino: 'toucinho_suino'
+    };
+    return {
+      id: uid('blend'),
+      corteId: mapping[item.insumoId] || 'outro',
+      perfil: 'magra',
+      gramas: formulaItemGrams(formula, item),
+      gorduraCustom: mapping[item.insumoId] ? '' : toNumber(ingredient?.gordura)
+    };
   });
-  const blendGrams = items.reduce((sum, item) => sum + toNumber(item.grams), 0) || toNumber(formula.pesoReferencia);
-  return { useBlend, items, blendGrams };
+  return inferred.length ? inferred : [{ id: uid('blend'), corteId: 'acem', perfil: 'magra', gramas: toNumber(formula?.pesoReferencia) || 1000, gorduraCustom: '' }];
+}
+
+function blendComponentFat(component) {
+  if (component?.gorduraCustom !== '' && component?.gorduraCustom !== undefined) return Math.max(0, Math.min(100, toNumber(component.gorduraCustom)));
+  const cut = MEAT_CUTS.find(item => item.id === component?.corteId) || MEAT_CUTS[MEAT_CUTS.length - 1];
+  return component?.perfil === 'normal' ? cut.gorduraNormal : cut.gorduraMagra;
+}
+
+function blendComponentSource(component) {
+  const cut = MEAT_CUTS.find(item => item.id === component?.corteId) || MEAT_CUTS[MEAT_CUTS.length - 1];
+  if (component?.gorduraCustom !== '' && component?.gorduraCustom !== undefined) return 'Teor de gordura ajustado pelo usuário para esta matéria-prima.';
+  return component?.perfil === 'normal' ? cut.fonteNormal : cut.fonteMagra;
 }
 
 function ingredientSuggestion(ingredient) {
@@ -2389,6 +2697,8 @@ function analyzeFormula(formula) {
   let carbGrams = 0;
   let pncGrams = 0;
   let costTotal = 0;
+  const blendState = formulaBlendState(formula);
+  const useDetailedBlend = blendState.useBlend && blendState.components.length > 0;
   formula.itens.forEach(item => {
     const ing = findIngredient(item.insumoId);
     const pct = toNumber(item.percentual);
@@ -2397,12 +2707,13 @@ function analyzeFormula(formula) {
     totalPct += pct;
     if (isMeatIngredient(ing)) meatBasePct += pct;
     finalWeight += grams;
-    fatGrams += grams * toNumber(ing.gordura) / 100;
+    if (!(useDetailedBlend && isMeatIngredient(ing))) fatGrams += grams * toNumber(ing.gordura) / 100;
     proteinGrams += grams * toNumber(ing.proteina) / 100;
     carbGrams += grams * toNumber(ing.carboidrato) / 100;
     if (ing.proteinaNaoCarnea || isFunctionalProtein(ing)) pncGrams += grams;
     costTotal += (grams / 1000) * toNumber(ing.custo);
   });
+  if (useDetailedBlend) fatGrams += blendState.fatGrams;
   const compositionWeight = finalWeight || weight;
   const fatPct = compositionWeight ? fatGrams / compositionWeight * 100 : 0;
   const proteinPct = compositionWeight ? proteinGrams / compositionWeight * 100 : 0;
@@ -2466,6 +2777,15 @@ function buildReport(formula) {
   lines.push(`Massa final estimada: ${fmt(analysis.finalWeight)} g`);
   if (formula.rendimento !== '') lines.push(`Rendimento esperado: ${fmt(formula.rendimento)}%`);
   lines.push('');
+  const blend = formulaBlendState(formula);
+  if (blend.useBlend && blend.components.length) {
+    lines.push('Blend de matérias-primas:');
+    blend.components.forEach(component => {
+      lines.push(`- ${component.cut.nome} (${component.perfil === 'normal' ? 'normal' : 'magra/aparada'}): ${fmt(component.gramas)} g, gordura de referência ${fmt(blendComponentFat(component))}%`);
+    });
+    lines.push(`- Gordura estimada do blend: ${fmt(blend.fatPct)}%`);
+    lines.push('');
+  }
   lines.push('Formulação:');
   formula.itens.forEach(item => {
     const ing = findIngredient(item.insumoId);
@@ -2572,6 +2892,13 @@ function openModal(id) {
   if (!modal) return;
   modal.style.zIndex = String(++modalZIndex);
   modal.classList.add('show');
+  modal.scrollTop = 0;
+  const panel = modal.querySelector('.modal');
+  if (panel) panel.scrollTop = 0;
+  requestAnimationFrame(() => {
+    modal.scrollTop = 0;
+    if (panel) panel.scrollTop = 0;
+  });
 }
 function closeModal(id) { $('#' + id)?.classList.remove('show'); }
 function findProduct(id) { return db.produtos.find(p => p.id === id); }
@@ -2594,6 +2921,7 @@ function setMultiSelectValues(select, values) {
 function cssEscape(value) { return window.CSS?.escape ? CSS.escape(value) : String(value).replace(/["\\]/g, '\\$&'); }
 function uid(prefix) { return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`; }
 function capitalize(text) { return String(text || '').charAt(0).toUpperCase() + String(text || '').slice(1); }
+function capitalizeFirst(text) { return capitalize(String(text || '').trim()); }
 function ingredientSubtypes(type) { return TYPES.find(t => t.value === type)?.subtipos || []; }
 function normalizeIngredientType(ingredient = {}) {
   const id = ingredient.id || '';

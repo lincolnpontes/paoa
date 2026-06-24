@@ -9,7 +9,7 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon.png" />
   <link rel="apple-touch-icon" href="icon.png" />
-  <link rel="stylesheet" href="style.css?v=17" />
+  <link rel="stylesheet" href="style.css?v=20" />
   <title>Processamento de Alimentos de Origem Animal</title>
 </head>
 <body>
@@ -165,10 +165,7 @@
       <div class="modal-title">Insumo</div>
       <input type="hidden" id="insumoId" />
       <div class="form-group"><label>Nome</label><input id="insumoNome" type="text" placeholder="Ex: Sal" /></div>
-      <div class="form-grid two-cols">
-        <div class="form-group"><label>Categoria</label><input id="insumoCategoria" type="text" placeholder="Ex: Condimento" /></div>
-        <div class="form-group"><label>Categoria principal</label><select id="insumoTipo"></select></div>
-      </div>
+      <div class="form-group"><label>Categoria</label><select id="insumoTipo"></select></div>
       <div class="form-group"><label>Subdivisão</label><select id="insumoSubtipo"></select></div>
       <div class="form-group"><label>Função tecnológica</label><textarea id="insumoFuncao" rows="4" placeholder="Diga para que serve na formulação"></textarea></div>
       <div class="form-group"><label>Observação didática</label><textarea id="insumoObs" rows="3"></textarea></div>
@@ -259,8 +256,9 @@
       <button type="button" class="modal-close" data-close="modalConfig" aria-label="Fechar">×</button>
       <div class="modal-title">Configurações</div>
       <div class="config-menu-grid">
-        <button type="button" class="config-menu-card" data-open-config-modal="modalConfigProdutos">Produtos</button>
-        <button type="button" class="config-menu-card" data-open-config-modal="modalConfigInsumos">Insumos</button>
+        <button type="button" class="config-menu-card" data-open-config-modal="modalConfigProdutos">Gerenciar produtos</button>
+        <button type="button" class="config-menu-card" data-open-config-modal="modalConfigInsumos">Gerenciar insumos</button>
+        <button type="button" class="config-menu-card" data-open-config-modal="modalConfigConteudos">Gerenciar conteúdos</button>
         <button type="button" class="config-menu-card" data-open-config-modal="modalConfigCronograma">Cronograma</button>
         <button type="button" class="config-menu-card" data-open-config-modal="modalConfigRegras">Regras do laboratório</button>
         <button type="button" class="config-menu-card" data-open-config-modal="modalConfigAvancadas">Configurações avançadas</button>
@@ -271,7 +269,7 @@
   <div class="modal-overlay" id="modalConfigProdutos">
     <div class="modal large-modal">
       <button type="button" class="modal-close" data-close="modalConfigProdutos" aria-label="Fechar">×</button>
-      <div class="modal-title">Produtos</div>
+      <div class="modal-title">Gerenciar produtos</div>
         <div class="toolbar in-modal">
           <input id="searchConfigProdutos" type="search" placeholder="Buscar produto..." />
           <button class="primary-btn compact" data-action="open-product">Novo produto</button>
@@ -283,7 +281,7 @@
   <div class="modal-overlay" id="modalConfigInsumos">
     <div class="modal large-modal">
       <button type="button" class="modal-close" data-close="modalConfigInsumos" aria-label="Fechar">×</button>
-      <div class="modal-title">Insumos</div>
+      <div class="modal-title">Gerenciar insumos</div>
         <div class="toolbar in-modal">
           <input id="searchInsumos" type="search" placeholder="Buscar insumo ou função..." />
           <button class="primary-btn compact" data-action="open-ingredient">Novo insumo</button>
@@ -322,6 +320,15 @@
     </div>
   </div>
 
+  <div class="modal-overlay" id="modalConfigConteudos">
+    <div class="modal large-modal">
+      <button type="button" class="modal-close" data-close="modalConfigConteudos" aria-label="Fechar">×</button>
+      <div class="modal-title">Gerenciar conteúdos</div>
+      <p class="muted content-config-intro">Cada conteúdo fica ligado à aula correspondente do período ativo. Use texto ou imagens quando quiser apresentar slides.</p>
+      <div id="configConteudosList" class="config-content-list"></div>
+    </div>
+  </div>
+
   <div class="modal-overlay" id="modalConfigRegras">
     <div class="modal large-modal">
       <button type="button" class="modal-close" data-close="modalConfigRegras" aria-label="Fechar">×</button>
@@ -349,6 +356,6 @@
   </div>
 
   <div id="toast" class="toast"></div>
-  <script src="app.js?v=17"></script>
+  <script src="app.js?v=20"></script>
 </body>
 </html>

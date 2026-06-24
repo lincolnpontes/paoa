@@ -6,12 +6,16 @@ App didático em formato PWA para a disciplina **Processamento de Alimentos de O
 
 - Organiza a página inicial como um sumário visual de produtos.
 - Cadastra produtos, roteiros de aula, fluxogramas, pontos de controle e perguntas de discussão.
-- Mantém o cadastro de insumos dentro de Configurações.
+- Mantém produtos e insumos protegidos dentro de Configurações.
+- Organiza os insumos por categoria principal e subdivisão.
 - Inclui cronograma de aulas no menu principal.
+- Permite criar e arquivar períodos, definir datas e vincular produtos e teoria a cada aula.
+- Exibe as aulas teóricas por encontro e aceita conteúdo em texto ou imagens de slides.
 - Monta formulações em porcentagem e calcula automaticamente os gramas para qualquer peso de lote.
 - Diferencia percentuais sobre massa cárnea/carne base e percentuais sobre 100% do produto final.
 - Permite abrir um produto como um roteiro em slides, com sumário interno e edição das formulações no painel.
-- Traz uma biblioteca de aulas teóricas por categoria de produto, com links internos para roteiros e insumos citados.
+- Traz conteúdo teórico conectado ao cronograma, com links internos para roteiros e insumos citados.
+- Monta blends com vários cortes ou matérias-primas, peso individual e estimativa de gordura baseada em referências de composição.
 - Estima gordura, proteína, carboidratos, proteína agregada e custo do lote.
 - Exibe alertas técnicos com base nos parâmetros cadastrados para cada produto.
 - Guarda uma ou mais fotos por produto.
@@ -45,7 +49,7 @@ http://localhost:8000
 Neste workspace, o servidor de teste foi iniciado em:
 
 ```text
-http://127.0.0.1:8767/?v=17
+http://127.0.0.1:8767/?v=20
 ```
 
 ## Arquivos principais
