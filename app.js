@@ -1,8 +1,10 @@
 'use strict';
 
 const STORAGE_KEY = 'paoa_lab_v1';
-const APP_VERSION = '1.9.0';
+const APP_VERSION = '2.0.0';
 const MEAT_CUTS_SOURCE_URL = 'https://nepa.unicamp.br/publicacoes/tabela-taco-pdf/';
+const MEDIA_DB_NAME = 'paoa_media_v1';
+const MEDIA_STORE_NAME = 'theory_slides';
 
 const MEAT_CUTS = [
   { id: 'acem', nome: 'Acém bovino', comGordura: 5.9, semGordura: 6.1, fonteCom: 'TACO: acém moído, cru', fonteSem: 'TACO: acém sem gordura, cru' },
@@ -739,14 +741,21 @@ let activeTheoryImageIndex = 0;
 let inlineEditTimer = null;
 let modalZIndex = 1000;
 let pendingConfirmationAction = null;
+let pendingConfirmationText = '';
+let productVisibilityDraft = false;
+let activeTheorySlideController = null;
+const expandedIntensityItems = new Set();
+const theoryImageCache = new Map();
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => Array.from(document.querySelectorAll(selector));
 
 window.addEventListener('DOMContentLoaded', init);
 
-function init() {
+async function init() {
   setTimeout(() => $('#splashScreen')?.classList.add('hide'), 450);
+  await hydrateTheoryImageCache();
+  await migrateEmbeddedTheoryImages();
   setupEvents();
   populateTypeOptions();
   populateProductCategoryOptions();
@@ -783,6 +792,7 @@ function setupEvents() {
   $('#searchInsumos')?.addEventListener('input', renderInsumos);
   $('#btnSalvarProduto')?.addEventListener('click', saveProductFromModal);
   $('#btnExcluirProduto')?.addEventListener('click', deleteProductFromModal);
+  $('#btnToggleProdutoVisibilidade')?.addEventListener('click', toggleProductVisibilityDraft);
   $('#produtoFotos')?.addEventListener('change', handleProductPhotos);
   $('#btnSalvarInsumo')?.addEventListener('click', saveIngredientFromModal);
   $('#btnExcluirInsumo')?.addEventListener('click', deleteIngredientFromModal);
@@ -821,6 +831,8 @@ function setupEvents() {
   $('#btnExcluirConteudo')?.addEventListener('click', deleteTheoryContent);
   $('#btnCancelarConfirmacao')?.addEventListener('click', closeConfirmation);
   $('#btnConfirmarAcao')?.addEventListener('click', confirmPendingAction);
+  $('#confirmacaoTexto')?.addEventListener('input', updateConfirmationButtonState);
+  document.addEventListener('keydown', handleTheoryPresentationKey);
   $('#btnAddRule')?.addEventListener('click', addLabRule);
   $('#btnExportar')?.addEventListener('click', exportData);
   $('#btnImportar')?.addEventListener('click', () => $('#fileImportar').click());
@@ -890,6 +902,7 @@ function normalizeDB(data) {
     p.pontos = Array.isArray(p.pontos) ? p.pontos : linesFrom(p.pontos);
     p.equipamentos = Array.isArray(p.equipamentos) ? p.equipamentos : (defaultProduct?.equipamentos ? clone(defaultProduct.equipamentos) : linesFrom(p.equipamentos));
     p.perguntas = Array.isArray(p.perguntas) ? p.perguntas : linesFrom(p.perguntas);
+    p.oculto = Boolean(p.oculto);
   });
   merged.insumos.forEach(i => {
     if (i.id === 'ing_pimenta_reino' && ['Pimenta-do-reino', 'Pimenta do reino'].includes(i.nome)) i.nome = 'Pimenta-do-reino preta';
@@ -998,7 +1011,7 @@ function renderActivePeriodLabel() {
 function renderHomeProducts() {
   const root = $('#homeProductCards');
   if (!root) return;
-  root.innerHTML = db.produtos.map(productCardHTML).join('') || emptyHTML('Nenhum produto cadastrado.');
+  root.innerHTML = visibleProducts().map(productCardHTML).join('') || emptyHTML('Nenhum produto cadastrado.');
   root.querySelectorAll('[data-product-card]').forEach(card => card.addEventListener('click', () => {
     openProductWorkspace(card.dataset.productCard);
   }));
@@ -1023,18 +1036,19 @@ function renderProdutos() {
   const overview = $('#produtosOverview');
   const workspace = $('#produtoWorkspace');
   const selected = activeProductId ? findProduct(activeProductId) : null;
-  if (selected && !($('#searchProdutos')?.value || '').trim()) {
+  const visibleSelected = selected && !selected.oculto ? selected : null;
+  if (visibleSelected && !($('#searchProdutos')?.value || '').trim()) {
     overview.hidden = true;
     workspace.hidden = false;
-    workspace.innerHTML = productWorkspaceHTML(selected);
+    workspace.innerHTML = productWorkspaceHTML(visibleSelected);
     bindProductWorkspace(workspace);
     return;
   }
   overview.hidden = false;
   workspace.hidden = true;
-  if (activeProductId && !selected) activeProductId = '';
+  if (activeProductId && (!selected || selected.oculto)) activeProductId = '';
   const term = ($('#searchProdutos')?.value || '').toLowerCase().trim();
-  const produtos = db.produtos.filter(p => [p.nome, p.categoria, p.especie, p.descricao].join(' ').toLowerCase().includes(term));
+  const produtos = visibleProducts().filter(p => [p.nome, p.categoria, p.especie, p.descricao].join(' ').toLowerCase().includes(term));
   $('#produtosList').innerHTML = produtos.map(productListHTML).join('') || emptyHTML('Nenhum produto encontrado.');
   $('#produtosList').querySelectorAll('[data-open-product]').forEach(el => el.addEventListener('click', () => openProductWorkspace(el.dataset.openProduct)));
 }
@@ -1067,12 +1081,14 @@ function productConfigHTML(p) {
       <div>
         <div class="item-title">${escapeHTML(p.nome)}</div>
         <div class="item-subtitle">${escapeHTML(productCategoryLabel(p))}</div>
+        ${p.oculto ? '<div class="item-meta"><span class="badge warn">Oculto para alunos</span></div>' : ''}
       </div>
     </button>`;
 }
 
 function openProductWorkspace(id) {
-  if (!findProduct(id)) return;
+  const product = findProduct(id);
+  if (!product || product.oculto) return;
   activeProductId = id;
   activeProductSlideId = 'visao';
   db.configs.produtoSelecionado = id;
@@ -1111,8 +1127,14 @@ function productWorkspaceHTML(p) {
     <button type="button" class="back-btn" data-product-back>Voltar aos produtos</button>
     <div class="product-slide-deck" data-slide-deck>
       <aside class="product-slide-summary">
-        <div class="summary-label">Sumário do roteiro</div>
-        ${slides.map((slide, index) => `<button type="button" class="slide-jump ${index === 0 ? 'active' : ''}" data-product-slide="${escapeAttr(slide.id)}"><span>${index + 1}</span>${escapeHTML(slide.label)}</button>`).join('')}
+        <div class="product-slide-summary-scroll">
+          ${slides.map((slide, index) => `<button type="button" class="slide-jump ${index === 0 ? 'active' : ''}" data-product-slide="${escapeAttr(slide.id)}"><span>${index + 1}</span>${escapeHTML(slide.label)}</button>`).join('')}
+        </div>
+        <div class="slide-controls">
+          <button type="button" class="secondary-btn compact" data-slide-prev>Voltar</button>
+          <div class="slide-position" data-slide-position>1 / ${slides.length}</div>
+          <button type="button" class="primary-btn compact" data-slide-next>Avançar</button>
+        </div>
       </aside>
 
       <div class="product-slide-stage">
@@ -1156,13 +1178,8 @@ function productWorkspaceHTML(p) {
         </section>
 
         <section class="product-slide" data-slide-panel="formulas">
-          <div class="slide-card">
-            <div class="slide-title-row">
-              <div>
-                <div class="slide-kicker">Cálculo e composição</div>
-                <h3>Formulações do produto</h3>
-              </div>
-            </div>
+          <div class="slide-card formula-slide-card">
+            <div class="slide-kicker formula-slide-kicker">Formulações do produto</div>
             <div class="formula-work-list">
               ${formulas.map(productFormulaHTML).join('') || emptyHTML('Nenhuma formulação cadastrada para este produto.')}
             </div>
@@ -1184,12 +1201,6 @@ function productWorkspaceHTML(p) {
             <div class="stack-list">${laws.map(lawCardHTML).join('') || emptyHTML('Nenhuma referência vinculada.')}</div>
           </div>
         </section>
-
-        <div class="slide-controls">
-          <button type="button" class="secondary-btn compact" data-slide-prev>Voltar</button>
-          <div class="slide-position" data-slide-position>1 / ${slides.length}</div>
-          <button type="button" class="primary-btn compact" data-slide-next>Avançar</button>
-        </div>
       </div>
     </div>
   `;
@@ -1200,10 +1211,7 @@ function productFormulaHTML(f) {
   return `
     <div class="formula-work-card ${f.bloqueada ? 'formula-locked' : ''}">
       <div class="formula-work-head">
-        <div>
-          <h3>${escapeHTML(f.nome)}</h3>
-          <p class="item-subtitle">${escapeHTML(analysis.baseLabel)}: ${fmt(f.pesoReferencia)} g · massa estimada ${fmt(analysis.finalWeight)} g${f.rendimento !== '' ? ` · rendimento esperado ${fmt(f.rendimento)}%` : ''}</p>
-        </div>
+        <h3>${escapeHTML(f.nome)}</h3>
         <button type="button" class="formula-lock-btn ${f.bloqueada ? 'locked' : ''}" data-toggle-formula-lock="${escapeAttr(f.id)}" title="${f.bloqueada ? 'Destravar formulação' : 'Travar formulação'}">${f.bloqueada ? '🔒' : '🔓'}</button>
       </div>
       ${blendEditorHTML(f)}
@@ -1245,6 +1253,7 @@ function blendComponentHTML(formula, component, index, options = {}) {
   const fat = blendComponentFat(component);
   const source = blendComponentSource(component);
   const cut = MEAT_CUTS.find(item => item.id === component.corteId) || MEAT_CUTS[MEAT_CUTS.length - 1];
+  const hasReferenceData = blendComponentHasReferenceData(component);
   const disabled = options.locked ? ' disabled' : '';
   const cutAttr = options.single ? `data-single-cut="${escapeAttr(formula.id)}"` : `data-blend-cut="${escapeAttr(formula.id)}" data-blend-index="${index}"`;
   const profileAttr = options.single ? `data-single-profile="${escapeAttr(formula.id)}"` : `data-blend-profile="${escapeAttr(formula.id)}" data-blend-index="${index}"`;
@@ -1270,10 +1279,10 @@ function blendComponentHTML(formula, component, index, options = {}) {
       </div>
       <div class="form-group">
         <label>Gordura (%)</label>
-        <input type="number" min="0" max="100" step="0.1" value="${escapeAttr(fmtInput(fat))}" ${fatAttr}${disabled}>
+        <input class="${hasReferenceData ? '' : 'missing-reference-value'}" type="number" min="0" max="100" step="0.1" value="${escapeAttr(hasReferenceData ? fmtInput(fat) : '0.0')}" ${fatAttr}${disabled}>
       </div>
     </div>
-    <small>${escapeHTML(source)}</small>
+    <small class="${hasReferenceData ? '' : 'missing-reference-note'}">${escapeHTML(source)}</small>
   </div>`;
 }
 
@@ -1282,7 +1291,7 @@ function meatProfileOptionsHTML(cut, selected) {
     { value: 'com_gordura', label: 'Com gordura', available: cut.comGordura !== null && cut.comGordura !== undefined },
     { value: 'sem_gordura', label: 'Sem gordura', available: cut.semGordura !== null && cut.semGordura !== undefined }
   ];
-  return profiles.map(profile => `<option value="${profile.value}" ${profile.value === selected ? 'selected' : ''} ${profile.available ? '' : 'disabled'}>${profile.label}${profile.available ? '' : ' — sem dado TACO'}</option>`).join('');
+  return profiles.map(profile => `<option value="${profile.value}" ${profile.value === selected ? 'selected' : ''}>${profile.label}</option>`).join('');
 }
 
 function inlineFormulaEditorHTML(f) {
@@ -1291,12 +1300,12 @@ function inlineFormulaEditorHTML(f) {
     ingredient.usadoNaFormulacao !== false &&
     !isMeatIngredient(ingredient) &&
     !(f.itens || []).some(item => item.insumoId === ingredient.id)
-  );
+  ).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
   const disabled = f.bloqueada ? ' disabled' : '';
   return `<div class="inline-formula-editor">
     <div class="inline-formula-head">
       <span>Insumos da formulação</span>
-      <small>${f.bloqueada ? 'Formulação protegida.' : 'Ajuste os percentuais usados na prática.'}</small>
+      ${f.bloqueada ? '<small>Formulação protegida.</small>' : ''}
     </div>
     ${editableItems.length ? editableItems.map(item => inlineFormulaRowHTML(f, item)).join('') : '<div class="notice-card slim">Sem insumos adicionais nesta formulação.</div>'}
     <div class="formula-add-row">
@@ -1315,19 +1324,23 @@ function inlineFormulaRowHTML(f, item) {
     const grams = formulaItemGrams(f, item);
     const suggestion = ingredientSuggestion(ing);
     const disabled = f.bloqueada ? ' disabled' : '';
+    const intensityKey = `${f.id}:${item.insumoId}`;
+    const expanded = expandedIntensityItems.has(intensityKey);
     const suggestionHTML = suggestion ? intensityScaleHTML(f, item, pct, suggestion) : '';
-    return `<div class="inline-formula-row">
+    return `<div class="inline-formula-row ${suggestion ? 'has-intensity' : ''}">
       <div class="inline-formula-name">
         <button type="button" class="inline-link" data-open-ingredient="${escapeAttr(item.insumoId)}">${escapeHTML(ing?.nome || 'Insumo não encontrado')}</button>
-        <span>${escapeHTML(typeLabel(ing?.tipo || 'outro'))}</span>
       </div>
+      ${suggestion ? `<div class="formula-intensity-cell ${expanded ? 'expanded' : ''}">
+        <button type="button" class="intensity-edit-btn" data-toggle-intensity="${escapeAttr(intensityKey)}" title="${expanded ? 'Fechar ajuste de intensidade' : 'Ajustar intensidade'}" aria-expanded="${expanded}">✎</button>
+        <div class="suggestion-panel">${suggestionHTML}</div>
+      </div>` : ''}
       <label class="pct-field">
         <span>%</span>
         <input type="number" min="0" step="0.1" value="${escapeAttr(fmtInput(pct))}" data-inline-pct-formula="${escapeAttr(f.id)}" data-inline-pct-insumo="${escapeAttr(item.insumoId)}"${disabled}>
       </label>
       <strong class="gram-pill">${fmt(grams)} g</strong>
       <button type="button" class="tiny-btn formula-item-remove" data-remove-ingredient-formula="${escapeAttr(f.id)}" data-remove-ingredient-id="${escapeAttr(item.insumoId)}" title="Remover insumo"${disabled}>×</button>
-      ${suggestionHTML ? `<div class="suggestion-panel">${suggestionHTML}</div>` : ''}
     </div>`;
 }
 
@@ -1385,6 +1398,16 @@ function handleProductWorkspaceClick(event) {
     toggleFormulaLock(target.dataset.toggleFormulaLock);
     return;
   }
+  if (target.dataset.toggleIntensity) {
+    const key = target.dataset.toggleIntensity;
+    if (expandedIntensityItems.has(key)) expandedIntensityItems.delete(key);
+    else expandedIntensityItems.add(key);
+    const cell = target.closest('.formula-intensity-cell');
+    cell?.classList.toggle('expanded', expandedIntensityItems.has(key));
+    target.setAttribute('aria-expanded', String(expandedIntensityItems.has(key)));
+    target.title = expandedIntensityItems.has(key) ? 'Fechar ajuste de intensidade' : 'Ajustar intensidade';
+    return;
+  }
   if (target.dataset.toggleBlendButton) {
     const formula = findFormula(target.dataset.toggleBlendButton);
     if (!formula || formula.bloqueada) return;
@@ -1410,7 +1433,7 @@ function handleProductWorkspaceClick(event) {
 function bindProductSlides(root) {
   const panels = Array.from(root.querySelectorAll('[data-slide-panel]'));
   const jumps = Array.from(root.querySelectorAll('[data-product-slide]'));
-  const summary = root.querySelector('.product-slide-summary');
+  const summary = root.querySelector('.product-slide-summary-scroll');
   const position = root.querySelector('[data-slide-position]');
   let index = Math.max(0, panels.findIndex(panel => panel.dataset.slidePanel === activeProductSlideId));
   const show = (nextIndex) => {
@@ -1421,7 +1444,8 @@ function bindProductSlides(root) {
     if (position) position.textContent = `${index + 1} / ${panels.length}`;
     const activeJump = jumps[index];
     if (activeJump && summary && summary.scrollWidth > summary.clientWidth) {
-      activeJump.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      const targetLeft = activeJump.offsetLeft - (summary.clientWidth - activeJump.offsetWidth) / 2;
+      summary.scrollTo({ left: Math.max(0, targetLeft), behavior: 'smooth' });
     }
   };
   jumps.forEach((jump, jumpIndex) => jump.addEventListener('click', () => show(jumpIndex)));
@@ -1526,7 +1550,7 @@ function renderCronograma() {
   const root = $('#cronogramaContent');
   if (!root) return;
   const period = getActivePeriod();
-  const schedule = getSchedule();
+  const schedule = getVisibleSchedule();
   root.innerHTML = `
     ${period ? `<div class="period-banner">
       <strong>${escapeHTML(period.nome)}</strong>
@@ -1596,6 +1620,14 @@ function getSchedule() {
   return period.aulas;
 }
 
+function getVisibleSchedule() {
+  return getSchedule().filter(item => !item.oculta);
+}
+
+function visibleProducts() {
+  return db.produtos.filter(product => !product.oculto);
+}
+
 function normalizeSchedulePeriods(source = [], legacySchedule = []) {
   const hasSourcePeriods = Array.isArray(source) && source.length;
   const current = hasSourcePeriods ? source : [{
@@ -1633,6 +1665,7 @@ function normalizeScheduleItem(saved = {}, fallback = {}, index = 0) {
     foco: saved.foco || fallback.foco || '',
     local: saved.local || fallback.local || '',
     observacao: saved.observacao || fallback.observacao || '',
+    oculta: Boolean(saved.oculta),
     produtos: Array.isArray(saved.produtos) ? saved.produtos : clone(fallback.produtos || []),
     categorias: Array.isArray(saved.categorias) ? saved.categorias : clone(fallback.categorias || [])
   };
@@ -1715,6 +1748,7 @@ function renderScheduleConfig() {
   root.querySelectorAll('[data-schedule-product]').forEach(input => input.addEventListener('change', () => saveScheduleLinkField(input, 'produtos')));
   root.querySelectorAll('[data-schedule-category]').forEach(input => input.addEventListener('change', () => saveScheduleLinkField(input, 'categorias')));
   root.querySelectorAll('[data-delete-schedule]').forEach(btn => btn.addEventListener('click', () => deleteScheduleLesson(Number(btn.dataset.deleteSchedule))));
+  root.querySelectorAll('[data-toggle-schedule-visibility]').forEach(btn => btn.addEventListener('click', () => toggleScheduleVisibility(Number(btn.dataset.toggleScheduleVisibility))));
 }
 
 function renderContentConfig() {
@@ -1767,7 +1801,10 @@ function renderTheoryContentLinks(content) {
 async function handleTheoryContentImages(ev) {
   const files = Array.from(ev.target.files || []).filter(file => file.type.startsWith('image/'));
   try {
-    for (const file of files) tempTheoryImages.push(await fileToDataURL(file, 1280, 0.72));
+    for (const file of files) {
+      const dataUrl = await fileToDataURL(file, 1600, 0.8);
+      tempTheoryImages.push(await storeTheoryImage(dataUrl));
+    }
   } catch (err) {
     console.error(err);
     toast('Não foi possível preparar uma das imagens.');
@@ -1778,8 +1815,8 @@ async function handleTheoryContentImages(ev) {
 
 function renderTheoryContentImages() {
   const root = $('#conteudoImagensPreview');
-  root.innerHTML = tempTheoryImages.map((src, index) => `<div class="photo-wrap content-photo-wrap">
-    <img class="content-photo-thumb" src="${escapeAttr(src)}" alt="Slide ${index + 1}">
+  root.innerHTML = tempTheoryImages.map((ref, index) => `<div class="photo-wrap content-photo-wrap">
+    <img class="content-photo-thumb" src="${escapeAttr(resolveTheoryImage(ref))}" alt="Slide ${index + 1}">
     <button type="button" class="photo-remove" data-remove-theory-image="${index}" aria-label="Remover imagem">×</button>
   </div>`).join('');
   root.querySelectorAll('[data-remove-theory-image]').forEach(btn => btn.addEventListener('click', () => {
@@ -1812,6 +1849,7 @@ function saveTheoryContent() {
     db.configs.conteudosTeoricos = previousContents;
     return;
   }
+  cleanupUnusedTheoryImages();
   closeModal('modalConteudoEditor');
   renderContentConfig();
   renderScheduleConfig();
@@ -1839,6 +1877,7 @@ function performTheoryContentDeletion(id) {
     lesson.categorias = (lesson.categorias || []).filter(contentId => contentId !== id);
   }));
   saveDB();
+  cleanupUnusedTheoryImages();
   closeModal('modalConteudoEditor');
   renderContentConfig();
   renderScheduleConfig();
@@ -1862,8 +1901,14 @@ function renderPeriodControls(period) {
 function scheduleConfigHTML(item, index) {
   return `<article class="config-schedule-card">
     <div class="config-schedule-head">
-      <strong>${lessonNumberLabel(index)}</strong>
-      <button type="button" class="tiny-btn" data-delete-schedule="${index}" title="Excluir aula">×</button>
+      <div>
+        <strong>${lessonNumberLabel(index)}</strong>
+        ${item.oculta ? '<span class="badge warn">Oculta para alunos</span>' : ''}
+      </div>
+      <div class="config-schedule-actions">
+        <button type="button" class="visibility-toggle compact ${item.oculta ? 'locked' : ''}" data-toggle-schedule-visibility="${index}" title="Ocultar ou mostrar aula">${item.oculta ? '🔒 Oculta' : '🔓 Visível'}</button>
+        <button type="button" class="tiny-btn" data-delete-schedule="${index}" title="Excluir aula">×</button>
+      </div>
     </div>
     <div class="form-grid two-cols">
       <div class="form-group">
@@ -1983,6 +2028,17 @@ function saveScheduleField(input) {
   renderContentConfig();
   renderAulas();
   toast('Cronograma atualizado.');
+}
+
+function toggleScheduleVisibility(index) {
+  const schedule = getSchedule();
+  if (!schedule[index]) return;
+  schedule[index].oculta = !schedule[index].oculta;
+  saveDB();
+  renderScheduleConfig();
+  renderCronograma();
+  renderAulas();
+  toast(schedule[index].oculta ? 'Aula ocultada dos alunos.' : 'Aula visível para os alunos.');
 }
 
 function saveScheduleLinkField(input, field) {
@@ -2114,7 +2170,7 @@ function renderAulaSelect() {
 
 function renderAulas() {
   const root = $('#aulaContent');
-  const schedule = getSchedule();
+  const schedule = getVisibleSchedule();
   if (!schedule.length) {
     root.innerHTML = emptyHTML('Nenhuma aula cadastrada no período ativo.');
     return;
@@ -2184,14 +2240,17 @@ function openTheoryContentView(id) {
 
 function theorySlidesHTML(images) {
   const index = 0;
-  return `<div class="theory-slides" data-theory-slides>
+  return `<div class="theory-slides" data-theory-slides tabindex="0">
     <div class="theory-slide-frame">
-      ${images.map((src, imageIndex) => `<img src="${escapeAttr(src)}" alt="Slide ${imageIndex + 1}" class="${imageIndex === index ? 'active' : ''}" data-theory-image="${imageIndex}">`).join('')}
+      ${images.map((ref, imageIndex) => `<img src="${escapeAttr(resolveTheoryImage(ref))}" alt="Slide ${imageIndex + 1}" class="${imageIndex === index ? 'active' : ''}" data-theory-image="${imageIndex}">`).join('')}
     </div>
     <div class="theory-slide-controls">
       <button type="button" class="secondary-btn compact" data-theory-slide-prev>Voltar</button>
       <strong data-theory-slide-position>${index + 1} / ${images.length}</strong>
-      <button type="button" class="primary-btn compact" data-theory-slide-next>Avançar</button>
+      <div class="theory-slide-actions">
+        <button type="button" class="icon-command" data-theory-slide-fullscreen title="Tela cheia">⛶</button>
+        <button type="button" class="primary-btn compact" data-theory-slide-next>Avançar</button>
+      </div>
     </div>
   </div>`;
 }
@@ -2208,6 +2267,13 @@ function bindTheorySlides(root) {
     };
     wrap.querySelector('[data-theory-slide-prev]')?.addEventListener('click', () => show(index - 1));
     wrap.querySelector('[data-theory-slide-next]')?.addEventListener('click', () => show(index + 1));
+    wrap.querySelector('[data-theory-slide-fullscreen]')?.addEventListener('click', () => toggleTheoryFullscreen(wrap));
+    wrap.addEventListener('click', () => {
+      activeTheorySlideController = { wrap, show, getIndex: () => index, count: images.length };
+      wrap.focus({ preventScroll: true });
+    });
+    activeTheorySlideController = { wrap, show, getIndex: () => index, count: images.length };
+    requestAnimationFrame(() => wrap.focus({ preventScroll: true }));
   });
 }
 
@@ -2248,7 +2314,7 @@ function theoryLessonHTML(lesson) {
 function linkedProductsHTML(ids) {
   return `<div class="link-chip-row">${ids.map(id => {
     const p = findProduct(id);
-    return p ? `<button type="button" class="link-chip" data-open-product="${escapeAttr(id)}">${escapeHTML(p.nome)}</button>` : '';
+    return p && !p.oculto ? `<button type="button" class="link-chip" data-open-product="${escapeAttr(id)}">${escapeHTML(p.nome)}</button>` : '';
   }).join('')}</div>`;
 }
 
@@ -2297,6 +2363,7 @@ function bindLawLinks(root) {
 
 function openProductModal(id = null) {
   const p = id ? findProduct(id) : null;
+  productVisibilityDraft = Boolean(p?.oculto);
   $('#produtoId').value = p?.id || '';
   $('#produtoNome').value = p?.nome || '';
   $('#produtoCategoria').value = p?.categoria || '';
@@ -2317,7 +2384,21 @@ function openProductModal(id = null) {
   $('#produtoFotos').value = '';
   renderProductPhotoPreview();
   $('#btnExcluirProduto').style.display = p ? 'inline-flex' : 'none';
+  renderProductVisibilityButton();
   openModal('modalProduto');
+}
+
+function toggleProductVisibilityDraft() {
+  productVisibilityDraft = !productVisibilityDraft;
+  renderProductVisibilityButton();
+}
+
+function renderProductVisibilityButton() {
+  const button = $('#btnToggleProdutoVisibilidade');
+  if (!button) return;
+  button.classList.toggle('locked', productVisibilityDraft);
+  button.textContent = productVisibilityDraft ? '🔒 Oculto' : '🔓 Visível';
+  button.title = productVisibilityDraft ? 'Mostrar produto para os alunos' : 'Ocultar produto dos alunos';
 }
 
 async function handleProductPhotos(ev) {
@@ -2368,6 +2449,7 @@ function saveProductFromModal() {
     equipamentos: linesFrom($('#produtoEquipamentos').value),
     perguntas: linesFrom($('#produtoPerguntas').value)
   };
+  product.oculto = productVisibilityDraft;
   if (!product.nome) return toast('Informe o nome do produto.');
   product.categoriaIds = product.categoriaIds.length ? product.categoriaIds : inferProductCategoryIds(product);
   product.categoriaId = product.categoriaIds[0] || inferProductCategoryId(product);
@@ -2385,8 +2467,18 @@ function saveProductFromModal() {
 function deleteProductFromModal() {
   const id = $('#produtoId').value;
   if (!id) return;
-  const used = db.formulacoes.some(f => f.produtoId === id);
-  if (used && !confirm('Este produto possui formulações. Excluir mesmo assim?')) return;
+  const product = findProduct(id);
+  if (!product) return;
+  openConfirmation({
+    title: 'Excluir produto',
+    message: `Para excluir "${product.nome}" e suas formulações, digite exatamente "quero excluir".`,
+    confirmLabel: 'Excluir produto',
+    requireText: 'quero excluir',
+    action: () => performProductDeletion(id)
+  });
+}
+
+function performProductDeletion(id) {
   db.produtos = db.produtos.filter(p => p.id !== id);
   db.formulacoes = db.formulacoes.filter(f => f.produtoId !== id);
   db.legislacoes.forEach(l => { if (l.produtoId === id) l.produtoId = null; });
@@ -2429,8 +2521,7 @@ function openIngredientModal(id = null) {
   $('#insumoProteina').value = i?.proteina ?? 0;
   $('#insumoCarbo').value = i?.carboidrato ?? 0;
   $('#insumoCusto').value = i?.custo ?? 0;
-  $('#insumoUsadoSim').checked = i ? i.usadoNaFormulacao !== false : true;
-  $('#insumoUsadoNao').checked = i ? i.usadoNaFormulacao === false : false;
+  $('#insumoUsadoNaFormulacao').checked = i ? i.usadoNaFormulacao !== false : true;
   $('#insumoPnc').checked = Boolean(i?.proteinaNaoCarnea);
   $('#insumoAlergeno').checked = Boolean(i?.alergeno);
   tempIngredientPhoto = i?.foto || '';
@@ -2502,7 +2593,7 @@ function saveIngredientFromModal() {
     proteina: toNumber($('#insumoProteina').value),
     carboidrato: toNumber($('#insumoCarbo').value),
     custo: toNumber($('#insumoCusto').value),
-    usadoNaFormulacao: $('#insumoUsadoSim').checked,
+    usadoNaFormulacao: $('#insumoUsadoNaFormulacao').checked,
     proteinaNaoCarnea: $('#insumoPnc').checked || isFunctionalProtein({ tipo: $('#insumoTipo').value, subtipo: $('#insumoSubtipo').value, nome: $('#insumoNome').value }),
     alergeno: $('#insumoAlergeno').checked,
     foto: tempIngredientPhoto
@@ -2583,7 +2674,9 @@ function renderFormulaItems() {
 }
 
 function formulaEligibleIngredients(currentId = '') {
-  return db.insumos.filter(ingredient => ingredient.usadoNaFormulacao !== false || ingredient.id === currentId);
+  return db.insumos
+    .filter(ingredient => ingredient.usadoNaFormulacao !== false || ingredient.id === currentId)
+    .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 }
 
 function renderFormulaSummary() {
@@ -2801,10 +2894,14 @@ function queueInlineFormulaEdit(callback) {
 
 function saveInlineFormulaEdit(message, options = {}) {
   const currentSlide = $('#produtoWorkspace .product-slide.active')?.dataset.slidePanel;
+  const scrollTop = $('.content')?.scrollTop || 0;
   if (currentSlide) activeProductSlideId = currentSlide;
   saveDB();
   renderProdutos();
   if (currentSlide) $('#produtoWorkspace [data-product-slide="' + cssEscape(currentSlide) + '"]')?.click();
+  requestAnimationFrame(() => {
+    if ($('.content')) $('.content').scrollTop = scrollTop;
+  });
   if (!options.silent) toast(message);
 }
 
@@ -2922,14 +3019,22 @@ function blendComponentSource(component) {
   const cut = MEAT_CUTS.find(item => item.id === component?.corteId) || MEAT_CUTS[MEAT_CUTS.length - 1];
   if (component?.gorduraCustom !== '' && component?.gorduraCustom !== undefined) return 'Teor de gordura ajustado pelo usuário para esta matéria-prima.';
   const profile = normalizeMeatProfile(component?.perfil, cut.id);
-  return profile === 'com_gordura' ? cut.fonteCom : cut.fonteSem;
+  const source = profile === 'com_gordura' ? cut.fonteCom : cut.fonteSem;
+  return source || 'Não há dados de composição para este perfil na TACO/NEPA/UNICAMP. Informe o teor medido ou obtido em outra referência.';
+}
+
+function blendComponentHasReferenceData(component) {
+  if (component?.gorduraCustom !== '' && component?.gorduraCustom !== undefined) return true;
+  const cut = MEAT_CUTS.find(item => item.id === component?.corteId) || MEAT_CUTS[MEAT_CUTS.length - 1];
+  const profile = normalizeMeatProfile(component?.perfil, cut.id);
+  const value = profile === 'com_gordura' ? cut.comGordura : cut.semGordura;
+  return value !== null && value !== undefined;
 }
 
 function normalizeMeatProfile(profile, cutId) {
   const cut = MEAT_CUTS.find(item => item.id === cutId) || MEAT_CUTS[MEAT_CUTS.length - 1];
   const migrated = profile === 'normal' ? 'com_gordura' : profile === 'magra' ? 'sem_gordura' : profile;
-  if (migrated === 'com_gordura' && cut.comGordura !== null && cut.comGordura !== undefined) return 'com_gordura';
-  if (migrated === 'sem_gordura' && cut.semGordura !== null && cut.semGordura !== undefined) return 'sem_gordura';
+  if (migrated === 'com_gordura' || migrated === 'sem_gordura') return migrated;
   if (cut.semGordura !== null && cut.semGordura !== undefined) return 'sem_gordura';
   return 'com_gordura';
 }
@@ -3047,6 +3152,8 @@ function analyzeFormula(formula) {
   let carbGrams = 0;
   let pncGrams = 0;
   let costTotal = 0;
+  let sourceMeatGrams = 0;
+  let sourceMeatProteinGrams = 0;
   const blendState = formulaBlendState(formula);
   const useDetailedBlend = (blendState.useBlend ? blendState.components.length : Boolean(blendState.singleComponent));
   formula.itens.forEach(item => {
@@ -3055,15 +3162,32 @@ function analyzeFormula(formula) {
     if (!ing) return;
     const grams = formulaItemGrams(formula, item);
     totalPct += pct;
-    if (isMeatIngredient(ing)) meatBasePct += pct;
-    finalWeight += grams;
-    if (!(useDetailedBlend && isMeatIngredient(ing))) fatGrams += grams * toNumber(ing.gordura) / 100;
-    proteinGrams += grams * toNumber(ing.proteina) / 100;
-    carbGrams += grams * toNumber(ing.carboidrato) / 100;
+    const meatIngredient = isMeatIngredient(ing);
+    if (meatIngredient) {
+      meatBasePct += pct;
+      sourceMeatGrams += grams;
+      sourceMeatProteinGrams += grams * toNumber(ing.proteina) / 100;
+    }
+    if (!(useDetailedBlend && meatIngredient)) {
+      finalWeight += grams;
+      fatGrams += grams * toNumber(ing.gordura) / 100;
+      proteinGrams += grams * toNumber(ing.proteina) / 100;
+      carbGrams += grams * toNumber(ing.carboidrato) / 100;
+    }
     if (ing.proteinaNaoCarnea || isFunctionalProtein(ing)) pncGrams += grams;
     costTotal += (grams / 1000) * toNumber(ing.custo);
   });
-  if (useDetailedBlend) fatGrams += blendState.fatGrams;
+  if (useDetailedBlend) {
+    const activeComponents = blendState.useBlend ? blendState.components : [blendState.singleComponent];
+    const sourceProteinRate = sourceMeatGrams ? sourceMeatProteinGrams / sourceMeatGrams : 0;
+    finalWeight += blendState.blendGrams;
+    fatGrams += blendState.fatGrams;
+    proteinGrams += activeComponents.reduce((sum, component) => {
+      const fatRate = blendComponentFat(component) / 100;
+      const physicallyPossibleProteinRate = Math.max(0, 1 - fatRate);
+      return sum + toNumber(component.gramas) * Math.min(sourceProteinRate, physicallyPossibleProteinRate);
+    }, 0);
+  }
   const compositionWeight = finalWeight || weight;
   const fatPct = compositionWeight ? fatGrams / compositionWeight * 100 : 0;
   const proteinPct = compositionWeight ? proteinGrams / compositionWeight * 100 : 0;
@@ -3191,7 +3315,11 @@ async function copyLesson() {
 }
 
 function exportData() {
-  downloadJSON(db, `paoa_lab_backup_${dateStamp()}.json`);
+  const backup = clone(db);
+  (backup.configs?.conteudosTeoricos || []).forEach(content => {
+    content.imagens = (content.imagens || []).map(resolveTheoryImage);
+  });
+  downloadJSON(backup, `paoa_lab_backup_${dateStamp()}.json`);
   toast('Backup gerado.');
 }
 
@@ -3207,6 +3335,9 @@ async function importData(ev) {
     const imported = JSON.parse(text);
     if (!imported.produtos || !imported.insumos) throw new Error('Arquivo inválido');
     db = normalizeDB(imported);
+    for (const content of db.configs?.conteudosTeoricos || []) {
+      content.imagens = await Promise.all((content.imagens || []).map(image => String(image).startsWith('data:image/') ? storeTheoryImage(image) : image));
+    }
     saveDB();
     renderAll();
     closeModal('modalConfig');
@@ -3247,23 +3378,73 @@ function openModal(id) {
     if (panel) panel.scrollTop = 0;
   });
 }
-function closeModal(id) { $('#' + id)?.classList.remove('show'); }
-function openConfirmation({ title = 'Confirmar ação', message = '', confirmLabel = 'Confirmar', action } = {}) {
+function closeModal(id) {
+  $('#' + id)?.classList.remove('show');
+  if (id === 'modalConteudoView') {
+    activeTheorySlideController?.wrap?.classList.remove('presentation-fullscreen');
+    activeTheorySlideController = null;
+  }
+}
+function openConfirmation({ title = 'Confirmar ação', message = '', confirmLabel = 'Confirmar', requireText = '', action } = {}) {
   pendingConfirmationAction = typeof action === 'function' ? action : null;
+  pendingConfirmationText = String(requireText || '');
   $('#confirmacaoTitulo').textContent = title;
   $('#confirmacaoMensagem').textContent = message;
   $('#btnConfirmarAcao').textContent = confirmLabel;
+  $('#confirmacaoTextoWrap').hidden = !pendingConfirmationText;
+  $('#confirmacaoTexto').value = '';
+  $('#confirmacaoTextoLabel').textContent = pendingConfirmationText ? `Digite: ${pendingConfirmationText}` : '';
+  updateConfirmationButtonState();
   openModal('modalConfirmacao');
+  if (pendingConfirmationText) requestAnimationFrame(() => $('#confirmacaoTexto')?.focus());
 }
 function closeConfirmation() {
   pendingConfirmationAction = null;
+  pendingConfirmationText = '';
   closeModal('modalConfirmacao');
 }
+function updateConfirmationButtonState() {
+  const button = $('#btnConfirmarAcao');
+  if (!button) return;
+  button.disabled = Boolean(pendingConfirmationText) && $('#confirmacaoTexto').value.trim().toLowerCase() !== pendingConfirmationText.toLowerCase();
+}
 function confirmPendingAction() {
+  if (pendingConfirmationText && $('#confirmacaoTexto').value.trim().toLowerCase() !== pendingConfirmationText.toLowerCase()) return;
   const action = pendingConfirmationAction;
   pendingConfirmationAction = null;
+  pendingConfirmationText = '';
   closeModal('modalConfirmacao');
   action?.();
+}
+function handleTheoryPresentationKey(event) {
+  const controller = activeTheorySlideController;
+  if (!controller?.wrap?.isConnected || !$('#modalConteudoView')?.classList.contains('show')) return;
+  const tag = String(event.target?.tagName || '').toLowerCase();
+  if (['input', 'textarea', 'select'].includes(tag)) return;
+  if (event.key === 'F5' || event.key === 'Enter') {
+    event.preventDefault();
+    toggleTheoryFullscreen(controller.wrap);
+    return;
+  }
+  if (event.key === 'Escape' && controller.wrap.classList.contains('presentation-fullscreen')) {
+    event.preventDefault();
+    controller.wrap.classList.remove('presentation-fullscreen');
+    return;
+  }
+  if (event.key === ' ' || event.key === 'ArrowRight') {
+    event.preventDefault();
+    controller.show(controller.getIndex() + 1);
+    return;
+  }
+  if (event.key === 'ArrowLeft') {
+    event.preventDefault();
+    controller.show(controller.getIndex() - 1);
+  }
+}
+function toggleTheoryFullscreen(wrap) {
+  if (!wrap) return;
+  wrap.classList.toggle('presentation-fullscreen');
+  wrap.focus({ preventScroll: true });
 }
 function findProduct(id) { return db.produtos.find(p => p.id === id); }
 function findIngredient(id) { return db.insumos.find(i => i.id === id); }
@@ -3384,6 +3565,92 @@ async function copyText(text) {
   area.select();
   document.execCommand('copy');
   area.remove();
+}
+
+function openMediaDB() {
+  if (!('indexedDB' in window)) return Promise.resolve(null);
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(MEDIA_DB_NAME, 1);
+    request.onupgradeneeded = () => {
+      const database = request.result;
+      if (!database.objectStoreNames.contains(MEDIA_STORE_NAME)) database.createObjectStore(MEDIA_STORE_NAME, { keyPath: 'id' });
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function hydrateTheoryImageCache() {
+  try {
+    const database = await openMediaDB();
+    if (!database) return;
+    const records = await new Promise((resolve, reject) => {
+      const request = database.transaction(MEDIA_STORE_NAME, 'readonly').objectStore(MEDIA_STORE_NAME).getAll();
+      request.onsuccess = () => resolve(request.result || []);
+      request.onerror = () => reject(request.error);
+    });
+    records.forEach(record => theoryImageCache.set(record.id, record.dataUrl));
+    database.close();
+    cleanupUnusedTheoryImages();
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function storeTheoryImage(dataUrl) {
+  const database = await openMediaDB();
+  if (!database) return dataUrl;
+  const id = `idb:${uid('slide')}`;
+  await new Promise((resolve, reject) => {
+    const request = database.transaction(MEDIA_STORE_NAME, 'readwrite').objectStore(MEDIA_STORE_NAME).put({ id, dataUrl });
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
+  database.close();
+  theoryImageCache.set(id, dataUrl);
+  return id;
+}
+
+async function migrateEmbeddedTheoryImages() {
+  let changed = false;
+  for (const content of db.configs?.conteudosTeoricos || []) {
+    const migrated = [];
+    for (const image of content.imagens || []) {
+      if (String(image).startsWith('data:image/')) {
+        migrated.push(await storeTheoryImage(image));
+        changed = true;
+      } else {
+        migrated.push(image);
+      }
+    }
+    content.imagens = migrated;
+  }
+  if (changed) saveDB();
+}
+
+function resolveTheoryImage(ref) {
+  return String(ref || '').startsWith('idb:') ? theoryImageCache.get(ref) || '' : ref;
+}
+
+async function cleanupUnusedTheoryImages() {
+  const used = new Set((db.configs?.conteudosTeoricos || []).flatMap(content => content.imagens || []).filter(ref => String(ref).startsWith('idb:')));
+  try {
+    const database = await openMediaDB();
+    if (!database) return;
+    const obsolete = Array.from(theoryImageCache.keys()).filter(id => !used.has(id));
+    if (obsolete.length) {
+      const transaction = database.transaction(MEDIA_STORE_NAME, 'readwrite');
+      obsolete.forEach(id => transaction.objectStore(MEDIA_STORE_NAME).delete(id));
+      await new Promise((resolve, reject) => {
+        transaction.oncomplete = resolve;
+        transaction.onerror = () => reject(transaction.error);
+      });
+      obsolete.forEach(id => theoryImageCache.delete(id));
+    }
+    database.close();
+  } catch (err) {
+    console.error(err);
+  }
 }
 
 function fileToDataURL(file, maxSize = 1200, quality = 0.86) {

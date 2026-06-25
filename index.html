@@ -9,7 +9,7 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon.png" />
   <link rel="apple-touch-icon" href="icon.png" />
-  <link rel="stylesheet" href="style.css?v=28" />
+  <link rel="stylesheet" href="style.css?v=34" />
   <title>Processamento de Alimentos de Origem Animal</title>
 </head>
 <body>
@@ -121,7 +121,10 @@
   <div class="modal-overlay" id="modalProduto">
     <div class="modal large-modal">
       <button type="button" class="modal-close" data-close="modalProduto" aria-label="Fechar">×</button>
-      <div class="modal-title">Produto</div>
+      <div class="modal-heading-row">
+        <div class="modal-title">Produto</div>
+        <button type="button" class="visibility-toggle" id="btnToggleProdutoVisibilidade" title="Ocultar ou mostrar produto">🔓 Visível</button>
+      </div>
       <input type="hidden" id="produtoId" />
       <div class="form-grid two-cols">
         <div class="form-group"><label>Nome do produto</label><input id="produtoNome" type="text" placeholder="Ex: Hambúrguer bovino" /></div>
@@ -177,13 +180,7 @@
         <div class="form-group"><label>Carboidrato (%)</label><input id="insumoCarbo" type="number" step="0.01" /></div>
         <div class="form-group"><label>Custo/kg (R$)</label><input id="insumoCusto" type="number" step="0.01" /></div>
       </div>
-      <div class="form-group">
-        <label>Pode ser adicionado às formulações?</label>
-        <div class="segmented-choice">
-          <label><input id="insumoUsadoSim" type="radio" name="insumoUsadoNaFormulacao" value="sim" checked /><span>Sim</span></label>
-          <label><input id="insumoUsadoNao" type="radio" name="insumoUsadoNaFormulacao" value="nao" /><span>Não</span></label>
-        </div>
-      </div>
+      <label class="check-row"><input id="insumoUsadoNaFormulacao" type="checkbox" checked /> Pode ser adicionado às formulações</label>
       <label class="check-row"><input id="insumoPnc" type="checkbox" /> Contabilizar como proteína agregada não cárnea</label>
       <label class="check-row"><input id="insumoAlergeno" type="checkbox" /> Pode envolver alérgeno ou declaração em rótulo</label>
       <div class="modal-actions">
@@ -270,7 +267,7 @@
         <button type="button" class="config-menu-card" data-open-config-modal="modalConfigProdutos">Gerenciar produtos</button>
         <button type="button" class="config-menu-card" data-open-config-modal="modalConfigInsumos">Gerenciar insumos</button>
         <button type="button" class="config-menu-card" data-open-config-modal="modalConfigConteudos">Gerenciar conteúdos</button>
-        <button type="button" class="config-menu-card" data-open-config-modal="modalConfigCronograma">Cronograma</button>
+        <button type="button" class="config-menu-card" data-open-config-modal="modalConfigCronograma">Gerenciar aulas</button>
         <button type="button" class="config-menu-card" data-open-config-modal="modalConfigRegras">Regras do laboratório</button>
         <button type="button" class="config-menu-card" data-open-config-modal="modalConfigAvancadas">Configurações avançadas</button>
       </div>
@@ -305,7 +302,7 @@
   <div class="modal-overlay" id="modalConfigCronograma">
     <div class="modal large-modal">
       <button type="button" class="modal-close" data-close="modalConfigCronograma" aria-label="Fechar">×</button>
-      <div class="modal-title">Cronograma</div>
+      <div class="modal-title">Gerenciar aulas</div>
         <div class="period-panel">
           <div class="form-grid two-cols">
             <div class="form-group">
@@ -438,6 +435,10 @@
       <button type="button" class="modal-close" data-close="modalConfirmacao" aria-label="Fechar">×</button>
       <div class="modal-title" id="confirmacaoTitulo">Confirmar exclusão</div>
       <p class="confirmation-message" id="confirmacaoMensagem"></p>
+      <div class="form-group confirmation-text-field" id="confirmacaoTextoWrap" hidden>
+        <label id="confirmacaoTextoLabel" for="confirmacaoTexto">Digite a frase de confirmação</label>
+        <input type="text" id="confirmacaoTexto" autocomplete="off" />
+      </div>
       <div class="modal-actions">
         <button type="button" class="secondary-btn" id="btnCancelarConfirmacao">Cancelar</button>
         <button type="button" class="danger-btn" id="btnConfirmarAcao">Excluir</button>
@@ -446,6 +447,6 @@
   </div>
 
   <div id="toast" class="toast"></div>
-  <script src="app.js?v=28"></script>
+  <script src="app.js?v=34"></script>
 </body>
 </html>
