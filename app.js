@@ -1,7 +1,7 @@
 'use strict';
 
 const STORAGE_KEY = 'paoa_lab_v1';
-const APP_VERSION = '1.7.1';
+const APP_VERSION = '1.8.0';
 const MEAT_CUTS_SOURCE_URL = 'https://nepa.unicamp.br/publicacoes/tabela-taco-pdf/';
 
 const MEAT_CUTS = [
@@ -1198,29 +1198,26 @@ function productFormulaHTML(f) {
 function blendEditorHTML(f) {
   const state = formulaBlendState(f);
   const disabled = f.bloqueada ? ' disabled' : '';
+  const firstComponent = state.useBlend ? state.components[0] : state.singleComponent;
+  const secondComponent = state.components[1] || defaultSecondBlendComponent(f, state);
   return `<div class="blend-editor">
     <div class="blend-switch-row">
       <div class="blend-toggle-group">
-        <strong>Blend</strong>
-        <label class="switch-control">
-          <input type="checkbox" data-toggle-blend="${escapeAttr(f.id)}" ${state.useBlend ? 'checked' : ''}${disabled}>
-          <span></span>
-        </label>
+        <button type="button" class="blend-toggle-button ${state.useBlend ? 'active' : ''}" data-toggle-blend-button="${escapeAttr(f.id)}" aria-pressed="${state.useBlend}"${disabled}>
+          <strong>Blend</strong><span class="switch-visual"><i></i></span>
+        </button>
       </div>
     </div>
-    ${state.useBlend ? `
-      <div class="blend-components">
-        ${state.components.map((component, index) => blendComponentHTML(f, component, index, { locked: f.bloqueada })).join('')}
-        <button type="button" class="secondary-btn compact blend-add" data-add-blend-component="${escapeAttr(f.id)}"${disabled}>Adicionar componente</button>
+    <div class="blend-components">
+        ${blendComponentHTML(f, firstComponent, 0, { locked: f.bloqueada, label: 'Matéria-prima 1', single: !state.useBlend })}
+        ${state.useBlend ? blendComponentHTML(f, secondComponent, 1, { locked: f.bloqueada, label: 'Matéria-prima 2' }) : ''}
+        ${state.useBlend ? `
         <div class="blend-summary">
           <div><span>Peso do blend</span><strong>${fmt(state.blendGrams)} g</strong></div>
           <div><span>Gordura estimada</span><strong>${fmt(state.fatPct)}%</strong></div>
-        </div>
+        </div>` : ''}
         <a href="${MEAT_CUTS_SOURCE_URL}" class="blend-source" target="_blank" rel="noopener">Referência de composição: TACO/NEPA/UNICAMP. Valores editáveis conforme a matéria-prima utilizada.</a>
-      </div>` : `
-      <div class="single-material-editor">
-        ${singleMaterialHTML(f, state.singleComponent, f.bloqueada)}
-      </div>`}
+    </div>
   </div>`;
 }
 
@@ -1228,63 +1225,35 @@ function blendComponentHTML(formula, component, index, options = {}) {
   const fat = blendComponentFat(component);
   const source = blendComponentSource(component);
   const disabled = options.locked ? ' disabled' : '';
-  return `<div class="blend-component-row">
+  const cutAttr = options.single ? `data-single-cut="${escapeAttr(formula.id)}"` : `data-blend-cut="${escapeAttr(formula.id)}" data-blend-index="${index}"`;
+  const profileAttr = options.single ? `data-single-profile="${escapeAttr(formula.id)}"` : `data-blend-profile="${escapeAttr(formula.id)}" data-blend-index="${index}"`;
+  const gramsAttr = options.single ? `data-single-grams="${escapeAttr(formula.id)}"` : `data-blend-grams="${escapeAttr(formula.id)}" data-blend-index="${index}"`;
+  const fatAttr = options.single ? `data-single-fat="${escapeAttr(formula.id)}"` : `data-blend-fat="${escapeAttr(formula.id)}" data-blend-index="${index}"`;
+  return `<div class="blend-component-row ${options.single ? 'single-component' : ''}">
     <div class="blend-component-main">
       <div class="form-group">
-        <label>Matéria-prima</label>
-        <select data-blend-cut="${escapeAttr(formula.id)}" data-blend-index="${index}"${disabled}>
+        <label>${escapeHTML(options.label || 'Matéria-prima')}</label>
+        <select ${cutAttr}${disabled}>
           ${MEAT_CUTS.map(cut => `<option value="${escapeAttr(cut.id)}" ${cut.id === component.corteId ? 'selected' : ''}>${escapeHTML(cut.nome)}</option>`).join('')}
         </select>
       </div>
       <div class="form-group">
         <label>Perfil</label>
-        <select data-blend-profile="${escapeAttr(formula.id)}" data-blend-index="${index}"${disabled}>
+        <select ${profileAttr}${disabled}>
           <option value="magra" ${component.perfil === 'magra' ? 'selected' : ''}>Magra</option>
           <option value="normal" ${component.perfil === 'normal' ? 'selected' : ''}>Normal</option>
         </select>
       </div>
-      <div class="form-group">
-        <label>Peso (g)</label>
-        <input type="number" min="0" step="1" value="${escapeAttr(fmtInput(component.gramas))}" data-blend-grams="${escapeAttr(formula.id)}" data-blend-index="${index}"${disabled}>
+      <div class="form-group ${options.single ? 'single-meat-weight' : ''}">
+        <label>${options.single ? 'Carne/massa cárnea (g)' : 'Peso (g)'}</label>
+        <input type="number" min="${options.single ? '1' : '0'}" step="1" value="${escapeAttr(fmtInput(component.gramas))}" ${gramsAttr}${disabled}>
       </div>
       <div class="form-group">
         <label>Gordura (%)</label>
-        <input type="number" min="0" max="100" step="0.1" value="${escapeAttr(fmtInput(fat))}" data-blend-fat="${escapeAttr(formula.id)}" data-blend-index="${index}"${disabled}>
+        <input type="number" min="0" max="100" step="0.1" value="${escapeAttr(fmtInput(fat))}" ${fatAttr}${disabled}>
       </div>
-      <button type="button" class="tiny-btn blend-remove" data-remove-blend-component="${escapeAttr(formula.id)}" data-blend-index="${index}" title="Remover componente"${disabled}>×</button>
     </div>
     <small>${escapeHTML(source)}</small>
-  </div>`;
-}
-
-function singleMaterialHTML(formula, component, locked) {
-  const fat = blendComponentFat(component);
-  const disabled = locked ? ' disabled' : '';
-  return `<div class="blend-component-row single-component">
-    <div class="blend-component-main">
-      <div class="form-group">
-        <label>Matéria-prima</label>
-        <select data-single-cut="${escapeAttr(formula.id)}"${disabled}>
-          ${MEAT_CUTS.map(cut => `<option value="${escapeAttr(cut.id)}" ${cut.id === component.corteId ? 'selected' : ''}>${escapeHTML(cut.nome)}</option>`).join('')}
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Perfil</label>
-        <select data-single-profile="${escapeAttr(formula.id)}"${disabled}>
-          <option value="magra" ${component.perfil === 'magra' ? 'selected' : ''}>Magra</option>
-          <option value="normal" ${component.perfil === 'normal' ? 'selected' : ''}>Normal</option>
-        </select>
-      </div>
-      <div class="form-group single-meat-weight">
-        <label>Carne/massa cárnea (g)</label>
-        <input type="number" min="1" step="1" value="${escapeAttr(fmtInput(component.gramas))}" data-single-grams="${escapeAttr(formula.id)}"${disabled}>
-      </div>
-      <div class="form-group">
-        <label>Gordura (%)</label>
-        <input type="number" min="0" max="100" step="0.1" value="${escapeAttr(fmtInput(fat))}" data-single-fat="${escapeAttr(formula.id)}"${disabled}>
-      </div>
-    </div>
-    <small>${escapeHTML(blendComponentSource(component))}</small>
   </div>`;
 }
 
@@ -1343,7 +1312,7 @@ function intensityScaleHTML(formula, item, current, suggestion) {
 
 function bindProductWorkspace(root) {
   root.querySelector('[data-product-back]')?.addEventListener('click', closeProductWorkspace);
-  root.querySelectorAll('[data-toggle-formula-lock]').forEach(btn => btn.addEventListener('click', () => toggleFormulaLock(btn.dataset.toggleFormulaLock)));
+  root.addEventListener('click', handleProductWorkspaceClick);
   root.querySelectorAll('[data-report-formula]').forEach(btn => btn.addEventListener('click', () => showFormulaReport(btn.dataset.reportFormula)));
   root.querySelectorAll('[data-open-ingredient]').forEach(btn => btn.addEventListener('click', () => openIngredientView(btn.dataset.openIngredient)));
   root.querySelectorAll('[data-inline-weight]').forEach(input => {
@@ -1354,14 +1323,6 @@ function bindProductWorkspace(root) {
     input.addEventListener('input', () => queueInlineFormulaEdit(() => updateFormulaItemPercent(input.dataset.inlinePctFormula, input.dataset.inlinePctInsumo, input.value, { silent: true })));
     input.addEventListener('change', () => updateFormulaItemPercent(input.dataset.inlinePctFormula, input.dataset.inlinePctInsumo, input.value));
   });
-  root.querySelectorAll('[data-suggestion-formula]').forEach(btn => btn.addEventListener('click', () => updateFormulaItemPercent(btn.dataset.suggestionFormula, btn.dataset.suggestionInsumo, btn.dataset.suggestionValue)));
-  root.querySelectorAll('[data-add-ingredient-formula]').forEach(btn => btn.addEventListener('click', () => {
-    const select = root.querySelector(`[data-add-ingredient-select="${cssEscape(btn.dataset.addIngredientFormula)}"]`);
-    if (!select?.value) return toast('Selecione um insumo.');
-    addFormulaItemInline(btn.dataset.addIngredientFormula, select.value);
-  }));
-  root.querySelectorAll('[data-remove-ingredient-formula]').forEach(btn => btn.addEventListener('click', () => removeFormulaItemInline(btn.dataset.removeIngredientFormula, btn.dataset.removeIngredientId)));
-  root.querySelectorAll('[data-toggle-blend]').forEach(input => input.addEventListener('change', () => updateFormulaBlend(input.dataset.toggleBlend, { useBlend: input.checked })));
   root.querySelectorAll('[data-blend-cut]').forEach(input => input.addEventListener('change', () => updateBlendComponent(input.dataset.blendCut, Number(input.dataset.blendIndex), { corteId: input.value, gorduraCustom: '' })));
   root.querySelectorAll('[data-blend-profile]').forEach(input => input.addEventListener('change', () => updateBlendComponent(input.dataset.blendProfile, Number(input.dataset.blendIndex), { perfil: input.value, gorduraCustom: '' })));
   root.querySelectorAll('[data-blend-grams]').forEach(input => {
@@ -1376,11 +1337,38 @@ function bindProductWorkspace(root) {
     input.addEventListener('change', () => updateSingleMaterial(input.dataset.singleGrams, { gramas: input.value }));
   });
   root.querySelectorAll('[data-single-fat]').forEach(input => input.addEventListener('change', () => updateSingleMaterial(input.dataset.singleFat, { gorduraCustom: input.value })));
-  root.querySelectorAll('[data-add-blend-component]').forEach(btn => btn.addEventListener('click', () => addBlendComponent(btn.dataset.addBlendComponent)));
-  root.querySelectorAll('[data-remove-blend-component]').forEach(btn => btn.addEventListener('click', () => removeBlendComponent(btn.dataset.removeBlendComponent, Number(btn.dataset.blendIndex))));
   root.querySelectorAll('[data-equipment-check]').forEach(btn => btn.addEventListener('click', () => toggleEquipmentCheck(btn)));
   bindProductSlides(root);
   bindLawLinks(root);
+}
+
+function handleProductWorkspaceClick(event) {
+  const target = event.target.closest('button');
+  if (!target) return;
+  if (target.dataset.toggleFormulaLock) {
+    toggleFormulaLock(target.dataset.toggleFormulaLock);
+    return;
+  }
+  if (target.dataset.toggleBlendButton) {
+    const formula = findFormula(target.dataset.toggleBlendButton);
+    if (!formula || formula.bloqueada) return;
+    updateFormulaBlend(formula.id, { useBlend: formula.usarBlend === false });
+    return;
+  }
+  if (target.dataset.suggestionFormula) {
+    updateFormulaItemPercent(target.dataset.suggestionFormula, target.dataset.suggestionInsumo, target.dataset.suggestionValue);
+    return;
+  }
+  if (target.dataset.addIngredientFormula) {
+    const card = target.closest('.formula-work-card');
+    const select = card?.querySelector('[data-add-ingredient-select]');
+    if (!select?.value) return toast('Selecione um insumo.');
+    addFormulaItemInline(target.dataset.addIngredientFormula, select.value);
+    return;
+  }
+  if (target.dataset.removeIngredientFormula) {
+    removeFormulaItemInline(target.dataset.removeIngredientFormula, target.dataset.removeIngredientId);
+  }
 }
 
 function bindProductSlides(root) {
@@ -2631,18 +2619,41 @@ function updateFormulaBlend(formulaId, changes = {}, options = {}) {
   const useBlend = changes.useBlend ?? previous.useBlend;
 
   if (!useBlend) {
-    const total = Math.max(1, toNumber(changes.blendGrams ?? previous.blendGrams ?? formula.pesoReferencia) || 1);
+    const first = previous.components[0] || previous.singleComponent;
+    const total = Math.max(1, toNumber(previous.blendGrams ?? changes.blendGrams ?? formula.pesoReferencia) || 1);
     formula.usarBlend = false;
-    formula.materiaPrimaUnica = normalizeSingleMaterial(formula.materiaPrimaUnica, formula);
-    formula.materiaPrimaUnica.gramas = total;
+    formula.materiaPrimaUnica = {
+      id: formula.materiaPrimaUnica?.id || uid('materia'),
+      corteId: first?.corteId || 'acem',
+      perfil: first?.perfil || 'magra',
+      gramas: total,
+      gorduraCustom: first?.gorduraCustom ?? ''
+    };
     setFormulaWeightFromBlendTotal(formula, total);
     saveInlineFormulaEdit('Blend atualizado.', options);
     return;
   }
 
   formula.usarBlend = true;
-  if (!formula.blendComponentes?.length) formula.blendComponentes = normalizeBlendComponents([], formula);
+  const single = normalizeSingleMaterial(formula.materiaPrimaUnica, formula);
+  formula.blendComponentes = normalizeBlendComponents(formula.blendComponentes, formula);
+  if (formula.blendComponentes.length < 2) {
+    formula.blendComponentes[0] = { ...single, id: formula.blendComponentes[0]?.id || uid('blend') };
+    formula.blendComponentes.push(defaultSecondBlendComponent(formula, { singleComponent: single }));
+  }
   saveInlineFormulaEdit('Blend atualizado.', options);
+}
+
+function defaultSecondBlendComponent(formula, state = {}) {
+  const first = state.singleComponent || state.components?.[0] || normalizeSingleMaterial(formula.materiaPrimaUnica, formula);
+  const isPork = first.corteId.includes('suino');
+  return {
+    id: uid('blend'),
+    corteId: isPork ? 'toucinho_suino' : 'gordura_bovina',
+    perfil: 'magra',
+    gramas: 0,
+    gorduraCustom: ''
+  };
 }
 
 function updateBlendComponent(formulaId, index, changes = {}, options = {}) {

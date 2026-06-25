@@ -587,6 +587,36 @@ button.item-card:hover { transform: translateY(-1px); border-color: rgba(31,111,
 }
 .blend-toggle-group { display: inline-flex; align-items: center; gap: 10px; }
 .blend-toggle-group > strong { color: var(--primary-dark); font-size: 17px; }
+.blend-toggle-button {
+  border: none;
+  background: transparent;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--primary-dark);
+  cursor: pointer;
+}
+.blend-toggle-button strong { font-size: 17px; }
+.switch-visual {
+  width: 54px;
+  height: 30px;
+  border-radius: 999px;
+  background: #D5DEDB;
+  border: 1px solid #C4D0CC;
+  padding: 2px;
+  display: flex;
+  justify-content: flex-start;
+  transition: .18s ease;
+}
+.switch-visual i {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 7px rgba(0,0,0,.18);
+}
+.blend-toggle-button.active .switch-visual { background: var(--primary); border-color: var(--primary); justify-content: flex-end; }
 .switch-control { position: relative; width: 54px; height: 30px; flex: 0 0 auto; }
 .switch-control input { opacity: 0; width: 0; height: 0; }
 .switch-control span {
@@ -630,7 +660,7 @@ button.item-card:hover { transform: translateY(-1px); border-color: rgba(31,111,
 }
 .blend-component-main {
   display: grid;
-  grid-template-columns: minmax(170px, 1.4fr) minmax(120px, .8fr) 105px 105px 36px;
+  grid-template-columns: minmax(170px, 1.4fr) minmax(120px, .8fr) 115px 105px;
   gap: 8px;
   align-items: end;
 }
@@ -1080,7 +1110,7 @@ button.item-card:hover { transform: translateY(-1px); border-color: rgba(31,111,
   text-align: center;
 }
 .calendar-index span { font-size: 11px; font-weight: 900; text-transform: uppercase; }
-.calendar-index strong { font-size: 34px; line-height: 1; margin: 4px 0 2px; }
+.calendar-index strong { font-size: 34px; line-height: 1; margin: 4px 0 2px; color: var(--accent); }
 .calendar-index b { font-size: 16px; line-height: 1; color: var(--accent); }
 .calendar-index em { font-size: 10px; line-height: 1; font-style: normal; margin-top: 5px; }
 .calendar-body h3 { margin: 0 0 5px; color: var(--primary-dark); font-size: 19px; }
