@@ -1,30 +1,34 @@
 'use strict';
 
 const STORAGE_KEY = 'paoa_lab_v1';
-const APP_VERSION = '1.8.0';
+const APP_VERSION = '1.9.0';
 const MEAT_CUTS_SOURCE_URL = 'https://nepa.unicamp.br/publicacoes/tabela-taco-pdf/';
 
 const MEAT_CUTS = [
-  { id: 'acem', nome: 'Acém bovino', gorduraMagra: 6.1, gorduraNormal: 15.5, fonteMagra: 'Acém sem gordura, cru', fonteNormal: '90% do corte aparado + 10% de gordura adicionada' },
-  { id: 'fraldinha', nome: 'Fraldinha bovina', gorduraMagra: 6.2, gorduraNormal: 16.1, fonteMagra: 'Flanco sem gordura, cru', fonteNormal: 'Fraldinha com gordura, crua' },
-  { id: 'peito_bovino', nome: 'Peito bovino', gorduraMagra: 20.4, gorduraNormal: 28.4, fonteMagra: 'Peito sem gordura, cru', fonteNormal: '90% do corte aparado + 10% de gordura adicionada' },
-  { id: 'alcatra', nome: 'Alcatra bovina', gorduraMagra: 7.8, gorduraNormal: 17, fonteMagra: 'Alcatra sem gordura, crua', fonteNormal: '90% do corte aparado + 10% de gordura adicionada' },
-  { id: 'coxao_mole', nome: 'Coxão mole bovino', gorduraMagra: 8.7, gorduraNormal: 17.8, fonteMagra: 'Coxão mole sem gordura, cru', fonteNormal: '90% do corte aparado + 10% de gordura adicionada' },
-  { id: 'patinho', nome: 'Patinho bovino', gorduraMagra: 4.5, gorduraNormal: 14.1, fonteMagra: 'Patinho sem gordura, cru', fonteNormal: '90% do corte aparado + 10% de gordura adicionada' },
-  { id: 'lagarto', nome: 'Lagarto bovino', gorduraMagra: 5.2, gorduraNormal: 14.7, fonteMagra: 'Lagarto bovino, cru', fonteNormal: '90% do corte aparado + 10% de gordura adicionada' },
-  { id: 'maminha', nome: 'Maminha bovina', gorduraMagra: 7, gorduraNormal: 16.3, fonteMagra: 'Alcatra, maminha, sem gordura, crua', fonteNormal: '90% do corte aparado + 10% de gordura adicionada' },
-  { id: 'musculo', nome: 'Músculo bovino', gorduraMagra: 5.5, gorduraNormal: 15, fonteMagra: 'Músculo sem gordura, cru', fonteNormal: '90% do corte aparado + 10% de gordura adicionada' },
-  { id: 'paleta', nome: 'Paleta bovina', gorduraMagra: 7.4, gorduraNormal: 16.7, fonteMagra: 'Paleta sem gordura, crua', fonteNormal: '90% do corte aparado + 10% de gordura adicionada' },
-  { id: 'contrafile', nome: 'Contrafilé bovino', gorduraMagra: 4.5, gorduraNormal: 12.8, fonteMagra: 'Contrafilé sem gordura, cru', fonteNormal: 'Contrafilé com gordura, cru' },
-  { id: 'file_mignon', nome: 'Filé mignon bovino', gorduraMagra: 5.6, gorduraNormal: 15, fonteMagra: 'Filé mignon sem gordura, cru', fonteNormal: '90% do corte aparado + 10% de gordura adicionada' },
-  { id: 'picanha', nome: 'Picanha bovina', gorduraMagra: 4.7, gorduraNormal: 14.7, fonteMagra: 'Picanha sem gordura, crua', fonteNormal: 'Picanha com gordura, crua' },
-  { id: 'pernil_suino', nome: 'Pernil suíno', gorduraMagra: 11.1, gorduraNormal: 20, fonteMagra: 'Pernil suíno cru, referência TACO', fonteNormal: '90% do corte magro + 10% de gordura adicionada' },
-  { id: 'lombo_suino', nome: 'Lombo suíno', gorduraMagra: 8.8, gorduraNormal: 17.9, fonteMagra: 'Lombo suíno cru, referência TACO', fonteNormal: '90% do corte magro + 10% de gordura adicionada' },
-  { id: 'peito_frango', nome: 'Peito de frango sem pele', gorduraMagra: 3, gorduraNormal: 12.7, fonteMagra: 'Peito de frango sem pele, cru, referência TACO', fonteNormal: '90% do corte magro + 10% de gordura adicionada' },
-  { id: 'coxa_frango', nome: 'Coxa de frango sem pele', gorduraMagra: 9.6, gorduraNormal: 18.6, fonteMagra: 'Coxa de frango sem pele, crua, referência TACO', fonteNormal: '90% do corte magro + 10% de gordura adicionada' },
-  { id: 'gordura_bovina', nome: 'Gordura bovina adicionada', gorduraMagra: 100, gorduraNormal: 100, fonteMagra: 'Gordura de formulação', fonteNormal: 'Gordura de formulação' },
-  { id: 'toucinho_suino', nome: 'Toucinho suíno', gorduraMagra: 99, gorduraNormal: 99, fonteMagra: 'Gordura de formulação', fonteNormal: 'Gordura de formulação' },
-  { id: 'outro', nome: 'Outro corte ou matéria-prima', gorduraMagra: 0, gorduraNormal: 0, fonteMagra: 'Informe o teor analisado ou consultado', fonteNormal: 'Informe o teor analisado ou consultado' }
+  { id: 'acem', nome: 'Acém bovino', comGordura: 5.9, semGordura: 6.1, fonteCom: 'TACO: acém moído, cru', fonteSem: 'TACO: acém sem gordura, cru' },
+  { id: 'fraldinha', nome: 'Fraldinha / flanco bovino', comGordura: 16.1, semGordura: 6.2, fonteCom: 'TACO: fraldinha com gordura, crua', fonteSem: 'TACO: flanco sem gordura, cru' },
+  { id: 'peito_bovino', nome: 'Peito bovino', comGordura: null, semGordura: 20.4, fonteSem: 'TACO: peito sem gordura, cru' },
+  { id: 'alcatra', nome: 'Miolo de alcatra bovina', comGordura: null, semGordura: 7.8, fonteSem: 'TACO: miolo de alcatra sem gordura, cru' },
+  { id: 'coxao_mole', nome: 'Coxão mole bovino', comGordura: null, semGordura: 8.7, fonteSem: 'TACO: coxão mole sem gordura, cru' },
+  { id: 'coxao_duro', nome: 'Coxão duro bovino', comGordura: null, semGordura: 6.2, fonteSem: 'TACO: coxão duro sem gordura, cru' },
+  { id: 'patinho', nome: 'Patinho bovino', comGordura: null, semGordura: 4.5, fonteSem: 'TACO: patinho sem gordura, cru' },
+  { id: 'lagarto', nome: 'Lagarto bovino', comGordura: 5.2, semGordura: null, fonteCom: 'TACO: lagarto, cru; a tabela não especifica retirada de gordura' },
+  { id: 'maminha', nome: 'Maminha bovina', comGordura: 7, semGordura: null, fonteCom: 'TACO: maminha, crua; a tabela não especifica retirada de gordura' },
+  { id: 'musculo', nome: 'Músculo bovino', comGordura: null, semGordura: 5.5, fonteSem: 'TACO: músculo sem gordura, cru' },
+  { id: 'paleta', nome: 'Paleta bovina', comGordura: 7.5, semGordura: 5.7, fonteCom: 'TACO: paleta com gordura, crua', fonteSem: 'TACO: paleta sem gordura, crua' },
+  { id: 'contrafile', nome: 'Contrafilé bovino', comGordura: 12.8, semGordura: 6, fonteCom: 'TACO: contrafilé com gordura, cru', fonteSem: 'TACO: contrafilé sem gordura, cru' },
+  { id: 'file_mignon', nome: 'Filé mignon bovino', comGordura: null, semGordura: 5.6, fonteSem: 'TACO: filé mignon sem gordura, cru' },
+  { id: 'picanha', nome: 'Picanha bovina', comGordura: 14.7, semGordura: 4.7, fonteCom: 'TACO: picanha com gordura, crua', fonteSem: 'TACO: picanha sem gordura, crua' },
+  { id: 'costela_bovina', nome: 'Costela bovina', comGordura: 31.8, semGordura: null, fonteCom: 'TACO: costela, crua; a tabela não especifica retirada de gordura' },
+  { id: 'cupim', nome: 'Cupim bovino', comGordura: 15.3, semGordura: null, fonteCom: 'TACO: cupim, cru; a tabela não especifica retirada de gordura' },
+  { id: 'pernil_suino', nome: 'Pernil suíno', comGordura: 11.1, semGordura: null, fonteCom: 'TACO: porco, pernil, cru' },
+  { id: 'lombo_suino', nome: 'Lombo suíno', comGordura: 8.8, semGordura: null, fonteCom: 'TACO: porco, lombo, cru' },
+  { id: 'peito_frango', nome: 'Peito de frango', comGordura: 6.7, semGordura: 3, fonteCom: 'TACO: peito de frango com pele, cru', fonteSem: 'TACO: peito de frango sem pele, cru' },
+  { id: 'coxa_frango', nome: 'Coxa de frango', comGordura: 9.8, semGordura: 4.9, fonteCom: 'TACO: coxa de frango com pele, crua', fonteSem: 'TACO: coxa de frango sem pele, crua' },
+  { id: 'sobrecoxa_frango', nome: 'Sobrecoxa de frango', comGordura: 20.9, semGordura: 9.6, fonteCom: 'TACO: sobrecoxa de frango com pele, crua', fonteSem: 'TACO: sobrecoxa de frango sem pele, crua' },
+  { id: 'gordura_bovina', nome: 'Gordura bovina adicionada', comGordura: 100, semGordura: null, fonteCom: 'Gordura de formulação; ajustar conforme análise ou ficha técnica' },
+  { id: 'toucinho_suino', nome: 'Toucinho suíno', comGordura: 60.3, semGordura: null, fonteCom: 'TACO: toucinho, cru' },
+  { id: 'outro', nome: 'Outro corte ou matéria-prima', comGordura: 0, semGordura: 0, fonteCom: 'Informe o teor analisado ou consultado', fonteSem: 'Informe o teor analisado ou consultado' }
 ];
 
 const TYPES = [
@@ -469,7 +473,7 @@ const DEFAULT_DB = {
     { id: 'ing_salsa_desidratada', nome: 'Salsa desidratada', categoria: 'Condimento / erva', tipo: 'condimento', funcao: 'Adiciona notas herbais e pontos visuais verdes em produtos como kafta e almôndega.', obs: 'Usar em baixo teor para não mascarar diferenças de textura.', gordura: 4, proteina: 22, carboidrato: 51, custo: 0, proteinaNaoCarnea: false, alergeno: false },
     { id: 'ing_farinha_rosca', nome: 'Farinha de rosca', categoria: 'Ingrediente ligante', tipo: 'carboidrato', funcao: 'Auxilia na absorção de umidade e na estrutura de produtos moldados, reduzindo desmanche durante a cocção.', obs: 'Discutir presença de glúten e impacto sobre textura, rendimento e rotulagem.', gordura: 3, proteina: 13, carboidrato: 72, custo: 0, proteinaNaoCarnea: false, alergeno: true },
     { id: 'ing_ovo_liquido', nome: 'Ovo líquido', categoria: 'Ingrediente ligante', tipo: 'outro', funcao: 'Contribui para liga, emulsificação parcial e estrutura térmica em produtos moldados.', obs: 'Ingrediente alergênico; útil para comparar formulações com e sem ligante proteico.', gordura: 10, proteina: 12, carboidrato: 1, custo: 0, proteinaNaoCarnea: false, alergeno: true },
-    { id: 'ing_tripa_suina', nome: 'Tripa suína natural', categoria: 'Envoltório', tipo: 'outro', funcao: 'Envoltório comestível que dá formato ao embutido e influencia aparência, calibre e mordida.', obs: 'Hidratar, lavar e manter sob boas condições higiênicas antes do embutimento.', gordura: 0, proteina: 0, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
+    { id: 'ing_tripa_suina', nome: 'Tripa suína natural', categoria: 'Envoltório', tipo: 'outro', funcao: 'Envoltório comestível que dá formato ao embutido e influencia aparência, calibre e mordida.', obs: 'Hidratar, lavar e manter sob boas condições higiênicas antes do embutimento.', gordura: 0, proteina: 0, carboidrato: 0, custo: 0, usadoNaFormulacao: false, proteinaNaoCarnea: false, alergeno: false },
     { id: 'ing_proteina_soja', nome: 'Proteína de soja texturizada/fina', categoria: 'Proteína não cárnea', tipo: 'proteina_nao_carnea', funcao: 'Pode contribuir para retenção de água, rendimento e textura, respeitando os limites do produto.', obs: 'Discutir rotulagem, limite legal, declaração de alergênico e impacto sensorial.', gordura: 1, proteina: 50, carboidrato: 30, custo: 0, proteinaNaoCarnea: true, alergeno: true },
     { id: 'ing_figado_suino', nome: 'Fígado suíno', categoria: 'Matéria-prima cárnea', tipo: 'carne', funcao: 'Contribui para sabor característico, cor e corpo em formulações pastosas como patê.', obs: 'Usar refrigerado e discutir intensidade sensorial quando a proporção aumenta.', gordura: 4, proteina: 20, carboidrato: 4, custo: 0, proteinaNaoCarnea: false, alergeno: false },
     { id: 'ing_fosfato', nome: 'Fosfato', categoria: 'Aditivo funcional', tipo: 'aditivo', funcao: 'Auxilia na retenção de água, extração proteica e estabilidade de emulsões cárneas, quando permitido.', obs: 'Usar apenas em discussão didática e conferir limites e permissões na legislação vigente para cada produto.', gordura: 0, proteina: 0, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
@@ -734,6 +738,7 @@ let activeTheoryLessonIndex = 0;
 let activeTheoryImageIndex = 0;
 let inlineEditTimer = null;
 let modalZIndex = 1000;
+let pendingConfirmationAction = null;
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => Array.from(document.querySelectorAll(selector));
@@ -786,7 +791,7 @@ function setupEvents() {
   $('#btnSalvarFormula')?.addEventListener('click', saveFormulaFromModal);
   $('#btnExcluirFormula')?.addEventListener('click', deleteFormulaFromModal);
   $('#btnAddFormulaItem')?.addEventListener('click', () => {
-    formulaDraftItems.push({ insumoId: db.insumos[0]?.id || '', percentual: 0 });
+    formulaDraftItems.push({ insumoId: formulaEligibleIngredients()[0]?.id || '', percentual: 0 });
     renderFormulaItems();
   });
   $('#formulaPeso')?.addEventListener('input', renderFormulaItems);
@@ -814,6 +819,8 @@ function setupEvents() {
   $('#conteudoImagens')?.addEventListener('change', handleTheoryContentImages);
   $('#btnSalvarConteudo')?.addEventListener('click', saveTheoryContent);
   $('#btnExcluirConteudo')?.addEventListener('click', deleteTheoryContent);
+  $('#btnCancelarConfirmacao')?.addEventListener('click', closeConfirmation);
+  $('#btnConfirmarAcao')?.addEventListener('click', confirmPendingAction);
   $('#btnAddRule')?.addEventListener('click', addLabRule);
   $('#btnExportar')?.addEventListener('click', exportData);
   $('#btnImportar')?.addEventListener('click', () => $('#fileImportar').click());
@@ -851,10 +858,12 @@ function loadDB() {
 
 function normalizeDB(data) {
   const source = data && typeof data === 'object' ? data : {};
+  const resetLegacyBlendDefault = source.version !== APP_VERSION;
   const merged = Object.assign(clone(DEFAULT_DB), source);
   merged.configs = Object.assign(clone(DEFAULT_DB.configs), source.configs || {});
   merged.configs.regrasLaboratorio = normalizeLabRules(source.configs?.regrasLaboratorio || source.configs?.regras || DEFAULT_RULES);
-  merged.configs.conteudosTeoricos = normalizeTheoryContents(source.configs?.conteudosTeoricos || source.conteudosTeoricos, source.configs?.periodos || []);
+  merged.configs.conteudosTeoricos = normalizeTheoryContents(source.configs?.conteudosTeoricos || source.conteudosTeoricos, source.configs?.periodos || [])
+    .filter(content => !(content.titulo === 'Conteúdo temporário de validação' && content.resumo === 'Resumo de teste'));
   if (merged.configs.filtroInsumo !== 'todos' && !TYPES.some(type => type.value === merged.configs.filtroInsumo)) merged.configs.filtroInsumo = 'todos';
   merged.configs.periodos = normalizeSchedulePeriods(source.configs?.periodos || source.configs?.cronogramaPeriodos, source.configs?.cronograma);
   if (!merged.configs.periodos.some(period => period.id === merged.configs.periodoAtivoId)) {
@@ -892,6 +901,9 @@ function normalizeDB(data) {
     i.proteina = toNumber(i.proteina);
     i.carboidrato = toNumber(i.carboidrato);
     i.custo = toNumber(i.custo);
+    i.usadoNaFormulacao = i.usadoNaFormulacao === undefined
+      ? i.tipo !== 'envoltorio_apresentacao'
+      : i.usadoNaFormulacao !== false;
     i.proteinaNaoCarnea = Boolean(i.proteinaNaoCarnea || isFunctionalProtein(i));
   });
   merged.formulacoes.forEach(f => {
@@ -907,6 +919,7 @@ function normalizeDB(data) {
     f.itens = Array.isArray(f.itens) ? f.itens : [];
     f.blendComponentes = normalizeBlendComponents(f.blendComponentes, f, merged.insumos);
     f.materiaPrimaUnica = normalizeSingleMaterial(f.materiaPrimaUnica, f, merged.insumos);
+    f.usarBlend = resetLegacyBlendDefault ? false : f.usarBlend === true;
     f.bloqueada = Boolean(f.bloqueada);
     if (String(f.observacoes || '').startsWith('Percentuais calculados sobre')) f.observacoes = '';
   });
@@ -931,7 +944,14 @@ function mergeDefaults(current, defaults) {
 
 function saveDB() {
   db.version = APP_VERSION;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+    return true;
+  } catch (err) {
+    console.error(err);
+    toast('Não foi possível salvar. Remova algumas imagens grandes e tente novamente.');
+    return false;
+  }
 }
 
 function renderAll() {
@@ -1209,7 +1229,7 @@ function blendEditorHTML(f) {
       </div>
     </div>
     <div class="blend-components">
-        ${blendComponentHTML(f, firstComponent, 0, { locked: f.bloqueada, label: 'Matéria-prima 1', single: !state.useBlend })}
+        ${blendComponentHTML(f, firstComponent, 0, { locked: f.bloqueada, label: state.useBlend ? 'Matéria-prima 1' : 'Matéria-prima', single: !state.useBlend })}
         ${state.useBlend ? blendComponentHTML(f, secondComponent, 1, { locked: f.bloqueada, label: 'Matéria-prima 2' }) : ''}
         ${state.useBlend ? `
         <div class="blend-summary">
@@ -1224,6 +1244,7 @@ function blendEditorHTML(f) {
 function blendComponentHTML(formula, component, index, options = {}) {
   const fat = blendComponentFat(component);
   const source = blendComponentSource(component);
+  const cut = MEAT_CUTS.find(item => item.id === component.corteId) || MEAT_CUTS[MEAT_CUTS.length - 1];
   const disabled = options.locked ? ' disabled' : '';
   const cutAttr = options.single ? `data-single-cut="${escapeAttr(formula.id)}"` : `data-blend-cut="${escapeAttr(formula.id)}" data-blend-index="${index}"`;
   const profileAttr = options.single ? `data-single-profile="${escapeAttr(formula.id)}"` : `data-blend-profile="${escapeAttr(formula.id)}" data-blend-index="${index}"`;
@@ -1240,8 +1261,7 @@ function blendComponentHTML(formula, component, index, options = {}) {
       <div class="form-group">
         <label>Perfil</label>
         <select ${profileAttr}${disabled}>
-          <option value="magra" ${component.perfil === 'magra' ? 'selected' : ''}>Magra</option>
-          <option value="normal" ${component.perfil === 'normal' ? 'selected' : ''}>Normal</option>
+          ${meatProfileOptionsHTML(cut, component.perfil)}
         </select>
       </div>
       <div class="form-group ${options.single ? 'single-meat-weight' : ''}">
@@ -1257,9 +1277,21 @@ function blendComponentHTML(formula, component, index, options = {}) {
   </div>`;
 }
 
+function meatProfileOptionsHTML(cut, selected) {
+  const profiles = [
+    { value: 'com_gordura', label: 'Com gordura', available: cut.comGordura !== null && cut.comGordura !== undefined },
+    { value: 'sem_gordura', label: 'Sem gordura', available: cut.semGordura !== null && cut.semGordura !== undefined }
+  ];
+  return profiles.map(profile => `<option value="${profile.value}" ${profile.value === selected ? 'selected' : ''} ${profile.available ? '' : 'disabled'}>${profile.label}${profile.available ? '' : ' — sem dado TACO'}</option>`).join('');
+}
+
 function inlineFormulaEditorHTML(f) {
   const editableItems = (f.itens || []).filter(item => !isBlendItem(item.insumoId, f));
-  const available = db.insumos.filter(ingredient => !isMeatIngredient(ingredient) && !(f.itens || []).some(item => item.insumoId === ingredient.id));
+  const available = db.insumos.filter(ingredient =>
+    ingredient.usadoNaFormulacao !== false &&
+    !isMeatIngredient(ingredient) &&
+    !(f.itens || []).some(item => item.insumoId === ingredient.id)
+  );
   const disabled = f.bloqueada ? ' disabled' : '';
   return `<div class="inline-formula-editor">
     <div class="inline-formula-head">
@@ -1301,11 +1333,15 @@ function inlineFormulaRowHTML(f, item) {
 
 function intensityScaleHTML(formula, item, current, suggestion) {
   const levels = Array.from({ length: 5 }, (_, index) => suggestion.suave + (suggestion.acentuado - suggestion.suave) * index / 4);
-  const closest = levels.reduce((best, value, index) => Math.abs(value - current) < Math.abs(levels[best] - current) ? index : best, 0);
+  const range = suggestion.acentuado - suggestion.suave;
+  const position = range > 0 ? Math.max(0, Math.min(100, (current - suggestion.suave) / range * 100)) : 0;
+  const endpointCorrection = position * 0.16;
+  const exactIndex = levels.findIndex(value => Math.abs(value - current) < 0.001);
   return `<div class="intensity-scale">
     <div class="intensity-labels"><span>Suave ${fmt(suggestion.suave)}%</span><span>Acentuado ${fmt(suggestion.acentuado)}%</span></div>
     <div class="intensity-track">
-      ${levels.map((value, index) => `<button type="button" class="intensity-dot ${index === closest ? 'active' : ''}" data-suggestion-formula="${escapeAttr(formula.id)}" data-suggestion-insumo="${escapeAttr(item.insumoId)}" data-suggestion-value="${escapeAttr(fmtInput(value))}" title="${fmt(value)}%" ${formula.bloqueada ? 'disabled' : ''}></button>`).join('')}
+      ${levels.map((value, index) => `<button type="button" class="intensity-dot ${index === exactIndex ? 'selected' : ''}" data-suggestion-formula="${escapeAttr(formula.id)}" data-suggestion-insumo="${escapeAttr(item.insumoId)}" data-suggestion-value="${escapeAttr(fmtInput(value))}" title="${fmt(value)}%" ${formula.bloqueada ? 'disabled' : ''}></button>`).join('')}
+      <span class="intensity-current" style="left:calc(8px + ${position.toFixed(2)}% - ${endpointCorrection.toFixed(2)}px)" title="Valor atual: ${fmt(current)}%"><i>${fmt(current)}%</i></span>
     </div>
   </div>`;
 }
@@ -1352,7 +1388,7 @@ function handleProductWorkspaceClick(event) {
   if (target.dataset.toggleBlendButton) {
     const formula = findFormula(target.dataset.toggleBlendButton);
     if (!formula || formula.bloqueada) return;
-    updateFormulaBlend(formula.id, { useBlend: formula.usarBlend === false });
+    updateFormulaBlend(formula.id, { useBlend: formula.usarBlend !== true });
     return;
   }
   if (target.dataset.suggestionFormula) {
@@ -1367,13 +1403,14 @@ function handleProductWorkspaceClick(event) {
     return;
   }
   if (target.dataset.removeIngredientFormula) {
-    removeFormulaItemInline(target.dataset.removeIngredientFormula, target.dataset.removeIngredientId);
+    requestFormulaItemRemoval(target.dataset.removeIngredientFormula, target.dataset.removeIngredientId);
   }
 }
 
 function bindProductSlides(root) {
   const panels = Array.from(root.querySelectorAll('[data-slide-panel]'));
   const jumps = Array.from(root.querySelectorAll('[data-product-slide]'));
+  const summary = root.querySelector('.product-slide-summary');
   const position = root.querySelector('[data-slide-position]');
   let index = Math.max(0, panels.findIndex(panel => panel.dataset.slidePanel === activeProductSlideId));
   const show = (nextIndex) => {
@@ -1382,6 +1419,10 @@ function bindProductSlides(root) {
     panels.forEach((panel, panelIndex) => panel.classList.toggle('active', panelIndex === index));
     jumps.forEach((jump, jumpIndex) => jump.classList.toggle('active', jumpIndex === index));
     if (position) position.textContent = `${index + 1} / ${panels.length}`;
+    const activeJump = jumps[index];
+    if (activeJump && summary && summary.scrollWidth > summary.clientWidth) {
+      activeJump.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
   };
   jumps.forEach((jump, jumpIndex) => jump.addEventListener('click', () => show(jumpIndex)));
   root.querySelector('[data-slide-prev]')?.addEventListener('click', () => show(index - 1));
@@ -1423,6 +1464,7 @@ function ingredientHTML(i) {
         <div class="item-meta">
           <span class="badge info">${escapeHTML(typeLabel(i.tipo))}</span>
           ${i.subtipo ? `<span class="badge">${escapeHTML(capitalizeFirst(i.subtipo))}</span>` : ''}
+          ${i.usadoNaFormulacao === false ? '<span class="badge">Fora da formulação</span>' : ''}
           ${i.proteinaNaoCarnea ? '<span class="badge warn">proteína agregada</span>' : ''}
           ${i.alergeno ? '<span class="badge danger">alérgeno</span>' : ''}
           <span class="badge">G ${fmt(i.gordura)}% · P ${fmt(i.proteina)}% · C ${fmt(i.carboidrato)}%</span>
@@ -1724,7 +1766,13 @@ function renderTheoryContentLinks(content) {
 
 async function handleTheoryContentImages(ev) {
   const files = Array.from(ev.target.files || []).filter(file => file.type.startsWith('image/'));
-  for (const file of files) tempTheoryImages.push(await fileToDataURL(file, 1800, 0.88));
+  try {
+    for (const file of files) tempTheoryImages.push(await fileToDataURL(file, 1280, 0.72));
+  } catch (err) {
+    console.error(err);
+    toast('Não foi possível preparar uma das imagens.');
+  }
+  ev.target.value = '';
   renderTheoryContentImages();
 }
 
@@ -1756,9 +1804,14 @@ function saveTheoryContent() {
     padrao: Boolean(existing?.padrao)
   };
   if (!content.titulo) return toast('Informe o nome do conteúdo.');
+  db.configs.conteudosTeoricos = getTheoryContents();
+  const previousContents = clone(db.configs.conteudosTeoricos);
   const index = db.configs.conteudosTeoricos.findIndex(item => item.id === id);
   if (index >= 0) db.configs.conteudosTeoricos[index] = content; else db.configs.conteudosTeoricos.push(content);
-  saveDB();
+  if (!saveDB()) {
+    db.configs.conteudosTeoricos = previousContents;
+    return;
+  }
   closeModal('modalConteudoEditor');
   renderContentConfig();
   renderScheduleConfig();
@@ -1772,7 +1825,15 @@ function deleteTheoryContent() {
   const id = $('#conteudoId').value;
   const content = getTheoryContent(id);
   if (!content || content.padrao) return;
-  if (!confirm('Excluir este conteúdo teórico?')) return;
+  openConfirmation({
+    title: 'Excluir conteúdo',
+    message: `Deseja excluir "${content.titulo}"? Esta ação também remove o vínculo desse assunto com o cronograma.`,
+    confirmLabel: 'Excluir',
+    action: () => performTheoryContentDeletion(id)
+  });
+}
+
+function performTheoryContentDeletion(id) {
   db.configs.conteudosTeoricos = db.configs.conteudosTeoricos.filter(item => item.id !== id);
   getSchedulePeriods().forEach(period => period.aulas.forEach(lesson => {
     lesson.categorias = (lesson.categorias || []).filter(contentId => contentId !== id);
@@ -2368,6 +2429,8 @@ function openIngredientModal(id = null) {
   $('#insumoProteina').value = i?.proteina ?? 0;
   $('#insumoCarbo').value = i?.carboidrato ?? 0;
   $('#insumoCusto').value = i?.custo ?? 0;
+  $('#insumoUsadoSim').checked = i ? i.usadoNaFormulacao !== false : true;
+  $('#insumoUsadoNao').checked = i ? i.usadoNaFormulacao === false : false;
   $('#insumoPnc').checked = Boolean(i?.proteinaNaoCarnea);
   $('#insumoAlergeno').checked = Boolean(i?.alergeno);
   tempIngredientPhoto = i?.foto || '';
@@ -2407,6 +2470,7 @@ function openIngredientView(id = null) {
       <div class="item-meta">
         <span class="badge info">${escapeHTML(typeLabel(i.tipo))}</span>
         ${i.subtipo ? `<span class="badge">${escapeHTML(capitalizeFirst(i.subtipo))}</span>` : ''}
+        ${i.usadoNaFormulacao === false ? '<span class="badge">Fora da formulação</span>' : ''}
         ${i.alergeno ? '<span class="badge danger">alérgeno</span>' : ''}
         ${i.proteinaNaoCarnea ? '<span class="badge warn">proteína agregada</span>' : ''}
       </div>
@@ -2438,6 +2502,7 @@ function saveIngredientFromModal() {
     proteina: toNumber($('#insumoProteina').value),
     carboidrato: toNumber($('#insumoCarbo').value),
     custo: toNumber($('#insumoCusto').value),
+    usadoNaFormulacao: $('#insumoUsadoSim').checked,
     proteinaNaoCarnea: $('#insumoPnc').checked || isFunctionalProtein({ tipo: $('#insumoTipo').value, subtipo: $('#insumoSubtipo').value, nome: $('#insumoNome').value }),
     alergeno: $('#insumoAlergeno').checked,
     foto: tempIngredientPhoto
@@ -2479,7 +2544,7 @@ function openFormulaModal(id = null, productId = null) {
   $('#formulaBaseCalculo').value = f?.baseCalculo || defaultFormulaBase(product);
   $('#formulaRendimento').value = f?.rendimento ?? '';
   $('#formulaObs').value = f?.observacoes || '';
-  formulaDraftItems = clone(f?.itens || [{ insumoId: db.insumos[0]?.id || '', percentual: 100 }]);
+  formulaDraftItems = clone(f?.itens || [{ insumoId: formulaEligibleIngredients()[0]?.id || '', percentual: 100 }]);
   $('#btnExcluirFormula').style.display = f ? 'inline-flex' : 'none';
   renderFormulaItems();
   openModal('modalFormula');
@@ -2489,8 +2554,9 @@ function renderFormulaItems() {
   const draft = getFormulaFromModal(false);
   $('#formulaItens').innerHTML = formulaDraftItems.map((item, idx) => {
     const grams = formulaItemGrams(draft, item);
+    const options = formulaEligibleIngredients(item.insumoId);
     return `<tr>
-      <td><select data-row-insumo="${idx}">${db.insumos.map(i => `<option value="${escapeAttr(i.id)}" ${i.id === item.insumoId ? 'selected' : ''}>${escapeHTML(i.nome)}</option>`).join('')}</select></td>
+      <td><select data-row-insumo="${idx}">${options.map(i => `<option value="${escapeAttr(i.id)}" ${i.id === item.insumoId ? 'selected' : ''}>${escapeHTML(i.nome)}</option>`).join('')}</select></td>
       <td><input type="number" step="0.1" data-row-pct="${idx}" value="${escapeAttr(item.percentual)}"></td>
       <td><strong data-row-grams="${idx}">${fmt(grams)} g</strong></td>
       <td><button type="button" class="tiny-btn" data-row-del="${idx}" title="Remover">×</button></td>
@@ -2516,6 +2582,10 @@ function renderFormulaItems() {
   renderFormulaSummary();
 }
 
+function formulaEligibleIngredients(currentId = '') {
+  return db.insumos.filter(ingredient => ingredient.usadoNaFormulacao !== false || ingredient.id === currentId);
+}
+
 function renderFormulaSummary() {
   const draft = getFormulaFromModal(false);
   $('#formulaResumo').innerHTML = analysisHTML(analyzeFormula(draft));
@@ -2532,7 +2602,7 @@ function getFormulaFromModal(requireName = true) {
     rendimento: numberOrBlank($('#formulaRendimento').value),
     itens: formulaDraftItems.map(item => ({ insumoId: item.insumoId, percentual: toNumber(item.percentual) })).filter(item => item.insumoId),
     observacoes: $('#formulaObs').value.trim(),
-    usarBlend: existing?.usarBlend !== false,
+    usarBlend: existing?.usarBlend === true,
     blendComponentes: clone(existing?.blendComponentes || []),
     materiaPrimaUnica: clone(existing?.materiaPrimaUnica || null),
     bloqueada: Boolean(existing?.bloqueada)
@@ -2605,6 +2675,18 @@ function removeFormulaItemInline(formulaId, insumoId) {
   saveInlineFormulaEdit('Insumo removido.');
 }
 
+function requestFormulaItemRemoval(formulaId, insumoId) {
+  const formula = findFormula(formulaId);
+  if (!formula || formula.bloqueada) return;
+  const ingredient = findIngredient(insumoId);
+  openConfirmation({
+    title: 'Excluir insumo',
+    message: `Deseja excluir "${ingredient?.nome || 'este insumo'}" desta formulação?`,
+    confirmLabel: 'Excluir',
+    action: () => removeFormulaItemInline(formulaId, insumoId)
+  });
+}
+
 function toggleFormulaLock(formulaId) {
   const formula = findFormula(formulaId);
   if (!formula) return;
@@ -2625,7 +2707,7 @@ function updateFormulaBlend(formulaId, changes = {}, options = {}) {
     formula.materiaPrimaUnica = {
       id: formula.materiaPrimaUnica?.id || uid('materia'),
       corteId: first?.corteId || 'acem',
-      perfil: first?.perfil || 'magra',
+      perfil: first?.perfil || normalizeMeatProfile('', first?.corteId || 'acem'),
       gramas: total,
       gorduraCustom: first?.gorduraCustom ?? ''
     };
@@ -2650,7 +2732,7 @@ function defaultSecondBlendComponent(formula, state = {}) {
   return {
     id: uid('blend'),
     corteId: isPork ? 'toucinho_suino' : 'gordura_bovina',
-    perfil: 'magra',
+    perfil: 'com_gordura',
     gramas: 0,
     gorduraCustom: ''
   };
@@ -2662,8 +2744,11 @@ function updateBlendComponent(formulaId, index, changes = {}, options = {}) {
   formula.blendComponentes = normalizeBlendComponents(formula.blendComponentes, formula);
   const component = formula.blendComponentes[index];
   if (!component) return;
-  if (Object.prototype.hasOwnProperty.call(changes, 'corteId')) component.corteId = MEAT_CUTS.some(cut => cut.id === changes.corteId) ? changes.corteId : 'outro';
-  if (Object.prototype.hasOwnProperty.call(changes, 'perfil')) component.perfil = changes.perfil === 'normal' ? 'normal' : 'magra';
+  if (Object.prototype.hasOwnProperty.call(changes, 'corteId')) {
+    component.corteId = MEAT_CUTS.some(cut => cut.id === changes.corteId) ? changes.corteId : 'outro';
+    component.perfil = normalizeMeatProfile(component.perfil, component.corteId);
+  }
+  if (Object.prototype.hasOwnProperty.call(changes, 'perfil')) component.perfil = normalizeMeatProfile(changes.perfil, component.corteId);
   if (Object.prototype.hasOwnProperty.call(changes, 'gramas')) component.gramas = Math.max(0, toNumber(changes.gramas));
   if (Object.prototype.hasOwnProperty.call(changes, 'gorduraCustom')) component.gorduraCustom = changes.gorduraCustom === '' ? '' : Math.max(0, Math.min(100, toNumber(changes.gorduraCustom)));
   formula.usarBlend = true;
@@ -2676,7 +2761,7 @@ function addBlendComponent(formulaId) {
   const formula = findFormula(formulaId);
   if (!formula || formula.bloqueada) return;
   formula.blendComponentes = normalizeBlendComponents(formula.blendComponentes, formula);
-  formula.blendComponentes.push({ id: uid('blend'), corteId: 'acem', perfil: 'magra', gramas: 0, gorduraCustom: '' });
+  formula.blendComponentes.push({ id: uid('blend'), corteId: 'acem', perfil: 'sem_gordura', gramas: 0, gorduraCustom: '' });
   formula.usarBlend = true;
   saveInlineFormulaEdit('Componente adicionado.');
 }
@@ -2697,8 +2782,11 @@ function updateSingleMaterial(formulaId, changes = {}, options = {}) {
   if (!formula || formula.bloqueada) return;
   formula.materiaPrimaUnica = normalizeSingleMaterial(formula.materiaPrimaUnica, formula);
   const component = formula.materiaPrimaUnica;
-  if (Object.prototype.hasOwnProperty.call(changes, 'corteId')) component.corteId = MEAT_CUTS.some(cut => cut.id === changes.corteId) ? changes.corteId : 'outro';
-  if (Object.prototype.hasOwnProperty.call(changes, 'perfil')) component.perfil = changes.perfil === 'normal' ? 'normal' : 'magra';
+  if (Object.prototype.hasOwnProperty.call(changes, 'corteId')) {
+    component.corteId = MEAT_CUTS.some(cut => cut.id === changes.corteId) ? changes.corteId : 'outro';
+    component.perfil = normalizeMeatProfile(component.perfil, component.corteId);
+  }
+  if (Object.prototype.hasOwnProperty.call(changes, 'perfil')) component.perfil = normalizeMeatProfile(changes.perfil, component.corteId);
   if (Object.prototype.hasOwnProperty.call(changes, 'gramas')) component.gramas = Math.max(1, toNumber(changes.gramas) || 1);
   if (Object.prototype.hasOwnProperty.call(changes, 'gorduraCustom')) component.gorduraCustom = changes.gorduraCustom === '' ? '' : Math.max(0, Math.min(100, toNumber(changes.gorduraCustom)));
   formula.usarBlend = false;
@@ -2749,7 +2837,7 @@ function isBlendItem(insumoId, formula) {
 }
 
 function formulaBlendState(formula) {
-  const useBlend = formula.usarBlend !== false;
+  const useBlend = formula.usarBlend === true;
   const components = normalizeBlendComponents(formula.blendComponentes, formula).map(component => ({
     ...component,
     cut: MEAT_CUTS.find(cut => cut.id === component.corteId) || MEAT_CUTS[MEAT_CUTS.length - 1]
@@ -2772,10 +2860,11 @@ function formulaBlendState(formula) {
 
 function normalizeSingleMaterial(source, formula, ingredients = db.insumos) {
   if (source && typeof source === 'object') {
+    const corteId = MEAT_CUTS.some(cut => cut.id === source.corteId) ? source.corteId : 'outro';
     return {
       id: source.id || uid('materia'),
-      corteId: MEAT_CUTS.some(cut => cut.id === source.corteId) ? source.corteId : 'outro',
-      perfil: source.perfil === 'normal' ? 'normal' : 'magra',
+      corteId,
+      perfil: normalizeMeatProfile(source.perfil, corteId),
       gramas: Math.max(1, toNumber(source.gramas) || toNumber(formula?.pesoReferencia) || 1000),
       gorduraCustom: source.gorduraCustom === '' || source.gorduraCustom === undefined ? '' : Math.max(0, Math.min(100, toNumber(source.gorduraCustom)))
     };
@@ -2784,7 +2873,7 @@ function normalizeSingleMaterial(source, formula, ingredients = db.insumos) {
   return {
     id: uid('materia'),
     corteId: inferred?.corteId || 'acem',
-    perfil: inferred?.perfil || 'magra',
+    perfil: inferred?.perfil || normalizeMeatProfile('', inferred?.corteId || 'acem'),
     gramas: toNumber(formula?.pesoReferencia) || 1000,
     gorduraCustom: inferred?.gorduraCustom ?? ''
   };
@@ -2792,13 +2881,16 @@ function normalizeSingleMaterial(source, formula, ingredients = db.insumos) {
 
 function normalizeBlendComponents(source, formula, ingredients = db.insumos) {
   if (Array.isArray(source) && source.length) {
-    return source.map(component => ({
-      id: component.id || uid('blend'),
-      corteId: MEAT_CUTS.some(cut => cut.id === component.corteId) ? component.corteId : 'outro',
-      perfil: component.perfil === 'normal' ? 'normal' : 'magra',
-      gramas: Math.max(0, toNumber(component.gramas)),
-      gorduraCustom: component.gorduraCustom === '' || component.gorduraCustom === undefined ? '' : Math.max(0, Math.min(100, toNumber(component.gorduraCustom)))
-    }));
+    return source.map(component => {
+      const corteId = MEAT_CUTS.some(cut => cut.id === component.corteId) ? component.corteId : 'outro';
+      return {
+        id: component.id || uid('blend'),
+        corteId,
+        perfil: normalizeMeatProfile(component.perfil, corteId),
+        gramas: Math.max(0, toNumber(component.gramas)),
+        gorduraCustom: component.gorduraCustom === '' || component.gorduraCustom === undefined ? '' : Math.max(0, Math.min(100, toNumber(component.gorduraCustom)))
+      };
+    });
   }
   const inferred = formulaBlendSourceItems(formula, ingredients).map(item => {
     const ingredient = (ingredients || []).find(row => row.id === item.insumoId);
@@ -2811,24 +2903,35 @@ function normalizeBlendComponents(source, formula, ingredients = db.insumos) {
     return {
       id: uid('blend'),
       corteId: mapping[item.insumoId] || 'outro',
-      perfil: 'magra',
+      perfil: normalizeMeatProfile('sem_gordura', mapping[item.insumoId] || 'outro'),
       gramas: formulaItemGrams(formula, item),
       gorduraCustom: mapping[item.insumoId] ? '' : toNumber(ingredient?.gordura)
     };
   });
-  return inferred.length ? inferred : [{ id: uid('blend'), corteId: 'acem', perfil: 'magra', gramas: toNumber(formula?.pesoReferencia) || 1000, gorduraCustom: '' }];
+  return inferred.length ? inferred : [{ id: uid('blend'), corteId: 'acem', perfil: 'sem_gordura', gramas: toNumber(formula?.pesoReferencia) || 1000, gorduraCustom: '' }];
 }
 
 function blendComponentFat(component) {
   if (component?.gorduraCustom !== '' && component?.gorduraCustom !== undefined) return Math.max(0, Math.min(100, toNumber(component.gorduraCustom)));
   const cut = MEAT_CUTS.find(item => item.id === component?.corteId) || MEAT_CUTS[MEAT_CUTS.length - 1];
-  return component?.perfil === 'normal' ? cut.gorduraNormal : cut.gorduraMagra;
+  const profile = normalizeMeatProfile(component?.perfil, cut.id);
+  return profile === 'com_gordura' ? toNumber(cut.comGordura) : toNumber(cut.semGordura);
 }
 
 function blendComponentSource(component) {
   const cut = MEAT_CUTS.find(item => item.id === component?.corteId) || MEAT_CUTS[MEAT_CUTS.length - 1];
   if (component?.gorduraCustom !== '' && component?.gorduraCustom !== undefined) return 'Teor de gordura ajustado pelo usuário para esta matéria-prima.';
-  return component?.perfil === 'normal' ? cut.fonteNormal : cut.fonteMagra;
+  const profile = normalizeMeatProfile(component?.perfil, cut.id);
+  return profile === 'com_gordura' ? cut.fonteCom : cut.fonteSem;
+}
+
+function normalizeMeatProfile(profile, cutId) {
+  const cut = MEAT_CUTS.find(item => item.id === cutId) || MEAT_CUTS[MEAT_CUTS.length - 1];
+  const migrated = profile === 'normal' ? 'com_gordura' : profile === 'magra' ? 'sem_gordura' : profile;
+  if (migrated === 'com_gordura' && cut.comGordura !== null && cut.comGordura !== undefined) return 'com_gordura';
+  if (migrated === 'sem_gordura' && cut.semGordura !== null && cut.semGordura !== undefined) return 'sem_gordura';
+  if (cut.semGordura !== null && cut.semGordura !== undefined) return 'sem_gordura';
+  return 'com_gordura';
 }
 
 function ingredientSuggestion(ingredient) {
@@ -3022,13 +3125,13 @@ function buildReport(formula) {
   if (blend.useBlend && blend.components.length) {
     lines.push('Blend de matérias-primas:');
     blend.components.forEach(component => {
-      lines.push(`- ${component.cut.nome} (${component.perfil === 'normal' ? 'normal' : 'magra/aparada'}): ${fmt(component.gramas)} g, gordura de referência ${fmt(blendComponentFat(component))}%`);
+      lines.push(`- ${component.cut.nome} (${component.perfil === 'com_gordura' ? 'com gordura' : 'sem gordura'}): ${fmt(component.gramas)} g, gordura de referência ${fmt(blendComponentFat(component))}%`);
     });
     lines.push(`- Gordura estimada do blend: ${fmt(blend.fatPct)}%`);
     lines.push('');
   } else if (blend.singleComponent) {
     const cut = MEAT_CUTS.find(item => item.id === blend.singleComponent.corteId);
-    lines.push(`Matéria-prima cárnea: ${cut?.nome || 'Não informada'} (${blend.singleComponent.perfil === 'normal' ? 'normal' : 'magra'}), ${fmt(blend.singleComponent.gramas)} g`);
+    lines.push(`Matéria-prima cárnea: ${cut?.nome || 'Não informada'} (${blend.singleComponent.perfil === 'com_gordura' ? 'com gordura' : 'sem gordura'}), ${fmt(blend.singleComponent.gramas)} g`);
     lines.push('');
   }
   lines.push('Formulação:');
@@ -3145,6 +3248,23 @@ function openModal(id) {
   });
 }
 function closeModal(id) { $('#' + id)?.classList.remove('show'); }
+function openConfirmation({ title = 'Confirmar ação', message = '', confirmLabel = 'Confirmar', action } = {}) {
+  pendingConfirmationAction = typeof action === 'function' ? action : null;
+  $('#confirmacaoTitulo').textContent = title;
+  $('#confirmacaoMensagem').textContent = message;
+  $('#btnConfirmarAcao').textContent = confirmLabel;
+  openModal('modalConfirmacao');
+}
+function closeConfirmation() {
+  pendingConfirmationAction = null;
+  closeModal('modalConfirmacao');
+}
+function confirmPendingAction() {
+  const action = pendingConfirmationAction;
+  pendingConfirmationAction = null;
+  closeModal('modalConfirmacao');
+  action?.();
+}
 function findProduct(id) { return db.produtos.find(p => p.id === id); }
 function findIngredient(id) { return db.insumos.find(i => i.id === id); }
 function findFormula(id) { return db.formulacoes.find(f => f.id === id); }

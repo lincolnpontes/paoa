@@ -9,7 +9,7 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon.png" />
   <link rel="apple-touch-icon" href="icon.png" />
-  <link rel="stylesheet" href="style.css?v=25" />
+  <link rel="stylesheet" href="style.css?v=28" />
   <title>Processamento de Alimentos de Origem Animal</title>
 </head>
 <body>
@@ -176,6 +176,13 @@
         <div class="form-group"><label>Proteína (%)</label><input id="insumoProteina" type="number" step="0.01" /></div>
         <div class="form-group"><label>Carboidrato (%)</label><input id="insumoCarbo" type="number" step="0.01" /></div>
         <div class="form-group"><label>Custo/kg (R$)</label><input id="insumoCusto" type="number" step="0.01" /></div>
+      </div>
+      <div class="form-group">
+        <label>Pode ser adicionado às formulações?</label>
+        <div class="segmented-choice">
+          <label><input id="insumoUsadoSim" type="radio" name="insumoUsadoNaFormulacao" value="sim" checked /><span>Sim</span></label>
+          <label><input id="insumoUsadoNao" type="radio" name="insumoUsadoNaFormulacao" value="nao" /><span>Não</span></label>
+        </div>
       </div>
       <label class="check-row"><input id="insumoPnc" type="checkbox" /> Contabilizar como proteína agregada não cárnea</label>
       <label class="check-row"><input id="insumoAlergeno" type="checkbox" /> Pode envolver alérgeno ou declaração em rótulo</label>
@@ -426,7 +433,19 @@
     </div>
   </div>
 
+  <div class="modal-overlay" id="modalConfirmacao">
+    <div class="modal confirmation-modal">
+      <button type="button" class="modal-close" data-close="modalConfirmacao" aria-label="Fechar">×</button>
+      <div class="modal-title" id="confirmacaoTitulo">Confirmar exclusão</div>
+      <p class="confirmation-message" id="confirmacaoMensagem"></p>
+      <div class="modal-actions">
+        <button type="button" class="secondary-btn" id="btnCancelarConfirmacao">Cancelar</button>
+        <button type="button" class="danger-btn" id="btnConfirmarAcao">Excluir</button>
+      </div>
+    </div>
+  </div>
+
   <div id="toast" class="toast"></div>
-  <script src="app.js?v=25"></script>
+  <script src="app.js?v=28"></script>
 </body>
 </html>
