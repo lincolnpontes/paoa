@@ -1,7 +1,7 @@
 'use strict';
 
 const STORAGE_KEY = 'paoa_lab_v1';
-const APP_VERSION = '1.6.0';
+const APP_VERSION = '1.7.1';
 const MEAT_CUTS_SOURCE_URL = 'https://nepa.unicamp.br/publicacoes/tabela-taco-pdf/';
 
 const MEAT_CUTS = [
@@ -727,6 +727,7 @@ let activeProductId = db.configs.produtoSelecionado || '';
 let pendingInstallPrompt = null;
 let tempProductPhotos = [];
 let tempIngredientPhoto = '';
+let tempTheoryImages = [];
 let formulaDraftItems = [];
 let activeProductSlideId = 'visao';
 let activeTheoryLessonIndex = 0;
@@ -808,6 +809,11 @@ function setupEvents() {
   $('#btnArquivarPeriodo')?.addEventListener('click', archiveActivePeriod);
   $('#btnArquivarNovoPeriodo')?.addEventListener('click', () => createPeriod(true));
   $('#btnAdicionarAula')?.addEventListener('click', addScheduleLesson);
+  $('#btnNovoConteudo')?.addEventListener('click', () => openTheoryContentModal());
+  $('#conteudoModo')?.addEventListener('change', updateTheoryContentMode);
+  $('#conteudoImagens')?.addEventListener('change', handleTheoryContentImages);
+  $('#btnSalvarConteudo')?.addEventListener('click', saveTheoryContent);
+  $('#btnExcluirConteudo')?.addEventListener('click', deleteTheoryContent);
   $('#btnAddRule')?.addEventListener('click', addLabRule);
   $('#btnExportar')?.addEventListener('click', exportData);
   $('#btnImportar')?.addEventListener('click', () => $('#fileImportar').click());
@@ -900,6 +906,8 @@ function normalizeDB(data) {
     f.pesoReferencia = toNumber(f.pesoReferencia) || 1000;
     f.itens = Array.isArray(f.itens) ? f.itens : [];
     f.blendComponentes = normalizeBlendComponents(f.blendComponentes, f, merged.insumos);
+    f.materiaPrimaUnica = normalizeSingleMaterial(f.materiaPrimaUnica, f, merged.insumos);
+    f.bloqueada = Boolean(f.bloqueada);
     if (String(f.observacoes || '').startsWith('Percentuais calculados sobre')) f.observacoes = '';
   });
   merged.legislacoes.forEach(law => {
@@ -1170,12 +1178,13 @@ function productWorkspaceHTML(p) {
 function productFormulaHTML(f) {
   const analysis = analyzeFormula(f);
   return `
-    <div class="formula-work-card">
+    <div class="formula-work-card ${f.bloqueada ? 'formula-locked' : ''}">
       <div class="formula-work-head">
         <div>
           <h3>${escapeHTML(f.nome)}</h3>
           <p class="item-subtitle">${escapeHTML(analysis.baseLabel)}: ${fmt(f.pesoReferencia)} g · massa estimada ${fmt(analysis.finalWeight)} g${f.rendimento !== '' ? ` · rendimento esperado ${fmt(f.rendimento)}%` : ''}</p>
         </div>
+        <button type="button" class="formula-lock-btn ${f.bloqueada ? 'locked' : ''}" data-toggle-formula-lock="${escapeAttr(f.id)}" title="${f.bloqueada ? 'Destravar formulação' : 'Travar formulação'}">${f.bloqueada ? '🔒' : '🔓'}</button>
       </div>
       ${blendEditorHTML(f)}
       ${inlineFormulaEditorHTML(f)}
@@ -1188,73 +1197,114 @@ function productFormulaHTML(f) {
 
 function blendEditorHTML(f) {
   const state = formulaBlendState(f);
+  const disabled = f.bloqueada ? ' disabled' : '';
   return `<div class="blend-editor">
     <div class="blend-switch-row">
-      <strong>Blend</strong>
-      <label class="switch-control">
-        <input type="checkbox" data-toggle-blend="${escapeAttr(f.id)}" ${state.useBlend ? 'checked' : ''}>
-        <span></span>
-      </label>
+      <div class="blend-toggle-group">
+        <strong>Blend</strong>
+        <label class="switch-control">
+          <input type="checkbox" data-toggle-blend="${escapeAttr(f.id)}" ${state.useBlend ? 'checked' : ''}${disabled}>
+          <span></span>
+        </label>
+      </div>
     </div>
     ${state.useBlend ? `
       <div class="blend-components">
-        ${state.components.map((component, index) => blendComponentHTML(f, component, index)).join('')}
-        <button type="button" class="secondary-btn compact blend-add" data-add-blend-component="${escapeAttr(f.id)}">Adicionar componente</button>
+        ${state.components.map((component, index) => blendComponentHTML(f, component, index, { locked: f.bloqueada })).join('')}
+        <button type="button" class="secondary-btn compact blend-add" data-add-blend-component="${escapeAttr(f.id)}"${disabled}>Adicionar componente</button>
         <div class="blend-summary">
           <div><span>Peso do blend</span><strong>${fmt(state.blendGrams)} g</strong></div>
           <div><span>Gordura estimada</span><strong>${fmt(state.fatPct)}%</strong></div>
         </div>
         <a href="${MEAT_CUTS_SOURCE_URL}" class="blend-source" target="_blank" rel="noopener">Referência de composição: TACO/NEPA/UNICAMP. Valores editáveis conforme a matéria-prima utilizada.</a>
       </div>` : `
-      <div class="blend-grid single">
-        <div class="form-group">
-          <label>Carne/massa cárnea base (g)</label>
-          <input type="number" min="1" step="1" value="${escapeAttr(fmtInput(state.blendGrams || f.pesoReferencia))}" data-meat-total="${escapeAttr(f.id)}">
-        </div>
+      <div class="single-material-editor">
+        ${singleMaterialHTML(f, state.singleComponent, f.bloqueada)}
       </div>`}
   </div>`;
 }
 
-function blendComponentHTML(formula, component, index) {
+function blendComponentHTML(formula, component, index, options = {}) {
   const fat = blendComponentFat(component);
   const source = blendComponentSource(component);
+  const disabled = options.locked ? ' disabled' : '';
   return `<div class="blend-component-row">
     <div class="blend-component-main">
       <div class="form-group">
         <label>Matéria-prima</label>
-        <select data-blend-cut="${escapeAttr(formula.id)}" data-blend-index="${index}">
+        <select data-blend-cut="${escapeAttr(formula.id)}" data-blend-index="${index}"${disabled}>
           ${MEAT_CUTS.map(cut => `<option value="${escapeAttr(cut.id)}" ${cut.id === component.corteId ? 'selected' : ''}>${escapeHTML(cut.nome)}</option>`).join('')}
         </select>
       </div>
       <div class="form-group">
         <label>Perfil</label>
-        <select data-blend-profile="${escapeAttr(formula.id)}" data-blend-index="${index}">
+        <select data-blend-profile="${escapeAttr(formula.id)}" data-blend-index="${index}"${disabled}>
           <option value="magra" ${component.perfil === 'magra' ? 'selected' : ''}>Magra</option>
           <option value="normal" ${component.perfil === 'normal' ? 'selected' : ''}>Normal</option>
         </select>
       </div>
       <div class="form-group">
         <label>Peso (g)</label>
-        <input type="number" min="0" step="1" value="${escapeAttr(fmtInput(component.gramas))}" data-blend-grams="${escapeAttr(formula.id)}" data-blend-index="${index}">
+        <input type="number" min="0" step="1" value="${escapeAttr(fmtInput(component.gramas))}" data-blend-grams="${escapeAttr(formula.id)}" data-blend-index="${index}"${disabled}>
       </div>
       <div class="form-group">
         <label>Gordura (%)</label>
-        <input type="number" min="0" max="100" step="0.1" value="${escapeAttr(fmtInput(fat))}" data-blend-fat="${escapeAttr(formula.id)}" data-blend-index="${index}">
+        <input type="number" min="0" max="100" step="0.1" value="${escapeAttr(fmtInput(fat))}" data-blend-fat="${escapeAttr(formula.id)}" data-blend-index="${index}"${disabled}>
       </div>
-      <button type="button" class="tiny-btn blend-remove" data-remove-blend-component="${escapeAttr(formula.id)}" data-blend-index="${index}" title="Remover componente">×</button>
+      <button type="button" class="tiny-btn blend-remove" data-remove-blend-component="${escapeAttr(formula.id)}" data-blend-index="${index}" title="Remover componente"${disabled}>×</button>
     </div>
     <small>${escapeHTML(source)}</small>
   </div>`;
 }
 
+function singleMaterialHTML(formula, component, locked) {
+  const fat = blendComponentFat(component);
+  const disabled = locked ? ' disabled' : '';
+  return `<div class="blend-component-row single-component">
+    <div class="blend-component-main">
+      <div class="form-group">
+        <label>Matéria-prima</label>
+        <select data-single-cut="${escapeAttr(formula.id)}"${disabled}>
+          ${MEAT_CUTS.map(cut => `<option value="${escapeAttr(cut.id)}" ${cut.id === component.corteId ? 'selected' : ''}>${escapeHTML(cut.nome)}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Perfil</label>
+        <select data-single-profile="${escapeAttr(formula.id)}"${disabled}>
+          <option value="magra" ${component.perfil === 'magra' ? 'selected' : ''}>Magra</option>
+          <option value="normal" ${component.perfil === 'normal' ? 'selected' : ''}>Normal</option>
+        </select>
+      </div>
+      <div class="form-group single-meat-weight">
+        <label>Carne/massa cárnea (g)</label>
+        <input type="number" min="1" step="1" value="${escapeAttr(fmtInput(component.gramas))}" data-single-grams="${escapeAttr(formula.id)}"${disabled}>
+      </div>
+      <div class="form-group">
+        <label>Gordura (%)</label>
+        <input type="number" min="0" max="100" step="0.1" value="${escapeAttr(fmtInput(fat))}" data-single-fat="${escapeAttr(formula.id)}"${disabled}>
+      </div>
+    </div>
+    <small>${escapeHTML(blendComponentSource(component))}</small>
+  </div>`;
+}
+
 function inlineFormulaEditorHTML(f) {
   const editableItems = (f.itens || []).filter(item => !isBlendItem(item.insumoId, f));
+  const available = db.insumos.filter(ingredient => !isMeatIngredient(ingredient) && !(f.itens || []).some(item => item.insumoId === ingredient.id));
+  const disabled = f.bloqueada ? ' disabled' : '';
   return `<div class="inline-formula-editor">
     <div class="inline-formula-head">
       <span>Insumos da formulação</span>
-      <small>Ajuste os percentuais usados na prática.</small>
+      <small>${f.bloqueada ? 'Formulação protegida.' : 'Ajuste os percentuais usados na prática.'}</small>
     </div>
     ${editableItems.length ? editableItems.map(item => inlineFormulaRowHTML(f, item)).join('') : '<div class="notice-card slim">Sem insumos adicionais nesta formulação.</div>'}
+    <div class="formula-add-row">
+      <select data-add-ingredient-select="${escapeAttr(f.id)}"${disabled}>
+        <option value="">Selecione um insumo cadastrado</option>
+        ${available.map(ingredient => `<option value="${escapeAttr(ingredient.id)}">${escapeHTML(ingredient.nome)}</option>`).join('')}
+      </select>
+      <button type="button" class="secondary-btn compact" data-add-ingredient-formula="${escapeAttr(f.id)}"${disabled}>Adicionar insumo</button>
+    </div>
   </div>`;
 }
 
@@ -1263,9 +1313,8 @@ function inlineFormulaRowHTML(f, item) {
     const pct = toNumber(item.percentual);
     const grams = formulaItemGrams(f, item);
     const suggestion = ingredientSuggestion(ing);
-    const suggestionHTML = suggestion ? `
-        <button type="button" class="suggestion-btn" data-suggestion-formula="${escapeAttr(f.id)}" data-suggestion-insumo="${escapeAttr(item.insumoId)}" data-suggestion-value="${escapeAttr(suggestion.suave)}">Suave ${fmt(suggestion.suave)}%</button>
-        <button type="button" class="suggestion-btn accent" data-suggestion-formula="${escapeAttr(f.id)}" data-suggestion-insumo="${escapeAttr(item.insumoId)}" data-suggestion-value="${escapeAttr(suggestion.acentuado)}">Acentuado ${fmt(suggestion.acentuado)}%</button>` : '';
+    const disabled = f.bloqueada ? ' disabled' : '';
+    const suggestionHTML = suggestion ? intensityScaleHTML(f, item, pct, suggestion) : '';
     return `<div class="inline-formula-row">
       <div class="inline-formula-name">
         <button type="button" class="inline-link" data-open-ingredient="${escapeAttr(item.insumoId)}">${escapeHTML(ing?.nome || 'Insumo não encontrado')}</button>
@@ -1273,15 +1322,28 @@ function inlineFormulaRowHTML(f, item) {
       </div>
       <label class="pct-field">
         <span>%</span>
-        <input type="number" min="0" step="0.1" value="${escapeAttr(fmtInput(pct))}" data-inline-pct-formula="${escapeAttr(f.id)}" data-inline-pct-insumo="${escapeAttr(item.insumoId)}">
+        <input type="number" min="0" step="0.1" value="${escapeAttr(fmtInput(pct))}" data-inline-pct-formula="${escapeAttr(f.id)}" data-inline-pct-insumo="${escapeAttr(item.insumoId)}"${disabled}>
       </label>
       <strong class="gram-pill">${fmt(grams)} g</strong>
+      <button type="button" class="tiny-btn formula-item-remove" data-remove-ingredient-formula="${escapeAttr(f.id)}" data-remove-ingredient-id="${escapeAttr(item.insumoId)}" title="Remover insumo"${disabled}>×</button>
       ${suggestionHTML ? `<div class="suggestion-panel">${suggestionHTML}</div>` : ''}
     </div>`;
 }
 
+function intensityScaleHTML(formula, item, current, suggestion) {
+  const levels = Array.from({ length: 5 }, (_, index) => suggestion.suave + (suggestion.acentuado - suggestion.suave) * index / 4);
+  const closest = levels.reduce((best, value, index) => Math.abs(value - current) < Math.abs(levels[best] - current) ? index : best, 0);
+  return `<div class="intensity-scale">
+    <div class="intensity-labels"><span>Suave ${fmt(suggestion.suave)}%</span><span>Acentuado ${fmt(suggestion.acentuado)}%</span></div>
+    <div class="intensity-track">
+      ${levels.map((value, index) => `<button type="button" class="intensity-dot ${index === closest ? 'active' : ''}" data-suggestion-formula="${escapeAttr(formula.id)}" data-suggestion-insumo="${escapeAttr(item.insumoId)}" data-suggestion-value="${escapeAttr(fmtInput(value))}" title="${fmt(value)}%" ${formula.bloqueada ? 'disabled' : ''}></button>`).join('')}
+    </div>
+  </div>`;
+}
+
 function bindProductWorkspace(root) {
   root.querySelector('[data-product-back]')?.addEventListener('click', closeProductWorkspace);
+  root.querySelectorAll('[data-toggle-formula-lock]').forEach(btn => btn.addEventListener('click', () => toggleFormulaLock(btn.dataset.toggleFormulaLock)));
   root.querySelectorAll('[data-report-formula]').forEach(btn => btn.addEventListener('click', () => showFormulaReport(btn.dataset.reportFormula)));
   root.querySelectorAll('[data-open-ingredient]').forEach(btn => btn.addEventListener('click', () => openIngredientView(btn.dataset.openIngredient)));
   root.querySelectorAll('[data-inline-weight]').forEach(input => {
@@ -1293,6 +1355,12 @@ function bindProductWorkspace(root) {
     input.addEventListener('change', () => updateFormulaItemPercent(input.dataset.inlinePctFormula, input.dataset.inlinePctInsumo, input.value));
   });
   root.querySelectorAll('[data-suggestion-formula]').forEach(btn => btn.addEventListener('click', () => updateFormulaItemPercent(btn.dataset.suggestionFormula, btn.dataset.suggestionInsumo, btn.dataset.suggestionValue)));
+  root.querySelectorAll('[data-add-ingredient-formula]').forEach(btn => btn.addEventListener('click', () => {
+    const select = root.querySelector(`[data-add-ingredient-select="${cssEscape(btn.dataset.addIngredientFormula)}"]`);
+    if (!select?.value) return toast('Selecione um insumo.');
+    addFormulaItemInline(btn.dataset.addIngredientFormula, select.value);
+  }));
+  root.querySelectorAll('[data-remove-ingredient-formula]').forEach(btn => btn.addEventListener('click', () => removeFormulaItemInline(btn.dataset.removeIngredientFormula, btn.dataset.removeIngredientId)));
   root.querySelectorAll('[data-toggle-blend]').forEach(input => input.addEventListener('change', () => updateFormulaBlend(input.dataset.toggleBlend, { useBlend: input.checked })));
   root.querySelectorAll('[data-blend-cut]').forEach(input => input.addEventListener('change', () => updateBlendComponent(input.dataset.blendCut, Number(input.dataset.blendIndex), { corteId: input.value, gorduraCustom: '' })));
   root.querySelectorAll('[data-blend-profile]').forEach(input => input.addEventListener('change', () => updateBlendComponent(input.dataset.blendProfile, Number(input.dataset.blendIndex), { perfil: input.value, gorduraCustom: '' })));
@@ -1301,12 +1369,15 @@ function bindProductWorkspace(root) {
     input.addEventListener('change', () => updateBlendComponent(input.dataset.blendGrams, Number(input.dataset.blendIndex), { gramas: input.value }));
   });
   root.querySelectorAll('[data-blend-fat]').forEach(input => input.addEventListener('change', () => updateBlendComponent(input.dataset.blendFat, Number(input.dataset.blendIndex), { gorduraCustom: input.value })));
+  root.querySelectorAll('[data-single-cut]').forEach(input => input.addEventListener('change', () => updateSingleMaterial(input.dataset.singleCut, { corteId: input.value, gorduraCustom: '' })));
+  root.querySelectorAll('[data-single-profile]').forEach(input => input.addEventListener('change', () => updateSingleMaterial(input.dataset.singleProfile, { perfil: input.value, gorduraCustom: '' })));
+  root.querySelectorAll('[data-single-grams]').forEach(input => {
+    input.addEventListener('input', () => queueInlineFormulaEdit(() => updateSingleMaterial(input.dataset.singleGrams, { gramas: input.value }, { silent: true })));
+    input.addEventListener('change', () => updateSingleMaterial(input.dataset.singleGrams, { gramas: input.value }));
+  });
+  root.querySelectorAll('[data-single-fat]').forEach(input => input.addEventListener('change', () => updateSingleMaterial(input.dataset.singleFat, { gorduraCustom: input.value })));
   root.querySelectorAll('[data-add-blend-component]').forEach(btn => btn.addEventListener('click', () => addBlendComponent(btn.dataset.addBlendComponent)));
   root.querySelectorAll('[data-remove-blend-component]').forEach(btn => btn.addEventListener('click', () => removeBlendComponent(btn.dataset.removeBlendComponent, Number(btn.dataset.blendIndex))));
-  root.querySelectorAll('[data-meat-total]').forEach(input => {
-    input.addEventListener('input', () => queueInlineFormulaEdit(() => updateFormulaBlend(input.dataset.meatTotal, { useBlend: false, blendGrams: input.value }, { silent: true })));
-    input.addEventListener('change', () => updateFormulaBlend(input.dataset.meatTotal, { useBlend: false, blendGrams: input.value }));
-  });
   root.querySelectorAll('[data-equipment-check]').forEach(btn => btn.addEventListener('click', () => toggleEquipmentCheck(btn)));
   bindProductSlides(root);
   bindLawLinks(root);
@@ -1397,9 +1468,8 @@ function formulaHTML(f) {
       <div class="item-avatar">∑</div>
       <div>
         <div class="item-title">${escapeHTML(f.nome)}</div>
-        <div class="item-subtitle">${escapeHTML(product?.nome || 'Produto não encontrado')} · soma ${fmt(analysis.totalPct)}%</div>
+        <div class="item-subtitle">${escapeHTML(product?.nome || 'Produto não encontrado')}</div>
         <div class="item-meta">
-          <span class="badge ${Math.abs(analysis.totalPct - 100) < 0.01 ? 'ok' : 'warn'}">Total ${fmt(analysis.totalPct)}%</span>
           <span class="badge ${limitBadge(analysis.fatPct, product?.parametros?.gorduraMax, 'max')}">Gordura ${fmt(analysis.fatPct)}%</span>
           <span class="badge ${danger ? 'danger' : warn ? 'warn' : 'ok'}">${danger ? 'corrigir' : warn ? 'atenção' : 'ok'}</span>
         </div>
@@ -1444,13 +1514,13 @@ function renderCronograma() {
 
 function scheduleCardHTML(item, index) {
   const categoryChips = (item.categorias || []).map(id => {
-    const category = PRODUCT_CATEGORIES.find(c => c.id === id);
-    return category ? `<button type="button" class="link-chip soft" data-open-category="${escapeAttr(id)}">${escapeHTML(getTheoryContent(id)?.titulo || category.titulo)}</button>` : '';
+    const content = getTheoryContent(id);
+    return content ? `<button type="button" class="link-chip soft" data-open-category="${escapeAttr(id)}">${escapeHTML(content.titulo)}</button>` : '';
   }).join('');
   const date = scheduleDateParts(item.dia);
   return `<article class="calendar-card">
     <div class="calendar-index ${item.dia ? 'has-date' : ''}">
-      ${item.dia ? `<span>${escapeHTML(date.weekday)}</span><strong>${escapeHTML(date.day)}</strong><b>${escapeHTML(date.monthYear)}</b>` : '<span>Data</span><strong>--</strong><b>A definir</b>'}
+      ${item.dia ? `<span>${escapeHTML(date.weekday)}</span><strong>${escapeHTML(date.day)}</strong><b>${escapeHTML(date.month)}</b><em>${escapeHTML(date.year)}</em>` : '<span>DATA</span><strong>--</strong><b>---</b><em>A definir</em>'}
     </div>
     <div class="calendar-body">
       <h3 class="calendar-lesson-title"><span>${lessonNumberLabel(index)}:</span> ${escapeHTML(item.tema)}</h3>
@@ -1554,7 +1624,7 @@ function normalizeLessonContent(source = {}, fallback = {}, lesson = {}) {
 function normalizeTheoryContents(source = [], periods = []) {
   const saved = Array.isArray(source) ? source : [];
   const legacyLessons = (Array.isArray(periods) ? periods : []).flatMap(period => Array.isArray(period?.aulas) ? period.aulas : []);
-  return PRODUCT_CATEGORIES.map(category => {
+  const defaults = PRODUCT_CATEGORIES.map(category => {
     const current = saved.find(item => item.id === category.id) || {};
     const legacy = legacyLessons.find(lesson => (lesson.categorias || []).includes(category.id) && (lesson.conteudo?.texto || lesson.conteudo?.imagens?.length))?.conteudo || {};
     return {
@@ -1564,9 +1634,25 @@ function normalizeTheoryContents(source = [], periods = []) {
       topicos: Array.isArray(current.topicos) ? current.topicos : clone(category.topicos || []),
       perguntas: Array.isArray(current.perguntas) ? current.perguntas : clone(category.perguntas || []),
       modo: current.modo === 'slides' || legacy.modo === 'slides' ? 'slides' : 'texto',
-      imagens: Array.isArray(current.imagens) ? current.imagens : clone(legacy.imagens || [])
+      imagens: Array.isArray(current.imagens) ? current.imagens : clone(legacy.imagens || []),
+      produtos: Array.isArray(current.produtos) ? current.produtos : clone(category.produtos || []),
+      insumos: Array.isArray(current.insumos) ? current.insumos : clone(category.insumos || []),
+      padrao: true
     };
   });
+  const custom = saved.filter(item => !PRODUCT_CATEGORIES.some(category => category.id === item.id)).map(item => ({
+    id: item.id || uid('conteudo'),
+    titulo: item.titulo || 'Novo conteúdo',
+    resumo: item.resumo || '',
+    topicos: Array.isArray(item.topicos) ? item.topicos : [],
+    perguntas: Array.isArray(item.perguntas) ? item.perguntas : [],
+    modo: item.modo === 'slides' ? 'slides' : 'texto',
+    imagens: Array.isArray(item.imagens) ? item.imagens : [],
+    produtos: Array.isArray(item.produtos) ? item.produtos : [],
+    insumos: Array.isArray(item.insumos) ? item.insumos : [],
+    padrao: false
+  }));
+  return [...defaults, ...custom];
 }
 
 function getTheoryContents() {
@@ -1604,92 +1690,112 @@ function renderScheduleConfig() {
 function renderContentConfig() {
   const root = $('#configConteudosList');
   if (!root) return;
-  root.innerHTML = getTheoryContents().map(contentConfigHTML).join('');
-  root.querySelectorAll('[data-content-field]').forEach(input => input.addEventListener('change', () => saveLessonContentField(input)));
-  root.querySelectorAll('[data-content-images]').forEach(input => input.addEventListener('change', () => addLessonContentImages(input)));
-  root.querySelectorAll('[data-remove-content-image]').forEach(btn => btn.addEventListener('click', () => removeLessonContentImage(btn.dataset.contentId, Number(btn.dataset.removeContentImage))));
+  root.innerHTML = getTheoryContents().map(contentConfigHTML).join('') || emptyHTML('Nenhum conteúdo cadastrado.');
+  root.querySelectorAll('[data-edit-content]').forEach(btn => btn.addEventListener('click', () => openTheoryContentModal(btn.dataset.editContent)));
 }
 
 function contentConfigHTML(content) {
-  const category = PRODUCT_CATEGORIES.find(item => item.id === content.id);
-  return `<article class="config-content-card">
-    <div class="config-schedule-head">
+  const format = content.modo === 'slides' ? `${content.imagens.length} slide(s)` : `${content.topicos.length} tópico(s)`;
+  return `<button type="button" class="content-list-card" data-edit-content="${escapeAttr(content.id)}">
+    <div>
       <strong>${escapeHTML(content.titulo)}</strong>
-      <span>${(category?.produtos || []).length} roteiro(s)</span>
+      <span>${escapeHTML(format)} · ${(content.produtos || []).length} produto(s)</span>
     </div>
-    <div class="form-grid two-cols">
-      <div class="form-group">
-        <label>Formato do conteúdo</label>
-        <select data-content-field="modo" data-content-id="${escapeAttr(content.id)}">
-          <option value="texto" ${content.modo === 'texto' ? 'selected' : ''}>Texto e tópicos</option>
-          <option value="slides" ${content.modo === 'slides' ? 'selected' : ''}>Imagens de slides</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Nome do assunto teórico</label>
-        <input type="text" value="${escapeAttr(content.titulo)}" data-content-field="titulo" data-content-id="${escapeAttr(content.id)}">
-      </div>
-    </div>
-    <div class="form-group content-text-field ${content.modo === 'slides' ? 'is-muted' : ''}">
-      <label>Resumo do assunto</label>
-      <textarea rows="4" data-content-field="resumo" data-content-id="${escapeAttr(content.id)}">${escapeHTML(content.resumo)}</textarea>
-    </div>
-    <div class="form-grid two-cols content-text-field ${content.modo === 'slides' ? 'is-muted' : ''}">
-      <div class="form-group">
-        <label>Tópicos, um por linha</label>
-        <textarea rows="5" data-content-field="topicos" data-content-id="${escapeAttr(content.id)}">${escapeHTML(content.topicos.join('\n'))}</textarea>
-      </div>
-      <div class="form-group">
-        <label>Perguntas, uma por linha</label>
-        <textarea rows="5" data-content-field="perguntas" data-content-id="${escapeAttr(content.id)}">${escapeHTML(content.perguntas.join('\n'))}</textarea>
-      </div>
-    </div>
-    <div class="form-group">
-      <label>Imagens ou slides do assunto</label>
-      <input type="file" accept="image/*" multiple data-content-images data-content-id="${escapeAttr(content.id)}">
-    </div>
-    <div class="content-image-preview">
-      ${content.imagens.map((src, imageIndex) => `<div class="photo-wrap content-photo-wrap">
-        <img class="content-photo-thumb" src="${escapeAttr(src)}" alt="Slide ${imageIndex + 1}">
-        <button type="button" class="photo-remove" data-remove-content-image="${imageIndex}" data-content-id="${escapeAttr(content.id)}" aria-label="Remover imagem">×</button>
-      </div>`).join('')}
-    </div>
-  </article>`;
+    <b>›</b>
+  </button>`;
 }
 
-function saveLessonContentField(input) {
-  const content = getTheoryContent(input.dataset.contentId);
-  if (!content) return;
-  const field = input.dataset.contentField;
-  content[field] = ['topicos', 'perguntas'].includes(field) ? linesFrom(input.value) : input.value;
+function openTheoryContentModal(id = '') {
+  const content = id ? getTheoryContent(id) : null;
+  $('#conteudoId').value = content?.id || '';
+  $('#conteudoTitulo').value = content?.titulo || '';
+  $('#conteudoModo').value = content?.modo || 'texto';
+  $('#conteudoResumo').value = content?.resumo || '';
+  $('#conteudoTopicos').value = (content?.topicos || []).join('\n');
+  $('#conteudoPerguntas').value = (content?.perguntas || []).join('\n');
+  tempTheoryImages = clone(content?.imagens || []);
+  $('#conteudoImagens').value = '';
+  renderTheoryContentLinks(content);
+  renderTheoryContentImages();
+  updateTheoryContentMode();
+  $('#btnExcluirConteudo').style.display = content && !content.padrao ? 'inline-flex' : 'none';
+  openModal('modalConteudoEditor');
+}
+
+function updateTheoryContentMode() {
+  const fields = $('#conteudoTextoFields');
+  if (fields) fields.hidden = $('#conteudoModo')?.value === 'slides';
+}
+
+function renderTheoryContentLinks(content) {
+  const selectedProducts = new Set(content?.produtos || []);
+  const selectedIngredients = new Set(content?.insumos || []);
+  $('#conteudoProdutos').innerHTML = db.produtos.map(product => `<label class="check-pill"><input type="checkbox" value="${escapeAttr(product.id)}" ${selectedProducts.has(product.id) ? 'checked' : ''}><span>${escapeHTML(product.nome)}</span></label>`).join('');
+  $('#conteudoInsumos').innerHTML = db.insumos.map(ingredient => `<label class="check-pill"><input type="checkbox" value="${escapeAttr(ingredient.id)}" ${selectedIngredients.has(ingredient.id) ? 'checked' : ''}><span>${escapeHTML(ingredient.nome)}</span></label>`).join('');
+}
+
+async function handleTheoryContentImages(ev) {
+  const files = Array.from(ev.target.files || []).filter(file => file.type.startsWith('image/'));
+  for (const file of files) tempTheoryImages.push(await fileToDataURL(file, 1800, 0.88));
+  renderTheoryContentImages();
+}
+
+function renderTheoryContentImages() {
+  const root = $('#conteudoImagensPreview');
+  root.innerHTML = tempTheoryImages.map((src, index) => `<div class="photo-wrap content-photo-wrap">
+    <img class="content-photo-thumb" src="${escapeAttr(src)}" alt="Slide ${index + 1}">
+    <button type="button" class="photo-remove" data-remove-theory-image="${index}" aria-label="Remover imagem">×</button>
+  </div>`).join('');
+  root.querySelectorAll('[data-remove-theory-image]').forEach(btn => btn.addEventListener('click', () => {
+    tempTheoryImages.splice(Number(btn.dataset.removeTheoryImage), 1);
+    renderTheoryContentImages();
+  }));
+}
+
+function saveTheoryContent() {
+  const id = $('#conteudoId').value || uid('conteudo');
+  const existing = getTheoryContent(id);
+  const content = {
+    id,
+    titulo: $('#conteudoTitulo').value.trim(),
+    modo: $('#conteudoModo').value === 'slides' ? 'slides' : 'texto',
+    resumo: $('#conteudoResumo').value.trim(),
+    topicos: linesFrom($('#conteudoTopicos').value),
+    perguntas: linesFrom($('#conteudoPerguntas').value),
+    imagens: clone(tempTheoryImages),
+    produtos: Array.from($('#conteudoProdutos').querySelectorAll('input:checked')).map(input => input.value),
+    insumos: Array.from($('#conteudoInsumos').querySelectorAll('input:checked')).map(input => input.value),
+    padrao: Boolean(existing?.padrao)
+  };
+  if (!content.titulo) return toast('Informe o nome do conteúdo.');
+  const index = db.configs.conteudosTeoricos.findIndex(item => item.id === id);
+  if (index >= 0) db.configs.conteudosTeoricos[index] = content; else db.configs.conteudosTeoricos.push(content);
   saveDB();
+  closeModal('modalConteudoEditor');
+  renderContentConfig();
+  renderScheduleConfig();
   renderAulas();
-  renderProdutos();
   renderCronograma();
-  populateProductCategoryOptions();
-  if (field === 'modo') renderContentConfig();
-  toast('Conteúdo atualizado.');
+  renderProdutos();
+  toast('Conteúdo salvo.');
 }
 
-async function addLessonContentImages(input) {
-  const content = getTheoryContent(input.dataset.contentId);
-  if (!content) return;
-  const files = Array.from(input.files || []).filter(file => file.type.startsWith('image/'));
-  for (const file of files) content.imagens.push(await fileToDataURL(file, 1800, 0.88));
+function deleteTheoryContent() {
+  const id = $('#conteudoId').value;
+  const content = getTheoryContent(id);
+  if (!content || content.padrao) return;
+  if (!confirm('Excluir este conteúdo teórico?')) return;
+  db.configs.conteudosTeoricos = db.configs.conteudosTeoricos.filter(item => item.id !== id);
+  getSchedulePeriods().forEach(period => period.aulas.forEach(lesson => {
+    lesson.categorias = (lesson.categorias || []).filter(contentId => contentId !== id);
+  }));
   saveDB();
+  closeModal('modalConteudoEditor');
   renderContentConfig();
+  renderScheduleConfig();
   renderAulas();
-  toast(files.length === 1 ? 'Slide adicionado.' : 'Slides adicionados.');
-}
-
-function removeLessonContentImage(contentId, imageIndex) {
-  const content = getTheoryContent(contentId);
-  if (!content?.imagens?.[imageIndex]) return;
-  content.imagens.splice(imageIndex, 1);
-  saveDB();
-  renderContentConfig();
-  renderAulas();
-  toast('Imagem removida.');
+  renderCronograma();
+  toast('Conteúdo excluído.');
 }
 
 function renderPeriodControls(period) {
@@ -1752,7 +1858,7 @@ function scheduleProductChecks(item, index) {
 
 function scheduleCategoryChecks(item, index) {
   const selected = new Set(item.categorias || []);
-  return PRODUCT_CATEGORIES.map(category => `<label class="check-pill"><input type="checkbox" ${selected.has(category.id) ? 'checked' : ''} data-schedule-category="${escapeAttr(category.id)}" data-schedule-index="${index}"><span>${escapeHTML(theoryTitle(category.id))}</span></label>`).join('');
+  return getTheoryContents().map(content => `<label class="check-pill"><input type="checkbox" ${selected.has(content.id) ? 'checked' : ''} data-schedule-category="${escapeAttr(content.id)}" data-schedule-index="${index}"><span>${escapeHTML(content.titulo)}</span></label>`).join('');
 }
 
 function renderRulesConfig() {
@@ -1936,13 +2042,14 @@ function formatScheduleDate(value) {
 }
 
 function scheduleDateParts(value) {
-  if (!value) return { day: '--', weekday: 'Data', monthYear: 'A definir' };
+  if (!value) return { day: '--', weekday: 'DATA', month: '---', year: 'A definir' };
   const date = new Date(`${value}T12:00:00`);
-  if (Number.isNaN(date.getTime())) return { day: value, weekday: 'Data', monthYear: '' };
+  if (Number.isNaN(date.getTime())) return { day: value, weekday: 'DATA', month: '', year: '' };
   return {
     day: String(date.getDate()).padStart(2, '0'),
-    weekday: capitalizeFirst(date.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '')),
-    monthYear: capitalizeFirst(date.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' }).replace('.', ''))
+    weekday: date.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '').toUpperCase(),
+    month: date.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '').toUpperCase(),
+    year: String(date.getFullYear())
   };
 }
 
@@ -1982,12 +2089,13 @@ function renderAulas() {
     renderAulas();
   }));
   bindTheorySlides(root);
+  root.querySelectorAll('[data-view-theory-content]').forEach(btn => btn.addEventListener('click', () => openTheoryContentView(btn.dataset.viewTheoryContent)));
   bindInternalLinks(root);
   bindLawLinks(root);
 }
 
 function theoryScheduleLessonHTML(item, index) {
-  const categories = (item.categorias || []).map(id => PRODUCT_CATEGORIES.find(category => category.id === id)).filter(Boolean);
+  const categories = (item.categorias || []).map(getTheoryContent).filter(Boolean);
   return `<article class="theory-lesson-panel ${index === activeTheoryLessonIndex ? 'active' : ''}" data-theory-panel="${index}">
     <header class="theory-lesson-header">
       <div>
@@ -1995,13 +2103,34 @@ function theoryScheduleLessonHTML(item, index) {
         <h3>${escapeHTML(item.tema || lessonNumberLabel(index))}</h3>
       </div>
     </header>
-    <div class="theory-grid lesson-theory-grid">
-      ${categories.map(theoryLessonHTML).join('') || '<div class="notice-card slim">Nenhum assunto teórico vinculado a esta aula.</div>'}
+    <div class="theory-subject-list">
+      ${categories.map(theorySubjectListHTML).join('') || '<div class="notice-card slim">Nenhum assunto teórico vinculado a esta aula.</div>'}
     </div>
     <div class="lesson-links">
       ${(item.produtos || []).length ? `<div class="linked-block"><div class="linked-title">Roteiros desta aula</div>${linkedProductsHTML(item.produtos)}</div>` : ''}
     </div>
   </article>`;
+}
+
+function theorySubjectListHTML(content) {
+  const format = content.modo === 'slides' ? `${content.imagens?.length || 0} slide(s)` : `${content.topicos?.length || 0} tópico(s)`;
+  return `<button type="button" class="theory-subject-button" data-view-theory-content="${escapeAttr(content.id)}">
+    <div>
+      <strong>${escapeHTML(content.titulo)}</strong>
+      <span>${escapeHTML(format)}</span>
+    </div>
+    <b>›</b>
+  </button>`;
+}
+
+function openTheoryContentView(id) {
+  const content = getTheoryContent(id);
+  if (!content) return toast('Conteúdo não encontrado.');
+  $('#conteudoViewTitle').textContent = content.titulo;
+  $('#conteudoViewBody').innerHTML = theoryLessonHTML(content);
+  bindTheorySlides($('#conteudoViewBody'));
+  bindInternalLinks($('#conteudoViewBody'));
+  openModal('modalConteudoView');
 }
 
 function theorySlidesHTML(images) {
@@ -2058,11 +2187,11 @@ function theoryLessonHTML(lesson) {
       </div>`}
     <div class="linked-block">
       <div class="linked-title">Roteiros disponíveis</div>
-      ${linkedProductsHTML(lesson.produtos)}
+      ${linkedProductsHTML(content.produtos || [])}
     </div>
     <div class="linked-block">
       <div class="linked-title">Insumos citados</div>
-      ${linkedIngredientsHTML(lesson.insumos)}
+      ${linkedIngredientsHTML(content.insumos || [])}
     </div>
   </article>`;
 }
@@ -2416,7 +2545,9 @@ function getFormulaFromModal(requireName = true) {
     itens: formulaDraftItems.map(item => ({ insumoId: item.insumoId, percentual: toNumber(item.percentual) })).filter(item => item.insumoId),
     observacoes: $('#formulaObs').value.trim(),
     usarBlend: existing?.usarBlend !== false,
-    blendComponentes: clone(existing?.blendComponentes || [])
+    blendComponentes: clone(existing?.blendComponentes || []),
+    materiaPrimaUnica: clone(existing?.materiaPrimaUnica || null),
+    bloqueada: Boolean(existing?.bloqueada)
   };
 }
 
@@ -2463,7 +2594,7 @@ function updateFormulaBase(formulaId, value, options = {}) {
 
 function updateFormulaItemPercent(formulaId, insumoId, value, options = {}) {
   const formula = findFormula(formulaId);
-  if (!formula || !insumoId) return;
+  if (!formula || !insumoId || formula.bloqueada) return;
   const item = ensureFormulaItem(formula, insumoId);
   item.percentual = Math.max(0, toNumber(value));
   saveInlineFormulaEdit('Percentual atualizado.', options);
@@ -2472,29 +2603,38 @@ function updateFormulaItemPercent(formulaId, insumoId, value, options = {}) {
 function addFormulaItemInline(formulaId, insumoId) {
   const formula = findFormula(formulaId);
   const ingredient = findIngredient(insumoId);
-  if (!formula || !ingredient) return;
+  if (!formula || !ingredient || formula.bloqueada) return;
   if ((formula.itens || []).some(item => item.insumoId === insumoId)) return toast('Esse insumo já está na formulação.');
   const suggestion = ingredientSuggestion(ingredient);
-  formula.itens.push({ insumoId, percentual: suggestion.suave });
+  formula.itens.push({ insumoId, percentual: suggestion?.suave ?? 0.1 });
   saveInlineFormulaEdit('Insumo adicionado.');
 }
 
 function removeFormulaItemInline(formulaId, insumoId) {
   const formula = findFormula(formulaId);
-  if (!formula) return;
+  if (!formula || formula.bloqueada) return;
   formula.itens = (formula.itens || []).filter(item => item.insumoId !== insumoId);
   saveInlineFormulaEdit('Insumo removido.');
 }
 
-function updateFormulaBlend(formulaId, changes = {}, options = {}) {
+function toggleFormulaLock(formulaId) {
   const formula = findFormula(formulaId);
   if (!formula) return;
+  formula.bloqueada = !formula.bloqueada;
+  saveInlineFormulaEdit(formula.bloqueada ? 'Formulação travada.' : 'Formulação destravada.');
+}
+
+function updateFormulaBlend(formulaId, changes = {}, options = {}) {
+  const formula = findFormula(formulaId);
+  if (!formula || formula.bloqueada) return;
   const previous = formulaBlendState(formula);
   const useBlend = changes.useBlend ?? previous.useBlend;
 
   if (!useBlend) {
     const total = Math.max(1, toNumber(changes.blendGrams ?? previous.blendGrams ?? formula.pesoReferencia) || 1);
     formula.usarBlend = false;
+    formula.materiaPrimaUnica = normalizeSingleMaterial(formula.materiaPrimaUnica, formula);
+    formula.materiaPrimaUnica.gramas = total;
     setFormulaWeightFromBlendTotal(formula, total);
     saveInlineFormulaEdit('Blend atualizado.', options);
     return;
@@ -2507,7 +2647,7 @@ function updateFormulaBlend(formulaId, changes = {}, options = {}) {
 
 function updateBlendComponent(formulaId, index, changes = {}, options = {}) {
   const formula = findFormula(formulaId);
-  if (!formula) return;
+  if (!formula || formula.bloqueada) return;
   formula.blendComponentes = normalizeBlendComponents(formula.blendComponentes, formula);
   const component = formula.blendComponentes[index];
   if (!component) return;
@@ -2523,7 +2663,7 @@ function updateBlendComponent(formulaId, index, changes = {}, options = {}) {
 
 function addBlendComponent(formulaId) {
   const formula = findFormula(formulaId);
-  if (!formula) return;
+  if (!formula || formula.bloqueada) return;
   formula.blendComponentes = normalizeBlendComponents(formula.blendComponentes, formula);
   formula.blendComponentes.push({ id: uid('blend'), corteId: 'acem', perfil: 'magra', gramas: 0, gorduraCustom: '' });
   formula.usarBlend = true;
@@ -2532,13 +2672,27 @@ function addBlendComponent(formulaId) {
 
 function removeBlendComponent(formulaId, index) {
   const formula = findFormula(formulaId);
-  if (!formula) return;
+  if (!formula || formula.bloqueada) return;
   formula.blendComponentes = normalizeBlendComponents(formula.blendComponentes, formula);
   if (formula.blendComponentes.length <= 1) return toast('O blend precisa manter ao menos um componente.');
   formula.blendComponentes.splice(index, 1);
   const total = formula.blendComponentes.reduce((sum, item) => sum + toNumber(item.gramas), 0);
   if (total > 0) setFormulaWeightFromBlendTotal(formula, total);
   saveInlineFormulaEdit('Componente removido.');
+}
+
+function updateSingleMaterial(formulaId, changes = {}, options = {}) {
+  const formula = findFormula(formulaId);
+  if (!formula || formula.bloqueada) return;
+  formula.materiaPrimaUnica = normalizeSingleMaterial(formula.materiaPrimaUnica, formula);
+  const component = formula.materiaPrimaUnica;
+  if (Object.prototype.hasOwnProperty.call(changes, 'corteId')) component.corteId = MEAT_CUTS.some(cut => cut.id === changes.corteId) ? changes.corteId : 'outro';
+  if (Object.prototype.hasOwnProperty.call(changes, 'perfil')) component.perfil = changes.perfil === 'normal' ? 'normal' : 'magra';
+  if (Object.prototype.hasOwnProperty.call(changes, 'gramas')) component.gramas = Math.max(1, toNumber(changes.gramas) || 1);
+  if (Object.prototype.hasOwnProperty.call(changes, 'gorduraCustom')) component.gorduraCustom = changes.gorduraCustom === '' ? '' : Math.max(0, Math.min(100, toNumber(changes.gorduraCustom)));
+  formula.usarBlend = false;
+  setFormulaWeightFromBlendTotal(formula, component.gramas);
+  saveInlineFormulaEdit('Matéria-prima atualizada.', options);
 }
 
 function queueInlineFormulaEdit(callback) {
@@ -2589,9 +2743,40 @@ function formulaBlendState(formula) {
     ...component,
     cut: MEAT_CUTS.find(cut => cut.id === component.corteId) || MEAT_CUTS[MEAT_CUTS.length - 1]
   }));
+  const singleComponent = normalizeSingleMaterial(formula.materiaPrimaUnica, formula);
   const blendGrams = components.reduce((sum, item) => sum + toNumber(item.gramas), 0) || toNumber(formula.pesoReferencia);
   const fatGrams = components.reduce((sum, item) => sum + toNumber(item.gramas) * blendComponentFat(item) / 100, 0);
-  return { useBlend, components, blendGrams, fatGrams, fatPct: blendGrams ? fatGrams / blendGrams * 100 : 0 };
+  const activeComponents = useBlend ? components : [singleComponent];
+  const activeGrams = useBlend ? blendGrams : toNumber(singleComponent.gramas);
+  const activeFatGrams = activeComponents.reduce((sum, item) => sum + toNumber(item.gramas) * blendComponentFat(item) / 100, 0);
+  return {
+    useBlend,
+    components,
+    singleComponent,
+    blendGrams: activeGrams || toNumber(formula.pesoReferencia),
+    fatGrams: activeFatGrams,
+    fatPct: activeGrams ? activeFatGrams / activeGrams * 100 : 0
+  };
+}
+
+function normalizeSingleMaterial(source, formula, ingredients = db.insumos) {
+  if (source && typeof source === 'object') {
+    return {
+      id: source.id || uid('materia'),
+      corteId: MEAT_CUTS.some(cut => cut.id === source.corteId) ? source.corteId : 'outro',
+      perfil: source.perfil === 'normal' ? 'normal' : 'magra',
+      gramas: Math.max(1, toNumber(source.gramas) || toNumber(formula?.pesoReferencia) || 1000),
+      gorduraCustom: source.gorduraCustom === '' || source.gorduraCustom === undefined ? '' : Math.max(0, Math.min(100, toNumber(source.gorduraCustom)))
+    };
+  }
+  const inferred = normalizeBlendComponents(formula?.blendComponentes, formula, ingredients)[0];
+  return {
+    id: uid('materia'),
+    corteId: inferred?.corteId || 'acem',
+    perfil: inferred?.perfil || 'magra',
+    gramas: toNumber(formula?.pesoReferencia) || 1000,
+    gorduraCustom: inferred?.gorduraCustom ?? ''
+  };
 }
 
 function normalizeBlendComponents(source, formula, ingredients = db.insumos) {
@@ -2749,7 +2934,7 @@ function analyzeFormula(formula) {
   let pncGrams = 0;
   let costTotal = 0;
   const blendState = formulaBlendState(formula);
-  const useDetailedBlend = blendState.useBlend && blendState.components.length > 0;
+  const useDetailedBlend = (blendState.useBlend ? blendState.components.length : Boolean(blendState.singleComponent));
   formula.itens.forEach(item => {
     const ing = findIngredient(item.insumoId);
     const pct = toNumber(item.percentual);
@@ -2771,11 +2956,6 @@ function analyzeFormula(formula) {
   const carbPct = compositionWeight ? carbGrams / compositionWeight * 100 : 0;
   const pncPct = compositionWeight ? pncGrams / compositionWeight * 100 : 0;
   const alerts = [];
-  if (baseMode === 'produto_final') {
-    if (Math.abs(totalPct - 100) >= 0.01) alerts.push({ type: 'warn', text: `A soma está em ${fmt(totalPct)}%. Ajuste para 100% quando a base for produto final.` });
-  } else {
-    if (Math.abs(meatBasePct - 100) >= 0.01) alerts.push({ type: 'warn', text: `Carne + gordura somam ${fmt(meatBasePct)}% da base.` });
-  }
   const params = product?.parametros || {};
   if (product && params.mostrarValidacao !== false) {
     addLimitAlert(alerts, fatPct, params.gorduraMax, 'Gordura', 'max');
@@ -2797,7 +2977,6 @@ function addLimitAlert(alerts, value, limit, label, mode) {
 function analysisHTML(a) {
   const importantAlerts = a.alerts.filter(alert => alert.type !== 'ok');
   return `<div class="analysis-grid">
-    <div class="analysis-metric"><strong>${fmt(a.totalPct)}%</strong><span>${a.baseMode === 'massa_carnea' ? 'Total sobre base' : 'Soma da fórmula'}</span></div>
     <div class="analysis-metric"><strong>${fmt(a.finalWeight)} g</strong><span>Massa final estimada</span></div>
     <div class="analysis-metric"><strong>${fmt(a.fatPct)}%</strong><span>Gordura estimada</span></div>
     <div class="analysis-metric"><strong>${fmt(a.proteinPct)}%</strong><span>Proteína estimada</span></div>
@@ -2836,6 +3015,10 @@ function buildReport(formula) {
     });
     lines.push(`- Gordura estimada do blend: ${fmt(blend.fatPct)}%`);
     lines.push('');
+  } else if (blend.singleComponent) {
+    const cut = MEAT_CUTS.find(item => item.id === blend.singleComponent.corteId);
+    lines.push(`Matéria-prima cárnea: ${cut?.nome || 'Não informada'} (${blend.singleComponent.perfil === 'normal' ? 'normal' : 'magra'}), ${fmt(blend.singleComponent.gramas)} g`);
+    lines.push('');
   }
   lines.push('Formulação:');
   formula.itens.forEach(item => {
@@ -2845,7 +3028,6 @@ function buildReport(formula) {
   });
   lines.push('');
   lines.push('Resumo técnico estimado:');
-  lines.push(`- ${analysis.baseMode === 'massa_carnea' ? 'Total sobre a base' : 'Soma da formulação'}: ${fmt(analysis.totalPct)}%`);
   lines.push(`- Gordura estimada: ${fmt(analysis.fatPct)}%`);
   lines.push(`- Proteína estimada: ${fmt(analysis.proteinPct)}%`);
   lines.push(`- Carboidratos estimados: ${fmt(analysis.carbPct)}%`);

@@ -9,7 +9,7 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon.png" />
   <link rel="apple-touch-icon" href="icon.png" />
-  <link rel="stylesheet" href="style.css?v=21" />
+  <link rel="stylesheet" href="style.css?v=23" />
   <title>Processamento de Alimentos de Origem Animal</title>
 </head>
 <body>
@@ -328,8 +328,76 @@
     <div class="modal large-modal">
       <button type="button" class="modal-close" data-close="modalConfigConteudos" aria-label="Fechar">×</button>
       <div class="modal-title">Gerenciar conteúdos</div>
-      <p class="muted content-config-intro">Edite cada assunto teórico e escolha entre conteúdo em texto ou imagens de slides.</p>
+      <div class="toolbar in-modal">
+        <p class="muted content-config-intro">Selecione um assunto para editar.</p>
+        <button type="button" class="primary-btn compact" id="btnNovoConteudo">Novo conteúdo</button>
+      </div>
       <div id="configConteudosList" class="config-content-list"></div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalConteudoEditor">
+    <div class="modal large-modal">
+      <button type="button" class="modal-close" data-close="modalConteudoEditor" aria-label="Fechar">×</button>
+      <div class="modal-title">Conteúdo teórico</div>
+      <input type="hidden" id="conteudoId" />
+      <div class="form-grid two-cols">
+        <div class="form-group">
+          <label>Nome do assunto teórico</label>
+          <input type="text" id="conteudoTitulo" />
+        </div>
+        <div class="form-group">
+          <label>Formato do conteúdo</label>
+          <select id="conteudoModo">
+            <option value="texto">Texto e tópicos</option>
+            <option value="slides">Imagens de slides</option>
+          </select>
+        </div>
+      </div>
+      <div id="conteudoTextoFields">
+        <div class="form-group">
+          <label>Resumo do assunto</label>
+          <textarea rows="4" id="conteudoResumo"></textarea>
+        </div>
+        <div class="form-grid two-cols">
+          <div class="form-group">
+            <label>Tópicos, um por linha</label>
+            <textarea rows="6" id="conteudoTopicos"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Perguntas, uma por linha</label>
+            <textarea rows="6" id="conteudoPerguntas"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Imagens ou slides do assunto</label>
+        <input type="file" id="conteudoImagens" accept="image/*" multiple />
+      </div>
+      <div id="conteudoImagensPreview" class="content-image-preview"></div>
+      <div class="schedule-link-grid">
+        <div>
+          <div class="linked-title">Produtos relacionados</div>
+          <div id="conteudoProdutos" class="check-pill-grid"></div>
+        </div>
+        <div>
+          <div class="linked-title">Insumos citados</div>
+          <div id="conteudoInsumos" class="check-pill-grid"></div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="danger-btn" id="btnExcluirConteudo">Excluir</button>
+        <button type="button" class="secondary-btn" data-close="modalConteudoEditor">Cancelar</button>
+        <button type="button" class="primary-btn" id="btnSalvarConteudo">Salvar conteúdo</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalConteudoView">
+    <div class="modal large-modal">
+      <button type="button" class="modal-close" data-close="modalConteudoView" aria-label="Fechar">×</button>
+      <div class="modal-title" id="conteudoViewTitle">Conteúdo teórico</div>
+      <div id="conteudoViewBody"></div>
     </div>
   </div>
 
@@ -360,6 +428,6 @@
   </div>
 
   <div id="toast" class="toast"></div>
-  <script src="app.js?v=21"></script>
+  <script src="app.js?v=23"></script>
 </body>
 </html>
