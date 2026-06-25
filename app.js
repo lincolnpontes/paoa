@@ -1,7 +1,7 @@
 'use strict';
 
 const STORAGE_KEY = 'paoa_lab_v1';
-const APP_VERSION = '1.5.0';
+const APP_VERSION = '1.6.0';
 const MEAT_CUTS_SOURCE_URL = 'https://nepa.unicamp.br/publicacoes/tabela-taco-pdf/';
 
 const MEAT_CUTS = [
@@ -30,7 +30,7 @@ const MEAT_CUTS = [
 const TYPES = [
   { value: 'materia_prima_carnea', label: 'Matéria-prima cárnea', subtipos: [], exemplos: 'carne bovina, frango, pernil, toucinho, pele suína' },
   { value: 'basico_nao_carneo', label: 'Ingredientes básicos não cárneos', subtipos: [], exemplos: 'água, gelo, sal, açúcar, dextrose' },
-  { value: 'condimento_especiaria', label: 'Condimentos e especiarias', subtipos: ['naturais', 'desidratados', 'em pó', 'extratos'], exemplos: 'alho em pó, cebola, pimenta, páprica, noz-moscada' },
+  { value: 'condimento_especiaria', label: 'Condimentos e especiarias', subtipos: ['naturais', 'frescos', 'desidratados', 'em pó', 'moídos', 'extratos'], exemplos: 'alho em pó, cebola, pimenta-do-reino preta moída, pimenta branca moída, páprica, noz-moscada moída' },
   { value: 'funcional_nao_aditivo', label: 'Ingredientes funcionais não aditivos', subtipos: ['proteínas', 'amidos/farinhas', 'fibras', 'hidrocoloides usados como ingrediente', 'lácteos', 'ovos'], exemplos: 'proteína de soja, fécula, amido, farinha de rosca, leite em pó, ovo' },
   { value: 'aditivo_alimentar', label: 'Aditivos alimentares', subtipos: ['conservadores', 'antioxidantes', 'estabilizantes', 'emulsificantes', 'espessantes', 'corantes', 'reguladores de acidez', 'realçadores de sabor', 'aromatizantes'], exemplos: 'nitrito, nitrato, eritorbato, fosfato, corante, glutamato' },
   { value: 'coadjuvante_tecnologia', label: 'Coadjuvantes de tecnologia', subtipos: [], exemplos: 'enzimas, agentes de cura/processo, nitrogênio/CO2' },
@@ -127,7 +127,7 @@ const PRODUCT_CATEGORIES = [
 const DEFAULT_DB = {
   app_id: 'paoa_lab',
   version: APP_VERSION,
-  configs: { ultimoProdutoAula: 'prod_hamburguer', produtoSelecionado: '', filtroInsumo: 'todos', periodoAtivoId: 'periodo_demo', periodos: [], regrasLaboratorio: clone(DEFAULT_RULES) },
+  configs: { ultimoProdutoAula: 'prod_hamburguer', produtoSelecionado: '', filtroInsumo: 'todos', periodoAtivoId: 'periodo_demo', periodos: [], regrasLaboratorio: clone(DEFAULT_RULES), conteudosTeoricos: [] },
   produtos: [
     {
       id: 'prod_hamburguer',
@@ -462,7 +462,7 @@ const DEFAULT_DB = {
     { id: 'ing_agua_gelada', nome: 'Água gelada / gelo', categoria: 'Veículo tecnológico', tipo: 'agua', funcao: 'Ajuda na distribuição dos ingredientes, hidratação e controle de temperatura durante a mistura.', obs: 'O excesso pode deixar a massa pouco coesa ou favorecer exsudação.', gordura: 0, proteina: 0, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
     { id: 'ing_sal', nome: 'Sal', categoria: 'Condimento / sal', tipo: 'sal', funcao: 'Contribui para sabor e favorece a extração de proteínas miofibrilares, aumentando a liga da massa.', obs: 'Em aula, comparar teores de sal mostra diferença de coesão e percepção sensorial.', gordura: 0, proteina: 0, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
     { id: 'ing_alho_po', nome: 'Alho em pó', categoria: 'Condimento', tipo: 'condimento', funcao: 'Fornece sabor e aroma característicos.', obs: 'Pode ser substituído por alho fresco, ajustando umidade e intensidade.', gordura: 0, proteina: 0, carboidrato: 70, custo: 0, proteinaNaoCarnea: false, alergeno: false },
-    { id: 'ing_pimenta_reino', nome: 'Pimenta-do-reino', categoria: 'Condimento', tipo: 'condimento', funcao: 'Ajusta pungência e aroma, ajudando a caracterizar o perfil sensorial do produto.', obs: 'Usar pequenas quantidades para não mascarar diferenças entre formulações.', gordura: 3, proteina: 10, carboidrato: 64, custo: 0, proteinaNaoCarnea: false, alergeno: false },
+    { id: 'ing_pimenta_reino', nome: 'Pimenta-do-reino preta', categoria: 'Condimento', tipo: 'condimento', subtipo: 'moídos', funcao: 'Ajusta pungência e aroma, ajudando a caracterizar o perfil sensorial do produto.', obs: 'Usar pequenas quantidades para não mascarar diferenças entre formulações.', gordura: 3, proteina: 10, carboidrato: 64, custo: 0, proteinaNaoCarnea: false, alergeno: false },
     { id: 'ing_paprica_doce', nome: 'Páprica doce', categoria: 'Condimento', tipo: 'condimento', funcao: 'Contribui para cor e aroma suave em embutidos frescais.', obs: 'Permite discutir padronização visual sem depender de corantes.', gordura: 13, proteina: 14, carboidrato: 54, custo: 0, proteinaNaoCarnea: false, alergeno: false },
     { id: 'ing_acucar', nome: 'Açúcar', categoria: 'Carboidrato', tipo: 'carboidrato', funcao: 'Equilibra sabor e pode contribuir para escurecimento em produtos submetidos à cocção.', obs: 'Em linguiça frescal, usar em baixo teor para ajuste sensorial.', gordura: 0, proteina: 0, carboidrato: 100, custo: 0, proteinaNaoCarnea: false, alergeno: false },
     { id: 'ing_cebola_desidratada', nome: 'Cebola desidratada', categoria: 'Condimento', tipo: 'condimento', funcao: 'Fornece aroma e dulçor característicos, contribuindo para o perfil sensorial de produtos moldados.', obs: 'Permite padronização melhor que cebola fresca, que varia em umidade.', gordura: 1, proteina: 10, carboidrato: 75, custo: 0, proteinaNaoCarnea: false, alergeno: false },
@@ -474,7 +474,7 @@ const DEFAULT_DB = {
     { id: 'ing_figado_suino', nome: 'Fígado suíno', categoria: 'Matéria-prima cárnea', tipo: 'carne', funcao: 'Contribui para sabor característico, cor e corpo em formulações pastosas como patê.', obs: 'Usar refrigerado e discutir intensidade sensorial quando a proporção aumenta.', gordura: 4, proteina: 20, carboidrato: 4, custo: 0, proteinaNaoCarnea: false, alergeno: false },
     { id: 'ing_fosfato', nome: 'Fosfato', categoria: 'Aditivo funcional', tipo: 'aditivo', funcao: 'Auxilia na retenção de água, extração proteica e estabilidade de emulsões cárneas, quando permitido.', obs: 'Usar apenas em discussão didática e conferir limites e permissões na legislação vigente para cada produto.', gordura: 0, proteina: 0, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
     { id: 'ing_leite_po', nome: 'Leite em pó', categoria: 'Ingrediente lácteo', tipo: 'lacteo', funcao: 'Contribui para corpo, retenção de água e estabilidade em alguns produtos emulsionados.', obs: 'Ingrediente alergênico; discutir declaração em rótulo quando utilizado.', gordura: 1, proteina: 34, carboidrato: 52, custo: 0, proteinaNaoCarnea: false, alergeno: true },
-    { id: 'ing_pimenta_branca', nome: 'Pimenta branca', categoria: 'Condimento', tipo: 'condimento', funcao: 'Ajusta pungência e aroma com menor impacto visual em massas claras e emulsionadas.', obs: 'Boa opção para comparar sabor suave e acentuado sem alterar muito a aparência.', gordura: 2, proteina: 10, carboidrato: 64, custo: 0, proteinaNaoCarnea: false, alergeno: false },
+    { id: 'ing_pimenta_branca', nome: 'Pimenta branca moída', categoria: 'Condimento', tipo: 'condimento', subtipo: 'moídos', funcao: 'Ajusta pungência e aroma com menor impacto visual em massas claras e emulsionadas.', obs: 'Boa opção para comparar sabor suave e acentuado sem alterar muito a aparência.', gordura: 2, proteina: 10, carboidrato: 64, custo: 0, proteinaNaoCarnea: false, alergeno: false },
     { id: 'ing_amido', nome: 'Amido', categoria: 'Carboidrato', tipo: 'carboidrato', funcao: 'Auxilia na retenção de água e na estabilidade, quando permitido e dentro dos limites do produto.', obs: 'Rendimento, textura e enquadramento legal podem ser comparados quando o teor é alterado.', gordura: 0, proteina: 0, carboidrato: 88, custo: 0, proteinaNaoCarnea: false, alergeno: false }
   ],
   formulacoes: [
@@ -744,6 +744,7 @@ function init() {
   setupEvents();
   populateTypeOptions();
   populateProductCategoryOptions();
+  if ($('#configAppVersion')) $('#configAppVersion').textContent = `Versão ${APP_VERSION}`;
   renderAll();
   registerServiceWorker();
 }
@@ -847,6 +848,7 @@ function normalizeDB(data) {
   const merged = Object.assign(clone(DEFAULT_DB), source);
   merged.configs = Object.assign(clone(DEFAULT_DB.configs), source.configs || {});
   merged.configs.regrasLaboratorio = normalizeLabRules(source.configs?.regrasLaboratorio || source.configs?.regras || DEFAULT_RULES);
+  merged.configs.conteudosTeoricos = normalizeTheoryContents(source.configs?.conteudosTeoricos || source.conteudosTeoricos, source.configs?.periodos || []);
   if (merged.configs.filtroInsumo !== 'todos' && !TYPES.some(type => type.value === merged.configs.filtroInsumo)) merged.configs.filtroInsumo = 'todos';
   merged.configs.periodos = normalizeSchedulePeriods(source.configs?.periodos || source.configs?.cronogramaPeriodos, source.configs?.cronograma);
   if (!merged.configs.periodos.some(period => period.id === merged.configs.periodoAtivoId)) {
@@ -875,6 +877,8 @@ function normalizeDB(data) {
     p.perguntas = Array.isArray(p.perguntas) ? p.perguntas : linesFrom(p.perguntas);
   });
   merged.insumos.forEach(i => {
+    if (i.id === 'ing_pimenta_reino' && ['Pimenta-do-reino', 'Pimenta do reino'].includes(i.nome)) i.nome = 'Pimenta-do-reino preta';
+    if (i.id === 'ing_pimenta_branca' && i.nome === 'Pimenta branca') i.nome = 'Pimenta branca moída';
     i.tipo = normalizeIngredientType(i);
     i.subtipo = normalizeIngredientSubtype(i);
     i.categoria = i.categoria || typeLabel(i.tipo);
@@ -1165,8 +1169,6 @@ function productWorkspaceHTML(p) {
 
 function productFormulaHTML(f) {
   const analysis = analyzeFormula(f);
-  const danger = analysis.alerts.some(a => a.type === 'danger');
-  const warn = analysis.alerts.some(a => a.type === 'warn');
   return `
     <div class="formula-work-card">
       <div class="formula-work-head">
@@ -1174,7 +1176,6 @@ function productFormulaHTML(f) {
           <h3>${escapeHTML(f.nome)}</h3>
           <p class="item-subtitle">${escapeHTML(analysis.baseLabel)}: ${fmt(f.pesoReferencia)} g · massa estimada ${fmt(analysis.finalWeight)} g${f.rendimento !== '' ? ` · rendimento esperado ${fmt(f.rendimento)}%` : ''}</p>
         </div>
-        <span class="badge ${danger ? 'danger' : warn ? 'warn' : 'ok'}">${danger ? 'corrigir' : warn ? 'atenção' : 'ok'}</span>
       </div>
       ${blendEditorHTML(f)}
       ${inlineFormulaEditorHTML(f)}
@@ -1187,13 +1188,9 @@ function productFormulaHTML(f) {
 
 function blendEditorHTML(f) {
   const state = formulaBlendState(f);
-  const label = state.components.length ? state.components.map(item => item.cut.nome).join(' + ') : 'Massa cárnea';
   return `<div class="blend-editor">
     <div class="blend-switch-row">
-      <div>
-        <strong>Blend</strong>
-        <span>${escapeHTML(label)}</span>
-      </div>
+      <strong>Blend</strong>
       <label class="switch-control">
         <input type="checkbox" data-toggle-blend="${escapeAttr(f.id)}" ${state.useBlend ? 'checked' : ''}>
         <span></span>
@@ -1448,7 +1445,7 @@ function renderCronograma() {
 function scheduleCardHTML(item, index) {
   const categoryChips = (item.categorias || []).map(id => {
     const category = PRODUCT_CATEGORIES.find(c => c.id === id);
-    return category ? `<button type="button" class="link-chip soft" data-open-category="${escapeAttr(id)}">${escapeHTML(category.titulo)}</button>` : '';
+    return category ? `<button type="button" class="link-chip soft" data-open-category="${escapeAttr(id)}">${escapeHTML(getTheoryContent(id)?.titulo || category.titulo)}</button>` : '';
   }).join('');
   const date = scheduleDateParts(item.dia);
   return `<article class="calendar-card">
@@ -1456,8 +1453,7 @@ function scheduleCardHTML(item, index) {
       ${item.dia ? `<span>${escapeHTML(date.weekday)}</span><strong>${escapeHTML(date.day)}</strong><b>${escapeHTML(date.monthYear)}</b>` : '<span>Data</span><strong>--</strong><b>A definir</b>'}
     </div>
     <div class="calendar-body">
-      <div class="calendar-lesson-label">${lessonNumberLabel(index)}</div>
-      <h3>${escapeHTML(item.tema)}</h3>
+      <h3 class="calendar-lesson-title"><span>${lessonNumberLabel(index)}:</span> ${escapeHTML(item.tema)}</h3>
       <p>${escapeHTML(item.foco)}</p>
       ${item.local ? `<div class="calendar-local">${escapeHTML(item.local)}</div>` : ''}
       ${item.observacao ? `<div class="calendar-note">${escapeHTML(item.observacao)}</div>` : ''}
@@ -1555,6 +1551,33 @@ function normalizeLessonContent(source = {}, fallback = {}, lesson = {}) {
   };
 }
 
+function normalizeTheoryContents(source = [], periods = []) {
+  const saved = Array.isArray(source) ? source : [];
+  const legacyLessons = (Array.isArray(periods) ? periods : []).flatMap(period => Array.isArray(period?.aulas) ? period.aulas : []);
+  return PRODUCT_CATEGORIES.map(category => {
+    const current = saved.find(item => item.id === category.id) || {};
+    const legacy = legacyLessons.find(lesson => (lesson.categorias || []).includes(category.id) && (lesson.conteudo?.texto || lesson.conteudo?.imagens?.length))?.conteudo || {};
+    return {
+      id: category.id,
+      titulo: current.titulo || category.titulo,
+      resumo: current.resumo || legacy.texto || category.resumo,
+      topicos: Array.isArray(current.topicos) ? current.topicos : clone(category.topicos || []),
+      perguntas: Array.isArray(current.perguntas) ? current.perguntas : clone(category.perguntas || []),
+      modo: current.modo === 'slides' || legacy.modo === 'slides' ? 'slides' : 'texto',
+      imagens: Array.isArray(current.imagens) ? current.imagens : clone(legacy.imagens || [])
+    };
+  });
+}
+
+function getTheoryContents() {
+  db.configs.conteudosTeoricos = normalizeTheoryContents(db.configs.conteudosTeoricos, db.configs.periodos);
+  return db.configs.conteudosTeoricos;
+}
+
+function getTheoryContent(id) {
+  return getTheoryContents().find(item => item.id === id);
+}
+
 function normalizeLabRules(source = []) {
   const list = Array.isArray(source) && source.length ? source : DEFAULT_RULES;
   return list.map((rule, index) => ({
@@ -1581,77 +1604,88 @@ function renderScheduleConfig() {
 function renderContentConfig() {
   const root = $('#configConteudosList');
   if (!root) return;
-  const schedule = getSchedule();
-  root.innerHTML = schedule.length ? schedule.map(contentConfigHTML).join('') : emptyHTML('Cadastre aulas no cronograma deste período antes de adicionar conteúdos.');
+  root.innerHTML = getTheoryContents().map(contentConfigHTML).join('');
   root.querySelectorAll('[data-content-field]').forEach(input => input.addEventListener('change', () => saveLessonContentField(input)));
   root.querySelectorAll('[data-content-images]').forEach(input => input.addEventListener('change', () => addLessonContentImages(input)));
-  root.querySelectorAll('[data-remove-content-image]').forEach(btn => btn.addEventListener('click', () => removeLessonContentImage(Number(btn.dataset.contentIndex), Number(btn.dataset.removeContentImage))));
+  root.querySelectorAll('[data-remove-content-image]').forEach(btn => btn.addEventListener('click', () => removeLessonContentImage(btn.dataset.contentId, Number(btn.dataset.removeContentImage))));
 }
 
-function contentConfigHTML(item, index) {
-  const content = normalizeLessonContent(item.conteudo, {}, item);
+function contentConfigHTML(content) {
+  const category = PRODUCT_CATEGORIES.find(item => item.id === content.id);
   return `<article class="config-content-card">
     <div class="config-schedule-head">
-      <strong>${lessonNumberLabel(index)} · ${escapeHTML(item.tema || 'Sem tema definido')}</strong>
-      ${item.dia ? `<span>${escapeHTML(formatScheduleDate(item.dia))}</span>` : ''}
+      <strong>${escapeHTML(content.titulo)}</strong>
+      <span>${(category?.produtos || []).length} roteiro(s)</span>
     </div>
     <div class="form-grid two-cols">
       <div class="form-group">
         <label>Formato do conteúdo</label>
-        <select data-content-field="modo" data-content-index="${index}">
-          <option value="texto" ${content.modo === 'texto' ? 'selected' : ''}>Texto e teoria vinculada</option>
+        <select data-content-field="modo" data-content-id="${escapeAttr(content.id)}">
+          <option value="texto" ${content.modo === 'texto' ? 'selected' : ''}>Texto e tópicos</option>
           <option value="slides" ${content.modo === 'slides' ? 'selected' : ''}>Imagens de slides</option>
         </select>
       </div>
       <div class="form-group">
-        <label>Título da aula teórica</label>
-        <input type="text" value="${escapeAttr(content.titulo)}" data-content-field="titulo" data-content-index="${index}">
+        <label>Nome do assunto teórico</label>
+        <input type="text" value="${escapeAttr(content.titulo)}" data-content-field="titulo" data-content-id="${escapeAttr(content.id)}">
       </div>
     </div>
     <div class="form-group content-text-field ${content.modo === 'slides' ? 'is-muted' : ''}">
-      <label>Conteúdo em texto</label>
-      <textarea rows="5" data-content-field="texto" data-content-index="${index}" placeholder="Digite o conteúdo teórico da aula.">${escapeHTML(content.texto)}</textarea>
+      <label>Resumo do assunto</label>
+      <textarea rows="4" data-content-field="resumo" data-content-id="${escapeAttr(content.id)}">${escapeHTML(content.resumo)}</textarea>
+    </div>
+    <div class="form-grid two-cols content-text-field ${content.modo === 'slides' ? 'is-muted' : ''}">
+      <div class="form-group">
+        <label>Tópicos, um por linha</label>
+        <textarea rows="5" data-content-field="topicos" data-content-id="${escapeAttr(content.id)}">${escapeHTML(content.topicos.join('\n'))}</textarea>
+      </div>
+      <div class="form-group">
+        <label>Perguntas, uma por linha</label>
+        <textarea rows="5" data-content-field="perguntas" data-content-id="${escapeAttr(content.id)}">${escapeHTML(content.perguntas.join('\n'))}</textarea>
+      </div>
     </div>
     <div class="form-group">
-      <label>Imagens ou slides da aula</label>
-      <input type="file" accept="image/*" multiple data-content-images data-content-index="${index}">
+      <label>Imagens ou slides do assunto</label>
+      <input type="file" accept="image/*" multiple data-content-images data-content-id="${escapeAttr(content.id)}">
     </div>
     <div class="content-image-preview">
       ${content.imagens.map((src, imageIndex) => `<div class="photo-wrap content-photo-wrap">
         <img class="content-photo-thumb" src="${escapeAttr(src)}" alt="Slide ${imageIndex + 1}">
-        <button type="button" class="photo-remove" data-remove-content-image="${imageIndex}" data-content-index="${index}" aria-label="Remover imagem">×</button>
+        <button type="button" class="photo-remove" data-remove-content-image="${imageIndex}" data-content-id="${escapeAttr(content.id)}" aria-label="Remover imagem">×</button>
       </div>`).join('')}
     </div>
   </article>`;
 }
 
 function saveLessonContentField(input) {
-  const lesson = getSchedule()[Number(input.dataset.contentIndex)];
-  if (!lesson) return;
-  lesson.conteudo = normalizeLessonContent(lesson.conteudo, {}, lesson);
-  lesson.conteudo[input.dataset.contentField] = input.value;
+  const content = getTheoryContent(input.dataset.contentId);
+  if (!content) return;
+  const field = input.dataset.contentField;
+  content[field] = ['topicos', 'perguntas'].includes(field) ? linesFrom(input.value) : input.value;
   saveDB();
   renderAulas();
-  if (input.dataset.contentField === 'modo') renderContentConfig();
+  renderProdutos();
+  renderCronograma();
+  populateProductCategoryOptions();
+  if (field === 'modo') renderContentConfig();
   toast('Conteúdo atualizado.');
 }
 
 async function addLessonContentImages(input) {
-  const lesson = getSchedule()[Number(input.dataset.contentIndex)];
-  if (!lesson) return;
-  lesson.conteudo = normalizeLessonContent(lesson.conteudo, {}, lesson);
+  const content = getTheoryContent(input.dataset.contentId);
+  if (!content) return;
   const files = Array.from(input.files || []).filter(file => file.type.startsWith('image/'));
-  for (const file of files) lesson.conteudo.imagens.push(await fileToDataURL(file, 1800, 0.88));
+  for (const file of files) content.imagens.push(await fileToDataURL(file, 1800, 0.88));
   saveDB();
   renderContentConfig();
   renderAulas();
   toast(files.length === 1 ? 'Slide adicionado.' : 'Slides adicionados.');
 }
 
-function removeLessonContentImage(lessonIndex, imageIndex) {
-  const lesson = getSchedule()[lessonIndex];
-  if (!lesson?.conteudo?.imagens?.[imageIndex]) return;
-  lesson.conteudo.imagens.splice(imageIndex, 1);
+function removeLessonContentImage(contentId, imageIndex) {
+  const content = getTheoryContent(contentId);
+  if (!content?.imagens?.[imageIndex]) return;
+  content.imagens.splice(imageIndex, 1);
   saveDB();
   renderContentConfig();
   renderAulas();
@@ -1718,7 +1752,7 @@ function scheduleProductChecks(item, index) {
 
 function scheduleCategoryChecks(item, index) {
   const selected = new Set(item.categorias || []);
-  return PRODUCT_CATEGORIES.map(category => `<label class="check-pill"><input type="checkbox" ${selected.has(category.id) ? 'checked' : ''} data-schedule-category="${escapeAttr(category.id)}" data-schedule-index="${index}"><span>${escapeHTML(category.titulo)}</span></label>`).join('');
+  return PRODUCT_CATEGORIES.map(category => `<label class="check-pill"><input type="checkbox" ${selected.has(category.id) ? 'checked' : ''} data-schedule-category="${escapeAttr(category.id)}" data-schedule-index="${index}"><span>${escapeHTML(theoryTitle(category.id))}</span></label>`).join('');
 }
 
 function renderRulesConfig() {
@@ -1953,32 +1987,25 @@ function renderAulas() {
 }
 
 function theoryScheduleLessonHTML(item, index) {
-  const content = normalizeLessonContent(item.conteudo, {}, item);
   const categories = (item.categorias || []).map(id => PRODUCT_CATEGORIES.find(category => category.id === id)).filter(Boolean);
-  const slides = content.imagens || [];
-  const showSlides = content.modo === 'slides' && slides.length;
   return `<article class="theory-lesson-panel ${index === activeTheoryLessonIndex ? 'active' : ''}" data-theory-panel="${index}">
     <header class="theory-lesson-header">
       <div>
         <span>${lessonNumberLabel(index)}${item.dia ? ` · ${escapeHTML(formatScheduleDate(item.dia))}` : ''}</span>
-        <h3>${escapeHTML(content.titulo || item.tema || lessonNumberLabel(index))}</h3>
+        <h3>${escapeHTML(item.tema || lessonNumberLabel(index))}</h3>
       </div>
     </header>
-    ${showSlides ? theorySlidesHTML(slides) : `
-      ${content.texto ? `<div class="theory-rich-text">${escapeHTML(content.texto).replace(/\n/g, '<br>')}</div>` : ''}
-      <div class="theory-grid lesson-theory-grid">
-        ${categories.map(theoryLessonHTML).join('') || (!content.texto ? '<div class="notice-card slim">Nenhum conteúdo teórico vinculado a esta aula.</div>' : '')}
-      </div>`}
+    <div class="theory-grid lesson-theory-grid">
+      ${categories.map(theoryLessonHTML).join('') || '<div class="notice-card slim">Nenhum assunto teórico vinculado a esta aula.</div>'}
+    </div>
     <div class="lesson-links">
       ${(item.produtos || []).length ? `<div class="linked-block"><div class="linked-title">Roteiros desta aula</div>${linkedProductsHTML(item.produtos)}</div>` : ''}
-      ${categories.length ? `<div class="linked-block"><div class="linked-title">Categorias relacionadas</div><div class="link-chip-row">${categories.map(category => `<span class="link-chip static">${escapeHTML(category.titulo)}</span>`).join('')}</div></div>` : ''}
     </div>
   </article>`;
 }
 
 function theorySlidesHTML(images) {
-  const index = Math.max(0, Math.min(images.length - 1, activeTheoryImageIndex));
-  activeTheoryImageIndex = index;
+  const index = 0;
   return `<div class="theory-slides" data-theory-slides>
     <div class="theory-slide-frame">
       ${images.map((src, imageIndex) => `<img src="${escapeAttr(src)}" alt="Slide ${imageIndex + 1}" class="${imageIndex === index ? 'active' : ''}" data-theory-image="${imageIndex}">`).join('')}
@@ -1992,17 +2019,18 @@ function theorySlidesHTML(images) {
 }
 
 function bindTheorySlides(root) {
-  const wrap = root.querySelector('[data-theory-slides]');
-  if (!wrap) return;
-  const images = Array.from(wrap.querySelectorAll('[data-theory-image]'));
-  const position = wrap.querySelector('[data-theory-slide-position]');
-  const show = next => {
-    activeTheoryImageIndex = Math.max(0, Math.min(images.length - 1, next));
-    images.forEach((image, index) => image.classList.toggle('active', index === activeTheoryImageIndex));
-    if (position) position.textContent = `${activeTheoryImageIndex + 1} / ${images.length}`;
-  };
-  wrap.querySelector('[data-theory-slide-prev]')?.addEventListener('click', () => show(activeTheoryImageIndex - 1));
-  wrap.querySelector('[data-theory-slide-next]')?.addEventListener('click', () => show(activeTheoryImageIndex + 1));
+  root.querySelectorAll('[data-theory-slides]').forEach(wrap => {
+    const images = Array.from(wrap.querySelectorAll('[data-theory-image]'));
+    const position = wrap.querySelector('[data-theory-slide-position]');
+    let index = 0;
+    const show = next => {
+      index = Math.max(0, Math.min(images.length - 1, next));
+      images.forEach((image, imageIndex) => image.classList.toggle('active', imageIndex === index));
+      if (position) position.textContent = `${index + 1} / ${images.length}`;
+    };
+    wrap.querySelector('[data-theory-slide-prev]')?.addEventListener('click', () => show(index - 1));
+    wrap.querySelector('[data-theory-slide-next]')?.addEventListener('click', () => show(index + 1));
+  });
 }
 
 function renderLegislacao() {
@@ -2012,19 +2040,22 @@ function renderLegislacao() {
 }
 
 function theoryLessonHTML(lesson) {
+  const content = getTheoryContent(lesson.id) || lesson;
+  const showSlides = content.modo === 'slides' && content.imagens?.length;
   return `<article class="theory-card">
-    <h3>${escapeHTML(lesson.titulo)}</h3>
-    <p>${escapeHTML(lesson.resumo)}</p>
-    <div class="theory-columns">
-      <div>
-        <h4>Tópicos</h4>
-        ${unorderedList(lesson.topicos)}
-      </div>
-      <div>
-        <h4>Perguntas</h4>
-        ${unorderedList(lesson.perguntas)}
-      </div>
-    </div>
+    <h3>${escapeHTML(content.titulo)}</h3>
+    ${showSlides ? theorySlidesHTML(content.imagens) : `
+      <p>${escapeHTML(content.resumo)}</p>
+      <div class="theory-columns">
+        <div>
+          <h4>Tópicos</h4>
+          ${unorderedList(content.topicos)}
+        </div>
+        <div>
+          <h4>Perguntas</h4>
+          ${unorderedList(content.perguntas)}
+        </div>
+      </div>`}
     <div class="linked-block">
       <div class="linked-title">Roteiros disponíveis</div>
       ${linkedProductsHTML(lesson.produtos)}
@@ -2057,13 +2088,29 @@ function bindInternalLinks(root) {
 
 function lawCardHTML(law) {
   const product = law.produtoId ? findProduct(law.produtoId) : null;
-  return `<div class="law-card">
-    <h3>${escapeHTML(law.titulo)}</h3>
-    <div class="item-subtitle">${escapeHTML(law.orgao || '')}${product ? ' · ' + escapeHTML(product.nome) : ' · Geral'}</div>
-    <p class="muted">${escapeHTML(law.resumo || '')}</p>
-    ${unorderedList(law.pontos || [])}
-    ${law.url ? `<button type="button" class="secondary-btn full" data-open-url="${escapeAttr(law.url)}">Abrir referência</button>` : ''}
-  </div>`;
+  return `<details class="law-card">
+    <summary class="law-summary">
+      <h3>${escapeHTML(lawDisplayTitle(law))}</h3>
+      <p>${escapeHTML(law.resumo || '')}</p>
+      <span aria-hidden="true">+</span>
+    </summary>
+    <div class="law-details">
+      <div class="item-subtitle">${escapeHTML(law.orgao || '')}${product ? ' · ' + escapeHTML(product.nome) : ' · Geral'}</div>
+      ${unorderedList(law.pontos || [])}
+      ${law.url ? `<button type="button" class="secondary-btn full" data-open-url="${escapeAttr(law.url)}">Abrir referência</button>` : ''}
+    </div>
+  </details>`;
+}
+
+function lawDisplayTitle(law) {
+  const labels = {
+    leg_hamburguer_724_2022: 'Portaria SDA/MAPA nº 724/2022 - RTIQ do hambúrguer',
+    leg_linguica_in4_2000: 'IN SDA/MAPA nº 4/2000 - RTIQ de linguiça',
+    leg_salsicha_in4_2000: 'IN SDA/MAPA nº 4/2000 - RTIQ de salsicha',
+    leg_riispoa_9013: 'Decreto nº 9.013/2017 - RIISPOA',
+    leg_rotulagem_anvisa: 'RDC nº 429/2020 e IN nº 75/2020 - Rotulagem nutricional'
+  };
+  return labels[law.id] || law.titulo || 'Referência legal';
 }
 
 function bindLawLinks(root) {
@@ -2189,7 +2236,7 @@ function populateSubtypeOptions(type, selected = '') {
 function populateProductCategoryOptions() {
   const select = $('#produtoCategoriaDidatica');
   if (!select) return;
-  select.innerHTML = PRODUCT_CATEGORIES.map(category => `<option value="${escapeAttr(category.id)}">${escapeHTML(category.titulo)}</option>`).join('');
+  select.innerHTML = PRODUCT_CATEGORIES.map(category => `<option value="${escapeAttr(category.id)}">${escapeHTML(theoryTitle(category.id))}</option>`).join('');
 }
 
 function openIngredientModal(id = null) {
@@ -2622,7 +2669,11 @@ function productCategory(product) {
 function productCategoryLabel(product) {
   const categories = productCategories(product);
   if (!categories.length) return 'Categoria não definida';
-  return categories.map(category => category.titulo).join(' + ');
+  return categories.map(category => theoryTitle(category.id)).join(' + ');
+}
+
+function theoryTitle(id) {
+  return getTheoryContent(id)?.titulo || PRODUCT_CATEGORIES.find(category => category.id === id)?.titulo || 'Assunto teórico';
 }
 
 function normalizeCategoryIds(product, defaultProduct = null) {
@@ -2941,8 +2992,10 @@ function normalizeIngredientSubtype(ingredient = {}) {
   if (existing && ingredientSubtypes(type).includes(existing)) return existing;
   const text = [ingredient.nome, ingredient.categoria, ingredient.tipo].join(' ').toLowerCase();
   if (type === 'condimento_especiaria') {
+    if (ingredient.id === 'ing_pimenta_reino' || ingredient.id === 'ing_pimenta_branca' || text.includes('moíd') || text.includes('moid')) return 'moídos';
     if (text.includes('pó') || text.includes('po')) return 'em pó';
     if (text.includes('desidrat')) return 'desidratados';
+    if (text.includes('fresc')) return 'frescos';
   }
   if (type === 'funcional_nao_aditivo') {
     if (text.includes('proteína') || text.includes('proteina')) return 'proteínas';

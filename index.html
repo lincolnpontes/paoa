@@ -9,7 +9,7 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon.png" />
   <link rel="apple-touch-icon" href="icon.png" />
-  <link rel="stylesheet" href="style.css?v=20" />
+  <link rel="stylesheet" href="style.css?v=21" />
   <title>Processamento de Alimentos de Origem Animal</title>
 </head>
 <body>
@@ -254,6 +254,10 @@
   <div class="modal-overlay" id="modalConfig">
     <div class="modal config-menu-modal">
       <button type="button" class="modal-close" data-close="modalConfig" aria-label="Fechar">×</button>
+      <div class="config-brand">
+        <strong>Processamento de Alimentos de Origem Animal</strong>
+        <span id="configAppVersion"></span>
+      </div>
       <div class="modal-title">Configurações</div>
       <div class="config-menu-grid">
         <button type="button" class="config-menu-card" data-open-config-modal="modalConfigProdutos">Gerenciar produtos</button>
@@ -324,7 +328,7 @@
     <div class="modal large-modal">
       <button type="button" class="modal-close" data-close="modalConfigConteudos" aria-label="Fechar">×</button>
       <div class="modal-title">Gerenciar conteúdos</div>
-      <p class="muted content-config-intro">Cada conteúdo fica ligado à aula correspondente do período ativo. Use texto ou imagens quando quiser apresentar slides.</p>
+      <p class="muted content-config-intro">Edite cada assunto teórico e escolha entre conteúdo em texto ou imagens de slides.</p>
       <div id="configConteudosList" class="config-content-list"></div>
     </div>
   </div>
@@ -356,6 +360,6 @@
   </div>
 
   <div id="toast" class="toast"></div>
-  <script src="app.js?v=20"></script>
+  <script src="app.js?v=21"></script>
 </body>
 </html>
