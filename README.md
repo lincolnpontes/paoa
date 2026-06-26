@@ -49,7 +49,7 @@ http://localhost:8000
 Neste workspace, o servidor de teste foi iniciado em:
 
 ```text
-http://127.0.0.1:8767/?v=40
+http://127.0.0.1:8767/?v=43
 ```
 
 ## Arquivos principais

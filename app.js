@@ -33,8 +33,52 @@ const MEAT_CUTS = [
   { id: 'outro', nome: 'Outro corte ou matéria-prima', comGordura: 0, semGordura: 0, fonteCom: 'Informe o teor analisado ou consultado', fonteSem: 'Informe o teor analisado ou consultado' }
 ];
 
+const MEAT_CUT_INGREDIENTS = [
+  { id: 'ing_corte_acem_moido_cru', nome: 'Acém bovino moído cru', gordura: 5.95, proteina: 19.42, carboidrato: 0, fonte: 'Carne, bovina, acém, moído, cru' },
+  { id: 'ing_corte_acem_sem_gordura_cru', nome: 'Acém bovino sem gordura cru', gordura: 6.11, proteina: 20.82, carboidrato: 0, fonte: 'Carne, bovina, acém, sem gordura, cru' },
+  { id: 'ing_corte_fraldinha_com_gordura_crua', nome: 'Fraldinha bovina com gordura crua', gordura: 16.15, proteina: 17.58, carboidrato: 0, fonte: 'Carne, bovina, fraldinha, com gordura, crua' },
+  { id: 'ing_corte_flanco_sem_gordura_cru', nome: 'Flanco bovino sem gordura cru', gordura: 6.22, proteina: 20, carboidrato: 0, fonte: 'Carne, bovina, flanco, sem gordura, cru' },
+  { id: 'ing_corte_peito_bovino_sem_gordura_cru', nome: 'Peito bovino sem gordura cru', gordura: 20.43, proteina: 17.56, carboidrato: 0, fonte: 'Carne, bovina, peito, sem gordura, cru' },
+  { id: 'ing_corte_miolo_alcatra_sem_gordura_cru', nome: 'Miolo de alcatra bovina sem gordura cru', gordura: 7.83, proteina: 21.61, carboidrato: 0, fonte: 'Carne, bovina, miolo de alcatra, sem gordura, cru' },
+  { id: 'ing_corte_coxao_mole_sem_gordura_cru', nome: 'Coxão mole bovino sem gordura cru', gordura: 8.69, proteina: 21.23, carboidrato: 0, fonte: 'Carne, bovina, coxão mole, sem gordura, cru' },
+  { id: 'ing_corte_coxao_duro_sem_gordura_cru', nome: 'Coxão duro bovino sem gordura cru', gordura: 6.22, proteina: 21.51, carboidrato: 0, fonte: 'Carne, bovina, coxão duro, sem gordura, cru' },
+  { id: 'ing_corte_patinho_sem_gordura_cru', nome: 'Patinho bovino sem gordura cru', gordura: 4.51, proteina: 21.72, carboidrato: 0, fonte: 'Carne, bovina, patinho, sem gordura, cru' },
+  { id: 'ing_corte_lagarto_cru', nome: 'Lagarto bovino cru', gordura: 5.23, proteina: 20.54, carboidrato: 0, fonte: 'Carne, bovina, lagarto, cru' },
+  { id: 'ing_corte_maminha_crua', nome: 'Maminha bovina crua', gordura: 7.03, proteina: 20.93, carboidrato: 0, fonte: 'Carne, bovina, maminha, crua' },
+  { id: 'ing_corte_musculo_sem_gordura_cru', nome: 'Músculo bovino sem gordura cru', gordura: 5.49, proteina: 21.56, carboidrato: 0, fonte: 'Carne, bovina, músculo, sem gordura, cru' },
+  { id: 'ing_corte_paleta_com_gordura_crua', nome: 'Paleta bovina com gordura crua', gordura: 7.46, proteina: 21.41, carboidrato: 0, fonte: 'Carne, bovina, paleta, com gordura, crua' },
+  { id: 'ing_corte_paleta_sem_gordura_crua', nome: 'Paleta bovina sem gordura crua', gordura: 5.67, proteina: 21.03, carboidrato: 0, fonte: 'Carne, bovina, paleta, sem gordura, crua' },
+  { id: 'ing_corte_contrafile_com_gordura_cru', nome: 'Contrafilé bovino com gordura cru', gordura: 12.81, proteina: 21.15, carboidrato: 0, fonte: 'Carne, bovina, contra-filé, com gordura, cru' },
+  { id: 'ing_corte_contrafile_sem_gordura_cru', nome: 'Contrafilé bovino sem gordura cru', gordura: 6, proteina: 24, carboidrato: 0, fonte: 'Carne, bovina, contra-filé, sem gordura, cru' },
+  { id: 'ing_corte_file_mignon_sem_gordura_cru', nome: 'Filé mignon bovino sem gordura cru', gordura: 5.61, proteina: 21.6, carboidrato: 0, fonte: 'Carne, bovina, filé mingnon, sem gordura, cru' },
+  { id: 'ing_corte_picanha_com_gordura_crua', nome: 'Picanha bovina com gordura crua', gordura: 14.69, proteina: 18.82, carboidrato: 0, fonte: 'Carne, bovina, picanha, com gordura, crua' },
+  { id: 'ing_corte_picanha_sem_gordura_crua', nome: 'Picanha bovina sem gordura crua', gordura: 4.74, proteina: 21.25, carboidrato: 0, fonte: 'Carne, bovina, picanha, sem gordura, crua' },
+  { id: 'ing_corte_costela_bovina_crua', nome: 'Costela bovina crua', gordura: 31.75, proteina: 16.71, carboidrato: 0, fonte: 'Carne, bovina, costela, crua' },
+  { id: 'ing_corte_cupim_cru', nome: 'Cupim bovino cru', gordura: 15.3, proteina: 19.54, carboidrato: 0, fonte: 'Carne, bovina, cupim, cru' },
+  { id: 'ing_corte_pernil_suino_cru', nome: 'Pernil suíno cru', gordura: 11.1, proteina: 20.13, carboidrato: 0, fonte: 'Porco, pernil, cru' },
+  { id: 'ing_corte_lombo_suino_cru', nome: 'Lombo suíno cru', gordura: 8.77, proteina: 22.6, carboidrato: 0, fonte: 'Porco, lombo, cru' },
+  { id: 'ing_corte_peito_frango_com_pele_cru', nome: 'Peito de frango com pele cru', gordura: 6.73, proteina: 20.78, carboidrato: 0, fonte: 'Frango, peito, com pele, cru' },
+  { id: 'ing_corte_peito_frango_sem_pele_cru', nome: 'Peito de frango sem pele cru', gordura: 3.02, proteina: 21.53, carboidrato: 0, fonte: 'Frango, peito, sem pele, cru' },
+  { id: 'ing_corte_coxa_frango_com_pele_crua', nome: 'Coxa de frango com pele crua', gordura: 9.81, proteina: 17.09, carboidrato: 0, fonte: 'Frango, coxa, com pele, crua' },
+  { id: 'ing_corte_coxa_frango_sem_pele_crua', nome: 'Coxa de frango sem pele crua', gordura: 4.86, proteina: 17.81, carboidrato: 0.02, fonte: 'Frango, coxa, sem pele, crua' },
+  { id: 'ing_corte_sobrecoxa_frango_com_pele_crua', nome: 'Sobrecoxa de frango com pele crua', gordura: 20.9, proteina: 15.46, carboidrato: 0, fonte: 'Frango, sobrecoxa, com pele, crua' },
+  { id: 'ing_corte_sobrecoxa_frango_sem_pele_crua', nome: 'Sobrecoxa de frango sem pele crua', gordura: 9.62, proteina: 17.57, carboidrato: 0, fonte: 'Frango, sobrecoxa, sem pele, crua' },
+  { id: 'ing_corte_toucinho_suino_cru', nome: 'Toucinho suíno cru', gordura: 60.26, proteina: 11.48, carboidrato: 0, fonte: 'Toucinho, cru' }
+].map(item => ({
+  ...item,
+  categoria: 'Matéria-prima cárnea',
+  tipo: 'materia_prima_carnea',
+  subtipo: 'cortes de referência',
+  funcao: 'Matéria-prima cárnea de referência para consulta e ajuste de composição.',
+  obs: `TACO/NEPA/UNICAMP: ${item.fonte}.`,
+  custo: 0,
+  usadoNaFormulacao: false,
+  proteinaNaoCarnea: false,
+  alergeno: false
+}));
+
 const TYPES = [
-  { value: 'materia_prima_carnea', label: 'Matéria-prima cárnea', subtipos: [], exemplos: 'carne bovina, frango, pernil, toucinho, pele suína' },
+  { value: 'materia_prima_carnea', label: 'Matéria-prima cárnea', subtipos: ['cortes de referência'], exemplos: 'carne bovina, frango, pernil, toucinho, pele suína' },
   { value: 'basico_nao_carneo', label: 'Ingredientes básicos não cárneos', subtipos: [], exemplos: 'água, gelo, sal, açúcar, dextrose' },
   { value: 'condimento_especiaria', label: 'Condimentos e especiarias', subtipos: ['naturais', 'frescos', 'desidratados', 'em pó', 'moídos', 'extratos'], exemplos: 'alho em pó, cebola, pimenta-do-reino preta moída, pimenta branca moída, páprica, noz-moscada moída' },
   { value: 'funcional_nao_aditivo', label: 'Ingredientes funcionais não aditivos', subtipos: ['proteínas', 'amidos/farinhas', 'fibras', 'hidrocoloides usados como ingrediente', 'lácteos', 'ovos'], exemplos: 'proteína de soja, fécula, amido, farinha de rosca, leite em pó, ovo' },
@@ -708,6 +752,7 @@ const DEFAULT_DB = {
     { id: 'ing_pernil_suino', nome: 'Pernil suíno magro', categoria: 'Matéria-prima cárnea', tipo: 'carne', funcao: 'Base proteica da linguiça frescal; contribui para estrutura, rendimento e sabor característico.', obs: 'Manter refrigerado e moer frio para reduzir liberação de gordura.', gordura: 8, proteina: 20, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
     { id: 'ing_toucinho_suino', nome: 'Toucinho suíno', categoria: 'Gordura animal', tipo: 'gordura', funcao: 'Ajusta o teor de gordura, melhora suculência e contribui para sabor e textura do embutido.', obs: 'Cortar em cubos e manter frio antes da moagem para preservar definição de partículas.', gordura: 99, proteina: 1, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
     { id: 'ing_peito_frango', nome: 'Peito de frango sem pele', categoria: 'Matéria-prima cárnea', tipo: 'carne', funcao: 'Base proteica magra para produtos de frango reestruturados, contribuindo para liga, textura e rendimento.', obs: 'Manter refrigerado e processar frio para evitar perda de liga e aquecimento da massa.', gordura: 3, proteina: 21, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
+    ...MEAT_CUT_INGREDIENTS,
     { id: 'ing_agua_gelada', nome: 'Água gelada / gelo', categoria: 'Veículo tecnológico', tipo: 'agua', funcao: 'Ajuda na distribuição dos ingredientes, hidratação e controle de temperatura durante a mistura.', obs: 'O excesso pode deixar a massa pouco coesa ou favorecer exsudação.', gordura: 0, proteina: 0, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
     { id: 'ing_sal', nome: 'Sal', categoria: 'Condimento / sal', tipo: 'sal', funcao: 'Contribui para sabor e favorece a extração de proteínas miofibrilares, aumentando a liga da massa.', obs: 'Em aula, comparar teores de sal mostra diferença de coesão e percepção sensorial.', gordura: 0, proteina: 0, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
     { id: 'ing_sal_cura', nome: 'Sal de cura', categoria: 'Mistura/preparado comercial', tipo: 'mistura_comercial', subtipo: 'mistura de cura', funcao: 'Mistura usada em produtos curados para discutir cor, sabor, segurança e limites de uso conforme legislação vigente.', obs: 'Usar apenas em contexto didático com orientação docente e conferir concentração e legislação antes de qualquer aplicação real.', gordura: 0, proteina: 0, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
@@ -1070,6 +1115,7 @@ let tempIngredientPhoto = '';
 let tempTheoryImages = [];
 let formulaDraftItems = [];
 let activeProductSlideId = 'visao';
+let activeProductReturnPage = 'Produtos';
 let activeTheoryLessonIndex = 0;
 let activeTheoryImageIndex = 0;
 let inlineEditTimer = null;
@@ -1265,6 +1311,10 @@ function normalizeDB(data) {
     f.baseCalculo = f.baseCalculo || defaultFormula?.baseCalculo || defaultFormulaBase(product);
     f.pesoReferencia = toNumber(f.pesoReferencia) || 1000;
     f.itens = Array.isArray(f.itens) ? f.itens : [];
+    f.itens.forEach(item => {
+      item.removido = item.removido === true;
+      if (item.percentualOriginal === undefined) item.percentualOriginal = toNumber(item.percentual);
+    });
     f.blendComponentes = normalizeBlendComponents(f.blendComponentes, f, merged.insumos);
     f.materiaPrimaUnica = normalizeSingleMaterial(f.materiaPrimaUnica, f, merged.insumos);
     f.usarBlend = resetLegacyBlendDefault ? false : f.usarBlend === true;
@@ -1426,25 +1476,37 @@ function productConfigHTML(p) {
     </button>`;
 }
 
-function openProductWorkspace(id) {
+function openProductWorkspace(id, returnPage = activePage) {
   const product = findProduct(id);
   if (!product || product.oculto) return;
   activeProductId = id;
   activeProductSlideId = 'visao';
+  activeProductReturnPage = returnPage || activePage || 'Produtos';
   db.configs.produtoSelecionado = id;
   db.configs.ultimoProdutoAula = id;
   saveDB();
   if ($('#searchProdutos')) $('#searchProdutos').value = '';
+  closeModal('modalConteudoView');
+  closeModal('modalInsumoView');
   setPage('Produtos');
   renderProdutos();
 }
 
 function closeProductWorkspace() {
+  const returnPage = activeProductReturnPage || 'Produtos';
   activeProductId = '';
   activeProductSlideId = 'visao';
   db.configs.produtoSelecionado = '';
   saveDB();
-  renderProdutos();
+  $('.content')?.classList.remove('product-mode');
+  if (returnPage === 'Produtos') renderProdutos();
+  else {
+    const workspace = $('#produtoWorkspace');
+    const overview = $('#produtosOverview');
+    if (workspace) workspace.hidden = true;
+    if (overview) overview.hidden = false;
+    setPage(returnPage);
+  }
 }
 
 function productWorkspaceHTML(p) {
@@ -1467,10 +1529,10 @@ function productWorkspaceHTML(p) {
     <div class="product-slide-deck" data-slide-deck>
       <aside class="product-slide-summary">
         <div class="slide-controls">
-          <button type="button" class="back-btn product-back-icon" data-product-back title="Voltar aos produtos" aria-label="Voltar aos produtos">↩</button>
-          <button type="button" class="secondary-btn compact slide-arrow" data-slide-prev aria-label="Slide anterior">←</button>
+          <button type="button" class="back-btn product-back-icon" data-product-back title="Fechar roteiro" aria-label="Fechar roteiro">✕</button>
+          <button type="button" class="secondary-btn compact slide-arrow" data-slide-prev aria-label="Slide anterior">➜</button>
           <div class="slide-position" data-slide-position>1 / ${slides.length}</div>
-          <button type="button" class="primary-btn compact slide-arrow" data-slide-next aria-label="Próximo slide">→</button>
+          <button type="button" class="primary-btn compact slide-arrow" data-slide-next aria-label="Próximo slide">➜</button>
         </div>
         <span class="summary-divider" aria-hidden="true"></span>
         <div class="product-slide-summary-scroll">
@@ -1516,7 +1578,7 @@ function productWorkspaceHTML(p) {
         </section>
 
         <section class="product-slide" data-slide-panel="formulas">
-          <div class="slide-card formula-slide-card">
+          <div class="formula-slide-card">
             <div class="formula-work-list">
               ${formulas.map(productFormulaHTML).join('') || emptyHTML('Nenhuma formulação cadastrada para este produto.')}
             </div>
@@ -1549,7 +1611,7 @@ function productFormulaHTML(f) {
   const analysis = analyzeFormula(f);
   const blendState = formulaBlendState(f);
   return `
-    <div class="formula-work-card ${f.bloqueada ? 'formula-locked' : ''}">
+    <div class="formula-work-card ${f.bloqueada ? 'formula-locked' : ''}" data-formula-card="${escapeAttr(f.id)}">
       <div class="formula-work-head">
         <h3><span>Formulação do Produto:</span> <strong>${escapeHTML(cleanFormulaName(f.nome))}</strong></h3>
         <div class="formula-head-actions">
@@ -1559,7 +1621,7 @@ function productFormulaHTML(f) {
       </div>
       ${blendEditorHTML(f, blendState)}
       ${inlineFormulaEditorHTML(f)}
-      ${analysisHTML(analysis)}
+      <div class="formula-analysis-wrap">${analysisHTML(analysis)}</div>
       <div class="product-action-row">
         <button type="button" class="secondary-btn compact" data-report-formula="${escapeAttr(f.id)}">Relatório</button>
       </div>
@@ -1663,18 +1725,19 @@ function inlineFormulaRowHTML(f, item) {
     const pct = toNumber(item.percentual);
     const grams = formulaItemGrams(f, item);
     const suggestion = ingredientSuggestion(ing);
-    const disabled = f.bloqueada ? ' disabled' : '';
+    const removed = item.removido === true;
+    const disabled = f.bloqueada || removed ? ' disabled' : '';
     const intensityKey = `${f.id}:${item.insumoId}`;
     const expanded = expandedIntensityItems.has(intensityKey);
     const suggestionHTML = suggestion ? intensityScaleHTML(f, item, pct, suggestion) : '';
-    return `<div class="inline-formula-row ${suggestion ? 'has-intensity' : ''}">
+    return `<div class="inline-formula-row ${suggestion ? 'has-intensity' : ''} ${removed ? 'removed' : ''}" data-formula-row="${escapeAttr(f.id)}" data-formula-row-insumo="${escapeAttr(item.insumoId)}">
       <div class="inline-formula-name">
         <button type="button" class="inline-link" data-open-ingredient="${escapeAttr(item.insumoId)}">${escapeHTML(ing?.nome || 'Insumo não encontrado')}</button>
       </div>
       ${suggestion ? `<div class="formula-intensity-cell ${expanded ? 'expanded' : ''}">
-        <button type="button" class="intensity-edit-btn" data-toggle-intensity="${escapeAttr(intensityKey)}" title="${expanded ? 'Fechar ajuste de intensidade' : 'Ajustar intensidade'}" aria-expanded="${expanded}">✎</button>
+        <button type="button" class="intensity-edit-btn" data-toggle-intensity="${escapeAttr(intensityKey)}" title="${expanded ? 'Fechar ajuste de intensidade' : 'Ajustar intensidade'}" aria-expanded="${expanded}"${disabled}>✎</button>
         <div class="suggestion-panel">
-          <button type="button" class="intensity-done-btn" data-toggle-intensity="${escapeAttr(intensityKey)}" title="Concluir ajuste" aria-label="Concluir ajuste">&#10004;&#65039;</button>
+          <button type="button" class="intensity-done-btn" data-toggle-intensity="${escapeAttr(intensityKey)}" title="Concluir ajuste" aria-label="Concluir ajuste"${disabled}>&#10004;&#65039;</button>
           ${suggestionHTML}
         </div>
       </div>` : ''}
@@ -1682,8 +1745,10 @@ function inlineFormulaRowHTML(f, item) {
         <span>%</span>
         <input type="number" min="0" step="0.1" value="${escapeAttr(fmtInput(pct))}" data-inline-pct-formula="${escapeAttr(f.id)}" data-inline-pct-insumo="${escapeAttr(item.insumoId)}"${disabled}>
       </label>
-      <strong class="gram-pill">${fmt(grams)} g</strong>
-      <button type="button" class="tiny-btn formula-item-remove" data-remove-ingredient-formula="${escapeAttr(f.id)}" data-remove-ingredient-id="${escapeAttr(item.insumoId)}" title="Remover insumo"${disabled}>×</button>
+      <strong class="gram-pill" data-inline-grams="${escapeAttr(f.id)}" data-inline-grams-insumo="${escapeAttr(item.insumoId)}">${fmt(grams)} g</strong>
+      ${removed
+        ? `<button type="button" class="tiny-btn restore formula-item-restore" data-restore-ingredient-formula="${escapeAttr(f.id)}" data-restore-ingredient-id="${escapeAttr(item.insumoId)}" title="Restaurar insumo"${f.bloqueada ? ' disabled' : ''}>↺</button>`
+        : `<button type="button" class="tiny-btn formula-item-remove" data-remove-ingredient-formula="${escapeAttr(f.id)}" data-remove-ingredient-id="${escapeAttr(item.insumoId)}" title="Remover insumo"${f.bloqueada ? ' disabled' : ''}>×</button>`}
     </div>`;
 }
 
@@ -1703,17 +1768,20 @@ function intensityScaleHTML(formula, item, current, suggestion) {
 }
 
 function bindProductWorkspace(root) {
-  root.querySelector('[data-product-back]')?.addEventListener('click', closeProductWorkspace);
   root.addEventListener('click', handleProductWorkspaceClick);
-  root.querySelectorAll('[data-report-formula]').forEach(btn => btn.addEventListener('click', () => showFormulaReport(btn.dataset.reportFormula)));
-  root.querySelectorAll('[data-open-ingredient]').forEach(btn => btn.addEventListener('click', () => openIngredientView(btn.dataset.openIngredient)));
+  bindFormulaControls(root);
+  bindProductSlides(root);
+  bindLawLinks(root);
+}
+
+function bindFormulaControls(root) {
   root.querySelectorAll('[data-inline-weight]').forEach(input => {
-    input.addEventListener('input', () => queueInlineFormulaEdit(() => updateFormulaWeight(input.dataset.inlineWeight, input.value, { silent: true })));
+    input.addEventListener('input', () => queueInlineFormulaEdit(() => updateFormulaWeight(input.dataset.inlineWeight, input.value, { silent: true, light: true })));
     input.addEventListener('change', () => updateFormulaWeight(input.dataset.inlineWeight, input.value));
   });
   root.querySelectorAll('[data-inline-pct-formula]').forEach(input => {
-    input.addEventListener('input', () => queueInlineFormulaEdit(() => updateFormulaItemPercent(input.dataset.inlinePctFormula, input.dataset.inlinePctInsumo, input.value, { silent: true })));
-    input.addEventListener('change', () => updateFormulaItemPercent(input.dataset.inlinePctFormula, input.dataset.inlinePctInsumo, input.value));
+    input.addEventListener('input', () => queueInlineFormulaEdit(() => updateFormulaItemPercent(input.dataset.inlinePctFormula, input.dataset.inlinePctInsumo, input.value, { silent: true, light: true })));
+    input.addEventListener('change', () => updateFormulaItemPercent(input.dataset.inlinePctFormula, input.dataset.inlinePctInsumo, input.value, { light: true }));
   });
   root.querySelectorAll('[data-blend-cut]').forEach(input => input.addEventListener('change', () => updateBlendComponent(input.dataset.blendCut, Number(input.dataset.blendIndex), { corteId: input.value, gorduraCustom: '' })));
   root.querySelectorAll('[data-blend-profile]').forEach(input => input.addEventListener('change', () => updateBlendComponent(input.dataset.blendProfile, Number(input.dataset.blendIndex), { perfil: input.value, gorduraCustom: '' })));
@@ -1729,14 +1797,27 @@ function bindProductWorkspace(root) {
     input.addEventListener('change', () => updateSingleMaterial(input.dataset.singleGrams, { gramas: input.value }));
   });
   root.querySelectorAll('[data-single-fat]').forEach(input => input.addEventListener('change', () => updateSingleMaterial(input.dataset.singleFat, { gorduraCustom: input.value })));
-  root.querySelectorAll('[data-equipment-check]').forEach(btn => btn.addEventListener('click', () => toggleEquipmentCheck(btn)));
-  bindProductSlides(root);
-  bindLawLinks(root);
 }
 
 function handleProductWorkspaceClick(event) {
   const target = event.target.closest('button');
   if (!target) return;
+  if (target.dataset.productBack !== undefined) {
+    closeProductWorkspace();
+    return;
+  }
+  if (target.dataset.reportFormula) {
+    showFormulaReport(target.dataset.reportFormula);
+    return;
+  }
+  if (target.dataset.openIngredient) {
+    openIngredientView(target.dataset.openIngredient);
+    return;
+  }
+  if (target.dataset.equipmentCheck !== undefined) {
+    toggleEquipmentCheck(target);
+    return;
+  }
   if (target.dataset.toggleFormulaLock) {
     toggleFormulaLock(target.dataset.toggleFormulaLock);
     return;
@@ -1770,6 +1851,10 @@ function handleProductWorkspaceClick(event) {
   }
   if (target.dataset.removeIngredientFormula) {
     requestFormulaItemRemoval(target.dataset.removeIngredientFormula, target.dataset.removeIngredientId);
+    return;
+  }
+  if (target.dataset.restoreIngredientFormula) {
+    restoreFormulaItemInline(target.dataset.restoreIngredientFormula, target.dataset.restoreIngredientId);
   }
 }
 
@@ -3078,14 +3163,14 @@ function updateFormulaWeight(formulaId, value, options = {}) {
   const formula = findFormula(formulaId);
   if (!formula) return;
   formula.pesoReferencia = Math.max(1, toNumber(value) || 1);
-  saveInlineFormulaEdit('Peso atualizado.', options);
+  saveInlineFormulaEdit('Peso atualizado.', { ...options, formulaId });
 }
 
 function updateFormulaBase(formulaId, value, options = {}) {
   const formula = findFormula(formulaId);
   if (!formula) return;
   formula.baseCalculo = value === 'produto_final' ? 'produto_final' : 'massa_carnea';
-  saveInlineFormulaEdit('Base de cálculo atualizada.', options);
+  saveInlineFormulaEdit('Base de cálculo atualizada.', { ...options, formulaId });
 }
 
 function updateFormulaItemPercent(formulaId, insumoId, value, options = {}) {
@@ -3093,24 +3178,43 @@ function updateFormulaItemPercent(formulaId, insumoId, value, options = {}) {
   if (!formula || !insumoId || formula.bloqueada) return;
   const item = ensureFormulaItem(formula, insumoId);
   item.percentual = Math.max(0, toNumber(value));
-  saveInlineFormulaEdit('Percentual atualizado.', options);
+  saveInlineFormulaEdit('Percentual atualizado.', { ...options, formulaId });
 }
 
 function addFormulaItemInline(formulaId, insumoId) {
   const formula = findFormula(formulaId);
   const ingredient = findIngredient(insumoId);
   if (!formula || !ingredient || formula.bloqueada) return;
-  if ((formula.itens || []).some(item => item.insumoId === insumoId)) return toast('Esse insumo já está na formulação.');
+  const existing = (formula.itens || []).find(item => item.insumoId === insumoId);
+  if (existing?.removido) return restoreFormulaItemInline(formulaId, insumoId);
+  if (existing) return toast('Esse insumo já está na formulação.');
   const suggestion = ingredientSuggestion(ingredient);
   formula.itens.push({ insumoId, percentual: suggestion?.suave ?? 0.1 });
-  saveInlineFormulaEdit('Insumo adicionado.');
+  saveInlineFormulaEdit('Insumo adicionado.', { formulaId });
 }
 
 function removeFormulaItemInline(formulaId, insumoId) {
   const formula = findFormula(formulaId);
   if (!formula || formula.bloqueada) return;
-  formula.itens = (formula.itens || []).filter(item => item.insumoId !== insumoId);
-  saveInlineFormulaEdit('Insumo removido.');
+  const item = (formula.itens || []).find(row => row.insumoId === insumoId);
+  if (!item) return;
+  if (isDefaultFormulaItem(formula, insumoId)) {
+    item.removido = true;
+    item.percentualOriginal = item.percentualOriginal ?? toNumber(item.percentual);
+  } else {
+    formula.itens = (formula.itens || []).filter(row => row.insumoId !== insumoId);
+  }
+  saveInlineFormulaEdit('Insumo removido.', { formulaId });
+}
+
+function restoreFormulaItemInline(formulaId, insumoId) {
+  const formula = findFormula(formulaId);
+  if (!formula || formula.bloqueada) return;
+  const item = (formula.itens || []).find(row => row.insumoId === insumoId);
+  if (!item) return;
+  item.removido = false;
+  if (toNumber(item.percentual) === 0 && item.percentualOriginal !== undefined) item.percentual = item.percentualOriginal;
+  saveInlineFormulaEdit('Insumo restaurado.', { formulaId });
 }
 
 function requestFormulaItemRemoval(formulaId, insumoId) {
@@ -3129,7 +3233,7 @@ function toggleFormulaLock(formulaId) {
   const formula = findFormula(formulaId);
   if (!formula) return;
   formula.bloqueada = !formula.bloqueada;
-  saveInlineFormulaEdit(formula.bloqueada ? 'Formulação travada.' : 'Formulação destravada.');
+  saveInlineFormulaEdit(formula.bloqueada ? 'Formulação travada.' : 'Formulação destravada.', { formulaId });
 }
 
 function updateFormulaBlend(formulaId, changes = {}, options = {}) {
@@ -3150,7 +3254,7 @@ function updateFormulaBlend(formulaId, changes = {}, options = {}) {
       gorduraCustom: first?.gorduraCustom ?? ''
     };
     setFormulaWeightFromBlendTotal(formula, total);
-    saveInlineFormulaEdit('Blend atualizado.', options);
+    saveInlineFormulaEdit('Blend atualizado.', { ...options, formulaId });
     return;
   }
 
@@ -3161,7 +3265,7 @@ function updateFormulaBlend(formulaId, changes = {}, options = {}) {
     formula.blendComponentes[0] = { ...single, id: formula.blendComponentes[0]?.id || uid('blend') };
     formula.blendComponentes.push(defaultSecondBlendComponent(formula, { singleComponent: single }));
   }
-  saveInlineFormulaEdit('Blend atualizado.', options);
+  saveInlineFormulaEdit('Blend atualizado.', { ...options, formulaId });
 }
 
 function defaultSecondBlendComponent(formula, state = {}) {
@@ -3192,7 +3296,7 @@ function updateBlendComponent(formulaId, index, changes = {}, options = {}) {
   formula.usarBlend = true;
   const total = formula.blendComponentes.reduce((sum, item) => sum + toNumber(item.gramas), 0);
   if (total > 0) setFormulaWeightFromBlendTotal(formula, total);
-  saveInlineFormulaEdit('Blend atualizado.', options);
+  saveInlineFormulaEdit('Blend atualizado.', { ...options, formulaId });
 }
 
 function addBlendComponent(formulaId) {
@@ -3201,7 +3305,7 @@ function addBlendComponent(formulaId) {
   formula.blendComponentes = normalizeBlendComponents(formula.blendComponentes, formula);
   formula.blendComponentes.push({ id: uid('blend'), corteId: 'acem', perfil: 'sem_gordura', gramas: 0, gorduraCustom: '' });
   formula.usarBlend = true;
-  saveInlineFormulaEdit('Componente adicionado.');
+  saveInlineFormulaEdit('Componente adicionado.', { formulaId });
 }
 
 function removeBlendComponent(formulaId, index) {
@@ -3212,7 +3316,7 @@ function removeBlendComponent(formulaId, index) {
   formula.blendComponentes.splice(index, 1);
   const total = formula.blendComponentes.reduce((sum, item) => sum + toNumber(item.gramas), 0);
   if (total > 0) setFormulaWeightFromBlendTotal(formula, total);
-  saveInlineFormulaEdit('Componente removido.');
+  saveInlineFormulaEdit('Componente removido.', { formulaId });
 }
 
 function updateSingleMaterial(formulaId, changes = {}, options = {}) {
@@ -3229,7 +3333,7 @@ function updateSingleMaterial(formulaId, changes = {}, options = {}) {
   if (Object.prototype.hasOwnProperty.call(changes, 'gorduraCustom')) component.gorduraCustom = changes.gorduraCustom === '' ? '' : Math.max(0, Math.min(100, toNumber(changes.gorduraCustom)));
   formula.usarBlend = false;
   setFormulaWeightFromBlendTotal(formula, component.gramas);
-  saveInlineFormulaEdit('Matéria-prima atualizada.', options);
+  saveInlineFormulaEdit('Matéria-prima atualizada.', { ...options, formulaId });
 }
 
 function queueInlineFormulaEdit(callback) {
@@ -3242,12 +3346,40 @@ function saveInlineFormulaEdit(message, options = {}) {
   const scrollTop = $('.content')?.scrollTop || 0;
   if (currentSlide) activeProductSlideId = currentSlide;
   saveDB();
-  renderProdutos();
-  if (currentSlide) $('#produtoWorkspace [data-product-slide="' + cssEscape(currentSlide) + '"]')?.click();
+  const updated = options.light && options.formulaId
+    ? refreshFormulaNumbers(options.formulaId)
+    : refreshActiveFormulaCard(options.formulaId);
+  if (!updated) {
+    renderProdutos();
+    if (currentSlide) $('#produtoWorkspace [data-product-slide="' + cssEscape(currentSlide) + '"]')?.click();
+  }
   requestAnimationFrame(() => {
     if ($('.content')) $('.content').scrollTop = scrollTop;
   });
   if (!options.silent) toast(message);
+}
+
+function refreshActiveFormulaCard(formulaId) {
+  const formula = findFormula(formulaId);
+  const card = formulaId ? $('#produtoWorkspace [data-formula-card="' + cssEscape(formulaId) + '"]') : null;
+  if (!formula || !card) return false;
+  card.outerHTML = productFormulaHTML(formula);
+  const newCard = $('#produtoWorkspace [data-formula-card="' + cssEscape(formulaId) + '"]');
+  if (newCard) bindFormulaControls(newCard);
+  return true;
+}
+
+function refreshFormulaNumbers(formulaId) {
+  const formula = findFormula(formulaId);
+  const card = formulaId ? $('#produtoWorkspace [data-formula-card="' + cssEscape(formulaId) + '"]') : null;
+  if (!formula || !card) return false;
+  (formula.itens || []).forEach(item => {
+    const grams = card.querySelector('[data-inline-grams="' + cssEscape(formulaId) + '"][data-inline-grams-insumo="' + cssEscape(item.insumoId) + '"]');
+    if (grams) grams.textContent = `${fmt(formulaItemGrams(formula, item))} g`;
+  });
+  const analysis = card.querySelector('.formula-analysis-wrap');
+  if (analysis) analysis.innerHTML = analysisHTML(analyzeFormula(formula));
+  return true;
 }
 
 function ensureFormulaItem(formula, insumoId) {
@@ -3260,12 +3392,17 @@ function ensureFormulaItem(formula, insumoId) {
   return item;
 }
 
+function isDefaultFormulaItem(formula, insumoId) {
+  const def = DEFAULT_DB.formulacoes.find(item => item.id === formula?.id);
+  return Boolean(def?.itens?.some(item => item.insumoId === insumoId));
+}
+
 function formulaBlendSourceItems(formula, ingredients = db.insumos) {
-  return (formula?.itens || []).filter(item => isMeatIngredient((ingredients || []).find(ingredient => ingredient.id === item.insumoId)));
+  return (formula?.itens || []).filter(item => !item.removido && isMeatIngredient((ingredients || []).find(ingredient => ingredient.id === item.insumoId)));
 }
 
 function setFormulaWeightFromBlendTotal(formula, blendTotal) {
-  const meatPct = formulaBlendSourceItems(formula).reduce((sum, item) => sum + toNumber(item.percentual), 0);
+  const meatPct = formulaBlendSourceItems(formula).reduce((sum, item) => sum + formulaItemPercent(item), 0);
   if (formulaBaseMode(formula) === 'produto_final' && meatPct > 0 && meatPct < 100) {
     formula.pesoReferencia = Math.max(1, blendTotal / (meatPct / 100));
     return;
@@ -3479,8 +3616,12 @@ function formulaBaseLabel(mode) {
   return mode === 'massa_carnea' ? 'Massa cárnea/carne base' : 'Produto final';
 }
 
+function formulaItemPercent(item) {
+  return item?.removido ? 0 : toNumber(item?.percentual);
+}
+
 function formulaItemGrams(formula, item) {
-  return (toNumber(formula?.pesoReferencia) || 0) * toNumber(item?.percentual) / 100;
+  return (toNumber(formula?.pesoReferencia) || 0) * formulaItemPercent(item) / 100;
 }
 
 function timelineHTML(items) {
@@ -3521,7 +3662,7 @@ function analyzeFormula(formula) {
   const useDetailedBlend = (blendState.useBlend ? blendState.components.length : Boolean(blendState.singleComponent));
   formula.itens.forEach(item => {
     const ing = findIngredient(item.insumoId);
-    const pct = toNumber(item.percentual);
+    const pct = formulaItemPercent(item);
     if (!ing) return;
     const grams = formulaItemGrams(formula, item);
     totalPct += pct;
@@ -3625,7 +3766,7 @@ function buildReport(formula) {
   formula.itens.forEach(item => {
     const ing = findIngredient(item.insumoId);
     const grams = formulaItemGrams(formula, item);
-    lines.push(`- ${ing?.nome || 'Insumo'}: ${fmt(item.percentual)}% = ${fmt(grams)} g`);
+    lines.push(`- ${ing?.nome || 'Insumo'}: ${item.removido ? 'removido da prática' : `${fmt(item.percentual)}% = ${fmt(grams)} g`}`);
   });
   lines.push('');
   lines.push('Resumo técnico estimado:');

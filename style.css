@@ -603,6 +603,15 @@ button.item-card:hover { transform: translateY(-1px); border-color: rgba(31,111,
 .formula-locked input:disabled,
 .formula-locked select:disabled,
 .formula-locked button:disabled { cursor: not-allowed; opacity: .68; }
+.inline-formula-row.removed {
+  opacity: .48;
+  background: #FAFCFB;
+}
+.inline-formula-row.removed .inline-link,
+.inline-formula-row.removed .pct-field,
+.inline-formula-row.removed .gram-pill {
+  text-decoration: line-through;
+}
 .formula-base-panel {
   display: grid;
   grid-template-columns: 1fr 180px;
@@ -1010,23 +1019,26 @@ button.item-card:hover { transform: translateY(-1px); border-color: rgba(31,111,
   background: #F8FBFA;
   border: 1px solid #E3EEEA;
   border-radius: var(--radius);
-  padding: 10px;
+  padding: 8px 10px;
 }
 .timeline-step:not(:last-child)::after,
 .timeline-step:not(:last-child)::before { content: none; }
 .timeline-connector {
   position: relative;
   width: 24px;
-  height: 26px;
+  height: 13px;
   margin-left: 25px;
+  margin-top: -1px;
+  margin-bottom: -1px;
+  z-index: 2;
 }
 .timeline-connector::before {
   content: "";
   position: absolute;
   left: 0;
-  top: -1px;
+  top: -2px;
   width: 4px;
-  height: 23px;
+  height: 16px;
   background: #9FC9C0;
   border-radius: 999px;
 }
@@ -1034,7 +1046,7 @@ button.item-card:hover { transform: translateY(-1px); border-color: rgba(31,111,
   content: "";
   position: absolute;
   left: -5px;
-  bottom: 2px;
+  bottom: -4px;
   width: 12px;
   height: 12px;
   border-right: 4px solid #9FC9C0;
@@ -1145,8 +1157,11 @@ button.item-card:hover { transform: translateY(-1px); border-color: rgba(31,111,
   font-weight: 1000;
   line-height: 1;
 }
+.slide-controls [data-slide-prev] {
+  transform: rotate(180deg);
+}
 .formula-slide-kicker { margin: 2px 2px 10px; font-size: 13px; }
-.formula-slide-card { padding-top: 14px; }
+.formula-slide-card { padding-top: 0; }
 .slide-controls [data-slide-prev] {
   background: #F7FAF9;
   color: #3E746D;
@@ -1272,6 +1287,10 @@ button.item-card:hover { transform: translateY(-1px); border-color: rgba(31,111,
 .formula-table th { background: var(--surface-soft); color: var(--primary-dark); }
 .formula-table td:nth-child(2), .formula-table td:nth-child(3) { width: 100px; }
 .tiny-btn { border: none; background: #FDE8E6; color: var(--danger); border-radius: var(--radius); width: 34px; height: 34px; cursor: pointer; font-weight: 900; }
+.tiny-btn.restore {
+  background: #E9F4F1;
+  color: var(--primary-dark);
+}
 .analysis-box { padding: 0; margin: 12px 0; }
 .analysis-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .analysis-metric { background: var(--surface-soft); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px; }
@@ -1830,8 +1849,6 @@ button.item-card:hover { transform: translateY(-1px); border-color: rgba(31,111,
   .gram-pill { padding: 8px 3px; font-size: 11px; white-space: nowrap; }
   .formula-item-remove { width: 32px; min-width: 32px; padding: 0; }
   .formula-intensity-cell { margin-top: 2px; }
-  .formula-intensity-cell .intensity-edit-btn { display: none; }
-  .formula-intensity-cell .suggestion-panel { display: block; }
   .formula-add-row { grid-template-columns: 1fr; }
   .calendar-card { grid-template-columns: 74px 1fr; gap: 10px; padding: 10px; }
   .calendar-index { min-height: 112px; align-items: center; padding-left: 0; }
