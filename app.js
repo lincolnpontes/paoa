@@ -1536,7 +1536,7 @@ function productWorkspaceHTML(p) {
         </div>
         <span class="summary-divider" aria-hidden="true"></span>
         <div class="product-slide-summary-scroll">
-          ${slides.map((slide, index) => `<button type="button" class="slide-jump ${index === 0 ? 'active' : ''}" data-product-slide="${escapeAttr(slide.id)}"><span>${index + 1}</span>${escapeHTML(slide.label)}</button>`).join('')}
+          ${slides.map((slide, index) => `<button type="button" class="slide-jump ${index === 0 ? 'active' : ''}" data-product-slide="${escapeAttr(slide.id)}"><span>${index + 1}</span><b>${escapeHTML(slide.label)}</b></button>`).join('')}
         </div>
       </aside>
 
@@ -1639,14 +1639,16 @@ function blendEditorHTML(f, state = formulaBlendState(f)) {
   const firstComponent = state.useBlend ? state.components[0] : state.singleComponent;
   const secondComponent = state.components[1] || defaultSecondBlendComponent(f, state);
   return `<div class="blend-editor">
+    <div class="blend-editor-head">
+      <span>Matéria-prima cárnea</span>
+      <div class="blend-head-metrics">
+        ${state.useBlend ? `<div><small>Peso do blend</small><strong>${fmt(state.blendGrams)} g</strong></div>` : ''}
+        <div><small>Gordura estimada</small><strong>${fmt(state.fatPct)}%</strong></div>
+      </div>
+    </div>
     <div class="blend-components">
         ${blendComponentHTML(f, firstComponent, 0, { locked: f.bloqueada, label: state.useBlend ? 'Matéria-prima 1' : 'Matéria-prima', single: !state.useBlend })}
         ${state.useBlend ? blendComponentHTML(f, secondComponent, 1, { locked: f.bloqueada, label: 'Matéria-prima 2' }) : ''}
-        ${state.useBlend ? `
-        <div class="blend-summary">
-          <div><span>Peso do blend</span><strong>${fmt(state.blendGrams)} g</strong></div>
-          <div><span>Gordura estimada</span><strong>${fmt(state.fatPct)}%</strong></div>
-        </div>` : ''}
     </div>
   </div>`;
 }
@@ -1676,7 +1678,7 @@ function blendComponentHTML(formula, component, index, options = {}) {
         </select>
       </div>
       <div class="form-group ${options.single ? 'single-meat-weight' : ''}">
-        <label>${options.single ? 'Carne/massa cárnea (g)' : 'Peso (g)'}</label>
+        <label>Peso (g)</label>
         <input type="number" min="${options.single ? '1' : '0'}" step="1" value="${escapeAttr(fmtInput(component.gramas))}" ${gramsAttr}${disabled}>
       </div>
       <div class="form-group">
@@ -1730,12 +1732,11 @@ function inlineFormulaRowHTML(f, item) {
     const intensityKey = `${f.id}:${item.insumoId}`;
     const expanded = expandedIntensityItems.has(intensityKey);
     const suggestionHTML = suggestion ? intensityScaleHTML(f, item, pct, suggestion) : '';
-    return `<div class="inline-formula-row ${suggestion ? 'has-intensity' : ''} ${removed ? 'removed' : ''}" data-formula-row="${escapeAttr(f.id)}" data-formula-row-insumo="${escapeAttr(item.insumoId)}">
+    return `<div class="inline-formula-row ${suggestion ? 'has-intensity' : ''} ${expanded ? 'editing' : ''} ${removed ? 'removed' : ''}" data-formula-row="${escapeAttr(f.id)}" data-formula-row-insumo="${escapeAttr(item.insumoId)}">
       <div class="inline-formula-name">
         <button type="button" class="inline-link" data-open-ingredient="${escapeAttr(item.insumoId)}">${escapeHTML(ing?.nome || 'Insumo não encontrado')}</button>
       </div>
       ${suggestion ? `<div class="formula-intensity-cell ${expanded ? 'expanded' : ''}">
-        <button type="button" class="intensity-edit-btn" data-toggle-intensity="${escapeAttr(intensityKey)}" title="${expanded ? 'Fechar ajuste de intensidade' : 'Ajustar intensidade'}" aria-expanded="${expanded}"${disabled}>✎</button>
         <div class="suggestion-panel">
           <button type="button" class="intensity-done-btn" data-toggle-intensity="${escapeAttr(intensityKey)}" title="Concluir ajuste" aria-label="Concluir ajuste"${disabled}>&#10004;&#65039;</button>
           ${suggestionHTML}
@@ -1743,12 +1744,15 @@ function inlineFormulaRowHTML(f, item) {
       </div>` : ''}
       <label class="pct-field">
         <span>%</span>
-        <input type="number" min="0" step="0.1" value="${escapeAttr(fmtInput(pct))}" data-inline-pct-formula="${escapeAttr(f.id)}" data-inline-pct-insumo="${escapeAttr(item.insumoId)}"${disabled}>
+        <input type="number" min="0" step="0.1" value="${escapeAttr(fmtInput(pct))}" data-inline-pct-formula="${escapeAttr(f.id)}" data-inline-pct-insumo="${escapeAttr(item.insumoId)}"${disabled}${!expanded && !disabled ? ' readonly' : ''}>
       </label>
       <strong class="gram-pill" data-inline-grams="${escapeAttr(f.id)}" data-inline-grams-insumo="${escapeAttr(item.insumoId)}">${fmt(grams)} g</strong>
-      ${removed
-        ? `<button type="button" class="tiny-btn restore formula-item-restore" data-restore-ingredient-formula="${escapeAttr(f.id)}" data-restore-ingredient-id="${escapeAttr(item.insumoId)}" title="Restaurar insumo"${f.bloqueada ? ' disabled' : ''}>↺</button>`
-        : `<button type="button" class="tiny-btn formula-item-remove" data-remove-ingredient-formula="${escapeAttr(f.id)}" data-remove-ingredient-id="${escapeAttr(item.insumoId)}" title="Remover insumo"${f.bloqueada ? ' disabled' : ''}>×</button>`}
+      <div class="formula-item-actions">
+        ${!removed ? `<button type="button" class="intensity-edit-btn" data-toggle-intensity="${escapeAttr(intensityKey)}" title="${expanded ? 'Concluir ajuste' : 'Editar quantidade'}" aria-expanded="${expanded}"${disabled}>${expanded ? '&#10004;&#65039;' : '✎'}</button>` : ''}
+        ${removed
+          ? `<button type="button" class="tiny-btn restore formula-item-restore" data-restore-ingredient-formula="${escapeAttr(f.id)}" data-restore-ingredient-id="${escapeAttr(item.insumoId)}" title="Restaurar insumo"${f.bloqueada ? ' disabled' : ''}>↺</button>`
+          : `<button type="button" class="tiny-btn formula-item-remove" data-remove-ingredient-formula="${escapeAttr(f.id)}" data-remove-ingredient-id="${escapeAttr(item.insumoId)}" title="Remover insumo"${f.bloqueada ? ' disabled' : ''}>×</button>`}
+      </div>
     </div>`;
 }
 
@@ -1826,10 +1830,18 @@ function handleProductWorkspaceClick(event) {
     const key = target.dataset.toggleIntensity;
     if (expandedIntensityItems.has(key)) expandedIntensityItems.delete(key);
     else expandedIntensityItems.add(key);
-    const cell = target.closest('.formula-intensity-cell');
+    const row = target.closest('.inline-formula-row');
+    const cell = row?.querySelector('.formula-intensity-cell');
     cell?.classList.toggle('expanded', expandedIntensityItems.has(key));
+    row?.classList.toggle('editing', expandedIntensityItems.has(key));
+    const input = row?.querySelector('[data-inline-pct-formula]');
+    if (input && !input.disabled) {
+      input.readOnly = !expandedIntensityItems.has(key);
+      if (expandedIntensityItems.has(key)) input.focus({ preventScroll: true });
+    }
     target.setAttribute('aria-expanded', String(expandedIntensityItems.has(key)));
-    target.title = expandedIntensityItems.has(key) ? 'Fechar ajuste de intensidade' : 'Ajustar intensidade';
+    target.title = expandedIntensityItems.has(key) ? 'Concluir ajuste' : 'Editar quantidade';
+    if (!target.closest('.suggestion-panel')) target.innerHTML = expandedIntensityItems.has(key) ? '&#10004;&#65039;' : '✎';
     return;
   }
   if (target.dataset.toggleBlendButton) {
@@ -1879,6 +1891,21 @@ function bindProductSlides(root) {
   jumps.forEach((jump, jumpIndex) => jump.addEventListener('click', () => show(jumpIndex)));
   root.querySelector('[data-slide-prev]')?.addEventListener('click', () => show(index - 1));
   root.querySelector('[data-slide-next]')?.addEventListener('click', () => show(index + 1));
+  const stage = root.querySelector('.product-slide-stage');
+  let pointerStart = null;
+  stage?.addEventListener('pointerdown', event => {
+    if (event.isPrimary === false || event.target.closest('input, select, textarea, button, a')) return;
+    pointerStart = { x: event.clientX, y: event.clientY, id: event.pointerId };
+  });
+  stage?.addEventListener('pointerup', event => {
+    if (!pointerStart || event.pointerId !== pointerStart.id) return;
+    const deltaX = event.clientX - pointerStart.x;
+    const deltaY = event.clientY - pointerStart.y;
+    pointerStart = null;
+    if (Math.abs(deltaX) < 55 || Math.abs(deltaX) <= Math.abs(deltaY) * 1.2) return;
+    show(index + (deltaX < 0 ? 1 : -1));
+  });
+  stage?.addEventListener('pointercancel', () => { pointerStart = null; });
   show(index);
 }
 
@@ -3626,10 +3653,10 @@ function formulaItemGrams(formula, item) {
 
 function timelineHTML(items) {
   const list = Array.isArray(items) ? items : [];
-  return list.map((item, index) => `
-    <div class="timeline-step"><span>${index + 1}</span><p>${escapeHTML(item)}</p></div>
-    ${index < list.length - 1 ? '<div class="timeline-connector" aria-hidden="true"></div>' : ''}
-  `).join('');
+  return list.map((item, index) => `<div class="timeline-step">
+    <div class="timeline-marker"><span>${index + 1}</span>${index ? '<i aria-hidden="true">⇩</i>' : ''}</div>
+    <p>${escapeHTML(item)}</p>
+  </div>`).join('');
 }
 
 function equipmentHTML(items) {
