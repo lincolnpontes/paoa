@@ -524,7 +524,7 @@ const DEFAULT_DB = {
       descricao: 'Peça ou porção suína submetida à marinada/salmoura condimentada para padronizar sabor, rendimento, maciez e suculência antes da cocção experimental.',
       objetivo: 'Avaliar como concentração da marinada, tempo de contato, temperatura e proporção entre carne e salmoura influenciam rendimento, sabor e textura do pernil.',
       parametros: { gorduraMax: '', proteinaMin: '', carbMax: '', proteinaNaoCarneaMax: '', proibeProteinaNaoCarnea: false, mostrarValidacao: true },
-      fotos: [],
+      fotos: ['assets/pernil-marinado.jpg'],
       fluxo: [
         'Recepção e inspeção visual do pernil refrigerado',
         'Toalete e padronização das porções para a prática',
@@ -571,7 +571,7 @@ const DEFAULT_DB = {
       descricao: 'Produto cárneo moldado que combina carne moída, trigo hidratado e condimentos, útil para discutir liga, retenção de água, padronização e cocção.',
       objetivo: 'Compreender o efeito do trigo hidratado, da gordura, do sal e da mistura mecânica na coesão, rendimento e textura do kibe.',
       parametros: { gorduraMax: '', proteinaMin: '', carbMax: '', proteinaNaoCarneaMax: '', proibeProteinaNaoCarnea: false, mostrarValidacao: true },
-      fotos: [],
+      fotos: ['assets/kibe.jpg'],
       fluxo: [
         'Hidratação do trigo para kibe em água fria e posterior escorrimento',
         'Recepção e moagem da carne refrigerada',
@@ -618,7 +618,7 @@ const DEFAULT_DB = {
       descricao: 'Produto reestruturado de frango, moldado e empanado, adequado para estudar massa cárnea, adesão de cobertura, rendimento e textura após cocção.',
       objetivo: 'Avaliar como moagem, mistura, moldagem e sistema de empanamento interferem na aderência da cobertura, crocância, rendimento e aceitação visual dos nuggets.',
       parametros: { gorduraMax: '', proteinaMin: '', carbMax: '', proteinaNaoCarneaMax: '', proibeProteinaNaoCarnea: false, mostrarValidacao: true },
-      fotos: [],
+      fotos: ['assets/nuggets.jpg'],
       fluxo: [
         'Recepção do frango refrigerado e separação de aparas indesejáveis',
         'Moagem ou processamento grosseiro da carne',
@@ -665,7 +665,7 @@ const DEFAULT_DB = {
       descricao: 'Produto suíno curado e cozido, usado didaticamente para discutir salmoura, cura, retenção de água, tratamento térmico, resfriamento e fatiabilidade.',
       objetivo: 'Relacionar salmoura, agentes de cura, fosfato, cocção e resfriamento com rendimento, cor, textura, fatiabilidade e segurança do presunto suíno.',
       parametros: { gorduraMax: '', proteinaMin: '', carbMax: '', proteinaNaoCarneaMax: '', proibeProteinaNaoCarnea: false, mostrarValidacao: true },
-      fotos: [],
+      fotos: ['assets/presunto-suino.jpg'],
       fluxo: [
         'Recepção do pernil suíno refrigerado',
         'Toalete e padronização da peça ou porções',
@@ -1542,7 +1542,7 @@ function productWorkspaceHTML(p) {
 }
 
 function slideHeadingHTML(label, productName = '') {
-  return `<h3 class="slide-heading"><span>${escapeHTML(label)}</span>${productName ? `: <strong>${escapeHTML(productName)}</strong>` : ''}</h3>`;
+  return `<h3 class="slide-heading"><span>${escapeHTML(label)}${productName ? ':' : ''}</span>${productName ? ` <strong>${escapeHTML(productName)}</strong>` : ''}</h3>`;
 }
 
 function productFormulaHTML(f) {
@@ -1551,7 +1551,7 @@ function productFormulaHTML(f) {
   return `
     <div class="formula-work-card ${f.bloqueada ? 'formula-locked' : ''}">
       <div class="formula-work-head">
-        <h3><span>Formulação do Produto</span>: <strong>${escapeHTML(cleanFormulaName(f.nome))}</strong></h3>
+        <h3><span>Formulação do Produto:</span> <strong>${escapeHTML(cleanFormulaName(f.nome))}</strong></h3>
         <div class="formula-head-actions">
           ${blendToggleButtonHTML(f, blendState)}
           <button type="button" class="formula-lock-btn ${f.bloqueada ? 'locked' : ''}" data-toggle-formula-lock="${escapeAttr(f.id)}" title="${f.bloqueada ? 'Destravar formulação' : 'Travar formulação'}">${f.bloqueada ? '🔒' : '🔓'}</button>
@@ -1585,14 +1585,13 @@ function blendEditorHTML(f, state = formulaBlendState(f)) {
           <div><span>Peso do blend</span><strong>${fmt(state.blendGrams)} g</strong></div>
           <div><span>Gordura estimada</span><strong>${fmt(state.fatPct)}%</strong></div>
         </div>` : ''}
-        <a href="${MEAT_CUTS_SOURCE_URL}" class="blend-source" target="_blank" rel="noopener">Referência de composição: TACO/NEPA/UNICAMP. Valores editáveis conforme a matéria-prima utilizada.</a>
     </div>
   </div>`;
 }
 
 function blendComponentHTML(formula, component, index, options = {}) {
   const fat = blendComponentFat(component);
-  const source = blendComponentSource(component);
+  const source = blendComponentSourceHTML(component);
   const cut = MEAT_CUTS.find(item => item.id === component.corteId) || MEAT_CUTS[MEAT_CUTS.length - 1];
   const hasReferenceData = blendComponentHasReferenceData(component);
   const disabled = options.locked ? ' disabled' : '';
@@ -1623,7 +1622,7 @@ function blendComponentHTML(formula, component, index, options = {}) {
         <input class="${hasReferenceData ? '' : 'missing-reference-value'}" type="number" min="0" max="100" step="0.1" value="${escapeAttr(hasReferenceData ? fmtInput(fat) : '0.0')}" ${fatAttr}${disabled}>
       </div>
     </div>
-    <small class="${hasReferenceData ? '' : 'missing-reference-note'}">${escapeHTML(source)}</small>
+    <small class="${hasReferenceData ? '' : 'missing-reference-note'}">${source}</small>
   </div>`;
 }
 
@@ -2551,7 +2550,7 @@ function theoryScheduleLessonHTML(item, index) {
       ${categories.map(theorySubjectListHTML).join('') || '<div class="notice-card slim">Nenhum assunto teórico vinculado a esta aula.</div>'}
     </div>
     <div class="lesson-links">
-      ${(item.produtos || []).length ? `<div class="linked-block"><div class="linked-title">Roteiros desta aula</div>${linkedProductsHTML(item.produtos)}</div>` : ''}
+      ${(item.produtos || []).length ? `<div class="linked-block"><div class="linked-title">Roteiros</div>${linkedProductsHTML(item.produtos)}</div>` : ''}
     </div>
   </article>`;
 }
@@ -2638,7 +2637,7 @@ function theoryLessonHTML(lesson) {
         </div>
       </div>`}
     <div class="linked-block">
-      <div class="linked-title">Roteiros disponíveis</div>
+      <div class="linked-title">Roteiros</div>
       ${linkedProductsHTML(content.produtos || [])}
     </div>
     <div class="linked-block">
@@ -2649,9 +2648,17 @@ function theoryLessonHTML(lesson) {
 }
 
 function linkedProductsHTML(ids) {
-  return `<div class="link-chip-row">${ids.map(id => {
+  return `<div class="linked-product-grid">${ids.map(id => {
     const p = findProduct(id);
-    return p && !p.oculto ? `<button type="button" class="link-chip" data-open-product="${escapeAttr(id)}">${escapeHTML(p.nome)}</button>` : '';
+    if (!p || p.oculto) return '';
+    const photo = Array.isArray(p.fotos) ? p.fotos.find(Boolean) : '';
+    const media = photo
+      ? `<img src="${escapeAttr(photo)}" alt="">`
+      : `<span>${escapeHTML(String(p.nome || '?').slice(0, 1).toUpperCase())}</span>`;
+    return `<button type="button" class="linked-product-card" data-open-product="${escapeAttr(id)}">
+      <div>${media}</div>
+      <strong>${escapeHTML(p.nome)}</strong>
+    </button>`;
   }).join('')}</div>`;
 }
 
@@ -3361,6 +3368,20 @@ function blendComponentSource(component) {
   return source || 'Não há dados de composição para este perfil na TACO/NEPA/UNICAMP. Informe o teor medido ou obtido em outra referência.';
 }
 
+function blendComponentSourceHTML(component) {
+  const cut = MEAT_CUTS.find(item => item.id === component?.corteId) || MEAT_CUTS[MEAT_CUTS.length - 1];
+  if (component?.gorduraCustom !== '' && component?.gorduraCustom !== undefined) {
+    return 'Teor de gordura ajustado pelo usuário para esta matéria-prima.';
+  }
+  const profile = normalizeMeatProfile(component?.perfil, cut.id);
+  const source = profile === 'com_gordura' ? cut.fonteCom : cut.fonteSem;
+  const sourceLabel = `<a href="${MEAT_CUTS_SOURCE_URL}" target="_blank" rel="noopener">TACO/NEPA/UNICAMP</a>`;
+  if (!source) {
+    return `${sourceLabel}: não há dados para este perfil. Informe o teor medido ou outra referência.`;
+  }
+  return `${sourceLabel}: ${escapeHTML(String(source).replace(/^TACO:\s*/i, '').trim())}`;
+}
+
 function blendComponentHasReferenceData(component) {
   if (component?.gorduraCustom !== '' && component?.gorduraCustom !== undefined) return true;
   const cut = MEAT_CUTS.find(item => item.id === component?.corteId) || MEAT_CUTS[MEAT_CUTS.length - 1];
@@ -3463,7 +3484,11 @@ function formulaItemGrams(formula, item) {
 }
 
 function timelineHTML(items) {
-  return (items || []).map((item, index) => `<div class="timeline-step"><span>${index + 1}</span><p>${escapeHTML(item)}</p></div>`).join('');
+  const list = Array.isArray(items) ? items : [];
+  return list.map((item, index) => `
+    <div class="timeline-step"><span>${index + 1}</span><p>${escapeHTML(item)}</p></div>
+    ${index < list.length - 1 ? '<div class="timeline-connector" aria-hidden="true"></div>' : ''}
+  `).join('');
 }
 
 function equipmentHTML(items) {

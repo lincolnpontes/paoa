@@ -1,9 +1,9 @@
-const CACHE_NAME = 'paoa-v37';
+const CACHE_NAME = 'paoa-v40';
 const ASSETS = [
   './',
   './index.html',
-  './style.css?v=37',
-  './app.js?v=37',
+  './style.css?v=40',
+  './app.js?v=40',
   './manifest.json',
   './icon.png',
   './assets/home-aulas.png',
@@ -17,7 +17,11 @@ const ASSETS = [
   './assets/kafta-bovina.jpg',
   './assets/almondega-bovina.jpg',
   './assets/pate-carneo.jpg',
-  './assets/salsicha.jpg'
+  './assets/salsicha.jpg',
+  './assets/pernil-marinado.jpg',
+  './assets/kibe.jpg',
+  './assets/nuggets.jpg',
+  './assets/presunto-suino.jpg'
 ];
 
 self.addEventListener('install', event => {
