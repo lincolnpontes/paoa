@@ -487,7 +487,7 @@ const DEFAULT_DB = {
     {
       id: 'form_hamb_base',
       produtoId: 'prod_hamburguer',
-      nome: 'Hambúrguer bovino base',
+      nome: 'Hambúrguer bovino',
       pesoReferencia: 1000,
       baseCalculo: 'massa_carnea',
       rendimento: 82,
@@ -503,7 +503,7 @@ const DEFAULT_DB = {
     {
       id: 'form_kafta_base',
       produtoId: 'prod_kafta',
-      nome: 'Kafta bovina base',
+      nome: 'Kafta bovina',
       pesoReferencia: 1000,
       baseCalculo: 'massa_carnea',
       rendimento: 80,
@@ -521,7 +521,7 @@ const DEFAULT_DB = {
     {
       id: 'form_almondega_base',
       produtoId: 'prod_almondega',
-      nome: 'Almôndega bovina base',
+      nome: 'Almôndega bovina',
       pesoReferencia: 1000,
       baseCalculo: 'massa_carnea',
       rendimento: 78,
@@ -540,7 +540,7 @@ const DEFAULT_DB = {
     {
       id: 'form_linguica_base',
       produtoId: 'prod_linguica_frescal',
-      nome: 'Linguiça frescal suína base',
+      nome: 'Linguiça frescal suína',
       pesoReferencia: 2000,
       baseCalculo: 'produto_final',
       rendimento: 92,
@@ -559,7 +559,7 @@ const DEFAULT_DB = {
     {
       id: 'form_pate_base',
       produtoId: 'prod_pate',
-      nome: 'Patê cárneo base',
+      nome: 'Patê cárneo',
       pesoReferencia: 1000,
       baseCalculo: 'produto_final',
       rendimento: 88,
@@ -580,7 +580,7 @@ const DEFAULT_DB = {
     {
       id: 'form_salsicha_base',
       produtoId: 'prod_salsicha',
-      nome: 'Salsicha base',
+      nome: 'Salsicha',
       pesoReferencia: 2000,
       baseCalculo: 'produto_final',
       rendimento: 90,
@@ -923,6 +923,7 @@ function normalizeDB(data) {
     const product = merged.produtos.find(p => p.id === f.produtoId);
     const hadBaseCalculo = Boolean(f.baseCalculo);
     const defaultFormula = DEFAULT_DB.formulacoes.find(def => def.id === f.id);
+    f.nome = cleanFormulaName(f.nome || defaultFormula?.nome || '');
     if (!hadBaseCalculo && defaultFormula && f.id === 'form_hamb_base') {
       f.itens = clone(defaultFormula.itens);
       f.observacoes = defaultFormula.observacoes;
@@ -953,6 +954,10 @@ function mergeDefaults(current, defaults) {
     if (!ids.has(item.id)) list.push(clone(item));
   });
   return list;
+}
+
+function cleanFormulaName(name) {
+  return String(name || '').replace(/\s+base$/i, '').trim();
 }
 
 function saveDB() {
@@ -1124,9 +1129,9 @@ function productWorkspaceHTML(p) {
     { id: 'referencias', label: 'Referências' }
   ];
   return `
-    <button type="button" class="back-btn" data-product-back>Voltar aos produtos</button>
     <div class="product-slide-deck" data-slide-deck>
       <aside class="product-slide-summary">
+        <button type="button" class="back-btn product-back-icon" data-product-back title="Voltar aos produtos" aria-label="Voltar aos produtos">↩️</button>
         <div class="product-slide-summary-scroll">
           ${slides.map((slide, index) => `<button type="button" class="slide-jump ${index === 0 ? 'active' : ''}" data-product-slide="${escapeAttr(slide.id)}"><span>${index + 1}</span>${escapeHTML(slide.label)}</button>`).join('')}
         </div>
@@ -1196,7 +1201,7 @@ function productWorkspaceHTML(p) {
 
         <section class="product-slide" data-slide-panel="referencias">
           <div class="slide-card">
-            <div class="slide-kicker">Consulta de apoio</div>
+            <div class="slide-kicker">Referências</div>
             <h3>Referências vinculadas</h3>
             <div class="stack-list">${laws.map(lawCardHTML).join('') || emptyHTML('Nenhuma referência vinculada.')}</div>
           </div>
@@ -1208,13 +1213,17 @@ function productWorkspaceHTML(p) {
 
 function productFormulaHTML(f) {
   const analysis = analyzeFormula(f);
+  const blendState = formulaBlendState(f);
   return `
     <div class="formula-work-card ${f.bloqueada ? 'formula-locked' : ''}">
       <div class="formula-work-head">
-        <h3>${escapeHTML(f.nome)}</h3>
-        <button type="button" class="formula-lock-btn ${f.bloqueada ? 'locked' : ''}" data-toggle-formula-lock="${escapeAttr(f.id)}" title="${f.bloqueada ? 'Destravar formulação' : 'Travar formulação'}">${f.bloqueada ? '🔒' : '🔓'}</button>
+        <h3>${escapeHTML(cleanFormulaName(f.nome))}</h3>
+        <div class="formula-head-actions">
+          ${blendToggleButtonHTML(f, blendState)}
+          <button type="button" class="formula-lock-btn ${f.bloqueada ? 'locked' : ''}" data-toggle-formula-lock="${escapeAttr(f.id)}" title="${f.bloqueada ? 'Destravar formulação' : 'Travar formulação'}">${f.bloqueada ? '🔒' : '🔓'}</button>
+        </div>
       </div>
-      ${blendEditorHTML(f)}
+      ${blendEditorHTML(f, blendState)}
       ${inlineFormulaEditorHTML(f)}
       ${analysisHTML(analysis)}
       <div class="product-action-row">
@@ -1223,19 +1232,17 @@ function productFormulaHTML(f) {
     </div>`;
 }
 
-function blendEditorHTML(f) {
-  const state = formulaBlendState(f);
+function blendToggleButtonHTML(f, state = formulaBlendState(f)) {
   const disabled = f.bloqueada ? ' disabled' : '';
+  return `<button type="button" class="blend-toggle-button ${state.useBlend ? 'active' : ''}" data-toggle-blend-button="${escapeAttr(f.id)}" aria-pressed="${state.useBlend}" title="${state.useBlend ? 'Desativar blend' : 'Ativar blend'}"${disabled}>
+    <strong>Blend</strong><span class="switch-visual"><i></i></span>
+  </button>`;
+}
+
+function blendEditorHTML(f, state = formulaBlendState(f)) {
   const firstComponent = state.useBlend ? state.components[0] : state.singleComponent;
   const secondComponent = state.components[1] || defaultSecondBlendComponent(f, state);
   return `<div class="blend-editor">
-    <div class="blend-switch-row">
-      <div class="blend-toggle-group">
-        <button type="button" class="blend-toggle-button ${state.useBlend ? 'active' : ''}" data-toggle-blend-button="${escapeAttr(f.id)}" aria-pressed="${state.useBlend}"${disabled}>
-          <strong>Blend</strong><span class="switch-visual"><i></i></span>
-        </button>
-      </div>
-    </div>
     <div class="blend-components">
         ${blendComponentHTML(f, firstComponent, 0, { locked: f.bloqueada, label: state.useBlend ? 'Matéria-prima 1' : 'Matéria-prima', single: !state.useBlend })}
         ${state.useBlend ? blendComponentHTML(f, secondComponent, 1, { locked: f.bloqueada, label: 'Matéria-prima 2' }) : ''}
@@ -1333,7 +1340,10 @@ function inlineFormulaRowHTML(f, item) {
       </div>
       ${suggestion ? `<div class="formula-intensity-cell ${expanded ? 'expanded' : ''}">
         <button type="button" class="intensity-edit-btn" data-toggle-intensity="${escapeAttr(intensityKey)}" title="${expanded ? 'Fechar ajuste de intensidade' : 'Ajustar intensidade'}" aria-expanded="${expanded}">✎</button>
-        <div class="suggestion-panel">${suggestionHTML}</div>
+        <div class="suggestion-panel">
+          <button type="button" class="intensity-done-btn" data-toggle-intensity="${escapeAttr(intensityKey)}" title="Concluir ajuste" aria-label="Concluir ajuste">&#10004;&#65039;</button>
+          ${suggestionHTML}
+        </div>
       </div>` : ''}
       <label class="pct-field">
         <span>%</span>
@@ -1521,7 +1531,7 @@ function formulaHTML(f) {
     <button type="button" class="item-card" data-edit-formula="${escapeAttr(f.id)}">
       <div class="item-avatar">∑</div>
       <div>
-        <div class="item-title">${escapeHTML(f.nome)}</div>
+        <div class="item-title">${escapeHTML(cleanFormulaName(f.nome))}</div>
         <div class="item-subtitle">${escapeHTML(product?.nome || 'Produto não encontrado')}</div>
         <div class="item-meta">
           <span class="badge ${limitBadge(analysis.fatPct, product?.parametros?.gorduraMax, 'max')}">Gordura ${fmt(analysis.fatPct)}%</span>
@@ -2182,9 +2192,6 @@ function renderAulas() {
     </div>
     <div class="theory-lesson-list">
       ${schedule.map((item, index) => theoryScheduleLessonHTML(item, index)).join('')}
-    </div>
-    <div class="notice-card">
-      <strong>Uso didático.</strong> As referências legais ficam aqui como apoio às aulas. Para registro, rotulagem oficial ou inspeção, confira sempre a norma vigente no órgão competente.
     </div>
     <div class="section-header"><div><h2>Referências legais</h2></div></div>
     <div class="stack-list">${db.legislacoes.map(lawCardHTML).join('')}</div>`;
@@ -3239,7 +3246,7 @@ function buildReport(formula) {
   lines.push('RELATÓRIO DA AULA PRÁTICA - PROCESSAMENTO DE ALIMENTOS DE ORIGEM ANIMAL');
   lines.push('');
   lines.push(`Produto: ${product?.nome || 'Não informado'}`);
-  lines.push(`Formulação: ${formula.nome}`);
+  lines.push(`Formulação: ${cleanFormulaName(formula.nome)}`);
   lines.push(`Base de cálculo: ${analysis.baseLabel}`);
   lines.push(`Peso base: ${fmt(formula.pesoReferencia)} g`);
   lines.push(`Massa final estimada: ${fmt(analysis.finalWeight)} g`);
