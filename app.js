@@ -88,8 +88,8 @@ const PRODUCT_CATEGORIES = [
       'Por que sal e mistura mecânica ajudam na coesão?',
       'Como interpretar percentuais sobre massa cárnea em vez de produto final?'
     ],
-    produtos: ['prod_hamburguer', 'prod_kafta', 'prod_almondega'],
-    insumos: ['ing_carne_bovina_magra', 'ing_gordura_bovina', 'ing_sal', 'ing_agua_gelada', 'ing_alho_po', 'ing_farinha_rosca']
+    produtos: ['prod_hamburguer', 'prod_kafta', 'prod_almondega', 'prod_kibe', 'prod_nuggets'],
+    insumos: ['ing_carne_bovina_magra', 'ing_gordura_bovina', 'ing_sal', 'ing_agua_gelada', 'ing_alho_po', 'ing_farinha_rosca', 'ing_trigo_kibe']
   },
   {
     id: 'embutidos',
@@ -127,6 +127,60 @@ const PRODUCT_CATEGORIES = [
     ],
     produtos: ['prod_pate', 'prod_salsicha'],
     insumos: ['ing_pernil_suino', 'ing_toucinho_suino', 'ing_agua_gelada', 'ing_sal', 'ing_fosfato', 'ing_amido', 'ing_leite_po']
+  },
+  {
+    id: 'marinados',
+    titulo: 'Produtos Marinados',
+    resumo: 'Produtos marinados usam salmoura, condimentos e tempo de contato para distribuir sabor, ajustar rendimento e discutir difusão, retenção de água e segurança durante a conservação.',
+    topicos: [
+      'Preparo de marinada e cálculo de concentração dos ingredientes',
+      'Difusão de sal, água e condimentos na matriz cárnea',
+      'Controle de tempo, temperatura e proporção de marinada',
+      'Relação entre rendimento, suculência e padronização de sabor'
+    ],
+    perguntas: [
+      'Como a proporção de marinada altera rendimento e sabor?',
+      'Que riscos aparecem se o produto fica tempo excessivo fora de refrigeração?',
+      'Como padronizar a aplicação da marinada em lotes pequenos?'
+    ],
+    produtos: ['prod_pernil_marinado'],
+    insumos: ['ing_pernil_suino', 'ing_agua_gelada', 'ing_sal', 'ing_acucar', 'ing_alho_po', 'ing_pimenta_reino']
+  },
+  {
+    id: 'empanados',
+    titulo: 'Produtos Empanados',
+    resumo: 'Produtos empanados combinam massa cárnea moldada, pré-enfarinhamento, líquido de adesão e cobertura seca para discutir aderência, crocância, rendimento e absorção de óleo.',
+    topicos: [
+      'Formação de massa cárnea e padronização das porções',
+      'Sequência de cobertura: pré-enfarinhamento, líquido de adesão e empanamento',
+      'Controle de aderência, perda de cobertura e rendimento',
+      'Efeito de cocção ou fritura na textura e aparência'
+    ],
+    perguntas: [
+      'O que melhora a aderência da cobertura?',
+      'Como a granulometria da farinha altera crocância?',
+      'Que controles reduzem perda de cobertura durante a cocção?'
+    ],
+    produtos: ['prod_nuggets'],
+    insumos: ['ing_peito_frango', 'ing_farinha_rosca', 'ing_ovo_liquido', 'ing_amido', 'ing_sal']
+  },
+  {
+    id: 'curados_cozidos',
+    titulo: 'Produtos Curados e Cozidos',
+    resumo: 'Produtos curados e cozidos usam salmoura, cura, retenção de água e tratamento térmico para discutir cor, fatiabilidade, rendimento, segurança e padronização.',
+    topicos: [
+      'Preparo de salmoura e função tecnológica do sal, cura e fosfato',
+      'Distribuição da salmoura na peça e tempo de cura',
+      'Tratamento térmico, resfriamento e fatiabilidade',
+      'Controle de rendimento, cor, textura e enquadramento legal'
+    ],
+    perguntas: [
+      'Como a cura altera cor e sabor do produto?',
+      'Qual é o papel do resfriamento na textura e segurança?',
+      'Como controlar rendimento sem comprometer identidade do produto?'
+    ],
+    produtos: ['prod_presunto_suino'],
+    insumos: ['ing_pernil_suino', 'ing_agua_gelada', 'ing_sal', 'ing_sal_cura', 'ing_fosfato', 'ing_acucar']
   }
 ];
 
@@ -458,6 +512,194 @@ const DEFAULT_DB = {
         'Como temperatura e gelo influenciam textura e rendimento?',
         'O envoltório usado alterou aparência, calibre ou mordida?'
       ]
+    },
+    {
+      id: 'prod_pernil_marinado',
+      nome: 'Pernil marinado',
+      categoria: 'Produto cárneo marinado',
+      categoriaId: 'marinados',
+      categoriaIds: ['marinados'],
+      especie: 'suína',
+      tipo: 'geral',
+      descricao: 'Peça ou porção suína submetida à marinada/salmoura condimentada para padronizar sabor, rendimento, maciez e suculência antes da cocção experimental.',
+      objetivo: 'Avaliar como concentração da marinada, tempo de contato, temperatura e proporção entre carne e salmoura influenciam rendimento, sabor e textura do pernil.',
+      parametros: { gorduraMax: '', proteinaMin: '', carbMax: '', proteinaNaoCarneaMax: '', proibeProteinaNaoCarnea: false, mostrarValidacao: true },
+      fotos: [],
+      fluxo: [
+        'Recepção e inspeção visual do pernil refrigerado',
+        'Toalete e padronização das porções para a prática',
+        'Pesagem da carne e preparo da marinada conforme formulação',
+        'Aplicação da marinada por imersão, massagem ou injeção didática',
+        'Repouso refrigerado pelo tempo definido para contato',
+        'Escorrimento, pesagem e registro de ganho ou perda de massa',
+        'Cocção experimental com controle de temperatura interna',
+        'Resfriamento breve, fatiamento e avaliação de sabor, textura e rendimento'
+      ],
+      pontos: [
+        'Manter o produto refrigerado durante o tempo de marinada',
+        'Registrar peso antes e depois da marinada',
+        'Evitar excesso de salmoura livre na embalagem ou recipiente',
+        'Padronizar tempo de contato entre grupos',
+        'Controlar temperatura interna na cocção',
+        'Comparar suculência e intensidade de sabor entre formulações'
+      ],
+      equipamentos: [
+        'Balança de bancada',
+        'Bowls ou recipientes sanitizados com tampa',
+        'Facas e tábuas separadas para carne crua',
+        'Medidores ou provetas para preparo da marinada',
+        'Bandejas e filme plástico',
+        'Forno, chapa ou panela para cocção experimental',
+        'Termômetro tipo espeto',
+        'Etiquetas para identificação dos tratamentos'
+      ],
+      perguntas: [
+        'A marinada aumentou ou reduziu o peso da matéria-prima?',
+        'Qual ingrediente mais influenciou sabor e suculência?',
+        'Como tempo de contato e temperatura interferem na segurança do processo?',
+        'Que ajuste faria sentido para reduzir sal sem perder percepção de sabor?'
+      ]
+    },
+    {
+      id: 'prod_kibe',
+      nome: 'Kibe',
+      categoria: 'Produto cárneo reestruturado',
+      categoriaId: 'reestruturados',
+      categoriaIds: ['reestruturados'],
+      especie: 'bovina',
+      tipo: 'geral',
+      descricao: 'Produto cárneo moldado que combina carne moída, trigo hidratado e condimentos, útil para discutir liga, retenção de água, padronização e cocção.',
+      objetivo: 'Compreender o efeito do trigo hidratado, da gordura, do sal e da mistura mecânica na coesão, rendimento e textura do kibe.',
+      parametros: { gorduraMax: '', proteinaMin: '', carbMax: '', proteinaNaoCarneaMax: '', proibeProteinaNaoCarnea: false, mostrarValidacao: true },
+      fotos: [],
+      fluxo: [
+        'Hidratação do trigo para kibe em água fria e posterior escorrimento',
+        'Recepção e moagem da carne refrigerada',
+        'Pesagem dos ingredientes conforme a formulação',
+        'Mistura da carne, trigo hidratado, sal e condimentos',
+        'Trabalho mecânico até obtenção de massa coesa',
+        'Modelagem em unidades padronizadas',
+        'Cocção experimental em forno, chapa ou fritura controlada',
+        'Avaliação de rendimento, coesão, textura e sabor'
+      ],
+      pontos: [
+        'Padronizar hidratação e escorrimento do trigo',
+        'Evitar excesso de água livre na massa',
+        'Manter a carne fria durante moagem e mistura',
+        'Padronizar peso e formato das unidades',
+        'Registrar perda de massa após a cocção',
+        'Observar desmanche, rachaduras e textura final'
+      ],
+      equipamentos: [
+        'Balança de bancada',
+        'Recipiente para hidratação do trigo',
+        'Peneira ou escorredor',
+        'Moedor de carne',
+        'Bowls de aço inox',
+        'Porcionador ou molde manual',
+        'Forno, chapa ou panela para cocção',
+        'Termômetro tipo espeto'
+      ],
+      perguntas: [
+        'Como o trigo hidratado alterou textura e rendimento?',
+        'Houve água livre ou desmanche durante a cocção?',
+        'A intensidade de mistura foi suficiente para formar liga?',
+        'Que diferença seria esperada ao variar o teor de gordura?'
+      ]
+    },
+    {
+      id: 'prod_nuggets',
+      nome: 'Nuggets',
+      categoria: 'Produto cárneo reestruturado empanado',
+      categoriaId: 'empanados',
+      categoriaIds: ['reestruturados', 'empanados'],
+      especie: 'frango',
+      tipo: 'geral',
+      descricao: 'Produto reestruturado de frango, moldado e empanado, adequado para estudar massa cárnea, adesão de cobertura, rendimento e textura após cocção.',
+      objetivo: 'Avaliar como moagem, mistura, moldagem e sistema de empanamento interferem na aderência da cobertura, crocância, rendimento e aceitação visual dos nuggets.',
+      parametros: { gorduraMax: '', proteinaMin: '', carbMax: '', proteinaNaoCarneaMax: '', proibeProteinaNaoCarnea: false, mostrarValidacao: true },
+      fotos: [],
+      fluxo: [
+        'Recepção do frango refrigerado e separação de aparas indesejáveis',
+        'Moagem ou processamento grosseiro da carne',
+        'Mistura com sal, gelo e ingredientes de liga',
+        'Moldagem em unidades padronizadas',
+        'Pré-enfarinhamento quando previsto',
+        'Passagem em líquido de adesão e cobertura seca',
+        'Cocção experimental em forno, air fryer ou fritura controlada',
+        'Avaliação de aderência, crocância, rendimento e textura interna'
+      ],
+      pontos: [
+        'Manter a massa fria e coesa antes da moldagem',
+        'Padronizar peso e espessura das unidades',
+        'Evitar excesso de umidade superficial antes do empanamento',
+        'Controlar aderência e perda de cobertura',
+        'Monitorar tempo e temperatura de cocção',
+        'Registrar rendimento antes e depois da cocção'
+      ],
+      equipamentos: [
+        'Balança de bancada',
+        'Moedor ou processador',
+        'Bowls de aço inox',
+        'Moldes ou porcionador',
+        'Bandejas para farinha, líquido de adesão e cobertura',
+        'Pegadores ou pinças',
+        'Forno, air fryer ou fritadeira controlada',
+        'Termômetro tipo espeto'
+      ],
+      perguntas: [
+        'Qual etapa mais influenciou a aderência da cobertura?',
+        'A massa manteve formato durante a cocção?',
+        'Como a umidade da superfície alterou o empanamento?',
+        'Que ajuste reduziria perda de cobertura sem endurecer o produto?'
+      ]
+    },
+    {
+      id: 'prod_presunto_suino',
+      nome: 'Presunto suíno',
+      categoria: 'Produto cárneo curado e cozido',
+      categoriaId: 'curados_cozidos',
+      categoriaIds: ['curados_cozidos'],
+      especie: 'suína',
+      tipo: 'geral',
+      descricao: 'Produto suíno curado e cozido, usado didaticamente para discutir salmoura, cura, retenção de água, tratamento térmico, resfriamento e fatiabilidade.',
+      objetivo: 'Relacionar salmoura, agentes de cura, fosfato, cocção e resfriamento com rendimento, cor, textura, fatiabilidade e segurança do presunto suíno.',
+      parametros: { gorduraMax: '', proteinaMin: '', carbMax: '', proteinaNaoCarneaMax: '', proibeProteinaNaoCarnea: false, mostrarValidacao: true },
+      fotos: [],
+      fluxo: [
+        'Recepção do pernil suíno refrigerado',
+        'Toalete e padronização da peça ou porções',
+        'Preparo da salmoura com ingredientes pesados',
+        'Aplicação da salmoura por imersão, massagem ou injeção didática',
+        'Repouso refrigerado para cura e distribuição dos ingredientes',
+        'Enformagem ou embalagem para cocção',
+        'Cocção até temperatura interna definida',
+        'Resfriamento, desenformagem, fatiamento e avaliação de rendimento e textura'
+      ],
+      pontos: [
+        'Controlar concentração da salmoura e dos agentes de cura',
+        'Manter repouso refrigerado durante a cura',
+        'Registrar peso antes e depois da salmoura e da cocção',
+        'Evitar aquecimento insuficiente no centro da peça',
+        'Resfriar rapidamente após o tratamento térmico',
+        'Avaliar fatiabilidade, cor, exsudação e textura'
+      ],
+      equipamentos: [
+        'Balança de bancada',
+        'Recipiente para salmoura',
+        'Seringa ou injetora manual didática quando disponível',
+        'Massageador, saco plástico próprio ou recipiente com tampa',
+        'Forma ou embalagem para cocção',
+        'Banho-maria, panela ou forno',
+        'Termômetro tipo espeto',
+        'Faca ou fatiador para avaliação'
+      ],
+      perguntas: [
+        'Como a salmoura alterou peso e textura?',
+        'Que efeito a cura teve na cor e no sabor?',
+        'O resfriamento influenciou fatiabilidade?',
+        'Quais cuidados legais e de segurança devem ser conferidos antes de uso real?'
+      ]
     }
   ],
   insumos: [
@@ -465,8 +707,10 @@ const DEFAULT_DB = {
     { id: 'ing_gordura_bovina', nome: 'Gordura bovina', categoria: 'Gordura animal', tipo: 'gordura', funcao: 'Contribui para suculência, sabor, maciez e percepção de palatabilidade.', obs: 'Deve ser bem distribuída para evitar perda excessiva durante a cocção.', gordura: 100, proteina: 0, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
     { id: 'ing_pernil_suino', nome: 'Pernil suíno magro', categoria: 'Matéria-prima cárnea', tipo: 'carne', funcao: 'Base proteica da linguiça frescal; contribui para estrutura, rendimento e sabor característico.', obs: 'Manter refrigerado e moer frio para reduzir liberação de gordura.', gordura: 8, proteina: 20, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
     { id: 'ing_toucinho_suino', nome: 'Toucinho suíno', categoria: 'Gordura animal', tipo: 'gordura', funcao: 'Ajusta o teor de gordura, melhora suculência e contribui para sabor e textura do embutido.', obs: 'Cortar em cubos e manter frio antes da moagem para preservar definição de partículas.', gordura: 99, proteina: 1, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
+    { id: 'ing_peito_frango', nome: 'Peito de frango sem pele', categoria: 'Matéria-prima cárnea', tipo: 'carne', funcao: 'Base proteica magra para produtos de frango reestruturados, contribuindo para liga, textura e rendimento.', obs: 'Manter refrigerado e processar frio para evitar perda de liga e aquecimento da massa.', gordura: 3, proteina: 21, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
     { id: 'ing_agua_gelada', nome: 'Água gelada / gelo', categoria: 'Veículo tecnológico', tipo: 'agua', funcao: 'Ajuda na distribuição dos ingredientes, hidratação e controle de temperatura durante a mistura.', obs: 'O excesso pode deixar a massa pouco coesa ou favorecer exsudação.', gordura: 0, proteina: 0, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
     { id: 'ing_sal', nome: 'Sal', categoria: 'Condimento / sal', tipo: 'sal', funcao: 'Contribui para sabor e favorece a extração de proteínas miofibrilares, aumentando a liga da massa.', obs: 'Em aula, comparar teores de sal mostra diferença de coesão e percepção sensorial.', gordura: 0, proteina: 0, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
+    { id: 'ing_sal_cura', nome: 'Sal de cura', categoria: 'Mistura/preparado comercial', tipo: 'mistura_comercial', subtipo: 'mistura de cura', funcao: 'Mistura usada em produtos curados para discutir cor, sabor, segurança e limites de uso conforme legislação vigente.', obs: 'Usar apenas em contexto didático com orientação docente e conferir concentração e legislação antes de qualquer aplicação real.', gordura: 0, proteina: 0, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
     { id: 'ing_alho_po', nome: 'Alho em pó', categoria: 'Condimento', tipo: 'condimento', funcao: 'Fornece sabor e aroma característicos.', obs: 'Pode ser substituído por alho fresco, ajustando umidade e intensidade.', gordura: 0, proteina: 0, carboidrato: 70, custo: 0, proteinaNaoCarnea: false, alergeno: false },
     { id: 'ing_pimenta_reino', nome: 'Pimenta-do-reino preta', categoria: 'Condimento', tipo: 'condimento', subtipo: 'moídos', funcao: 'Ajusta pungência e aroma, ajudando a caracterizar o perfil sensorial do produto.', obs: 'Usar pequenas quantidades para não mascarar diferenças entre formulações.', gordura: 3, proteina: 10, carboidrato: 64, custo: 0, proteinaNaoCarnea: false, alergeno: false },
     { id: 'ing_paprica_doce', nome: 'Páprica doce', categoria: 'Condimento', tipo: 'condimento', funcao: 'Contribui para cor e aroma suave em embutidos frescais.', obs: 'Permite discutir padronização visual sem depender de corantes.', gordura: 13, proteina: 14, carboidrato: 54, custo: 0, proteinaNaoCarnea: false, alergeno: false },
@@ -474,6 +718,7 @@ const DEFAULT_DB = {
     { id: 'ing_cebola_desidratada', nome: 'Cebola desidratada', categoria: 'Condimento', tipo: 'condimento', funcao: 'Fornece aroma e dulçor característicos, contribuindo para o perfil sensorial de produtos moldados.', obs: 'Permite padronização melhor que cebola fresca, que varia em umidade.', gordura: 1, proteina: 10, carboidrato: 75, custo: 0, proteinaNaoCarnea: false, alergeno: false },
     { id: 'ing_salsa_desidratada', nome: 'Salsa desidratada', categoria: 'Condimento / erva', tipo: 'condimento', funcao: 'Adiciona notas herbais e pontos visuais verdes em produtos como kafta e almôndega.', obs: 'Usar em baixo teor para não mascarar diferenças de textura.', gordura: 4, proteina: 22, carboidrato: 51, custo: 0, proteinaNaoCarnea: false, alergeno: false },
     { id: 'ing_farinha_rosca', nome: 'Farinha de rosca', categoria: 'Ingrediente ligante', tipo: 'carboidrato', funcao: 'Auxilia na absorção de umidade e na estrutura de produtos moldados, reduzindo desmanche durante a cocção.', obs: 'Discutir presença de glúten e impacto sobre textura, rendimento e rotulagem.', gordura: 3, proteina: 13, carboidrato: 72, custo: 0, proteinaNaoCarnea: false, alergeno: true },
+    { id: 'ing_trigo_kibe', nome: 'Trigo para kibe', categoria: 'Ingrediente funcional não aditivo', tipo: 'funcional_nao_aditivo', subtipo: 'amidos/farinhas', funcao: 'Absorve água, contribui para corpo, rendimento e textura característica em kibe e produtos moldados.', obs: 'Ingrediente com glúten; padronizar hidratação e escorrimento antes da mistura.', gordura: 1, proteina: 12, carboidrato: 76, custo: 0, proteinaNaoCarnea: false, alergeno: true },
     { id: 'ing_ovo_liquido', nome: 'Ovo líquido', categoria: 'Ingrediente ligante', tipo: 'outro', funcao: 'Contribui para liga, emulsificação parcial e estrutura térmica em produtos moldados.', obs: 'Ingrediente alergênico; útil para comparar formulações com e sem ligante proteico.', gordura: 10, proteina: 12, carboidrato: 1, custo: 0, proteinaNaoCarnea: false, alergeno: true },
     { id: 'ing_tripa_suina', nome: 'Tripa suína natural', categoria: 'Envoltório', tipo: 'outro', funcao: 'Envoltório comestível que dá formato ao embutido e influencia aparência, calibre e mordida.', obs: 'Hidratar, lavar e manter sob boas condições higiênicas antes do embutimento.', gordura: 0, proteina: 0, carboidrato: 0, custo: 0, usadoNaFormulacao: false, proteinaNaoCarnea: false, alergeno: false },
     { id: 'ing_proteina_soja', nome: 'Proteína de soja texturizada/fina', categoria: 'Proteína não cárnea', tipo: 'proteina_nao_carnea', funcao: 'Pode contribuir para retenção de água, rendimento e textura, respeitando os limites do produto.', obs: 'Discutir rotulagem, limite legal, declaração de alergênico e impacto sensorial.', gordura: 1, proteina: 50, carboidrato: 30, custo: 0, proteinaNaoCarnea: true, alergeno: true },
@@ -597,6 +842,79 @@ const DEFAULT_DB = {
         { insumoId: 'ing_pimenta_branca', percentual: 0.1 }
       ],
       observacoes: 'Formulação didática fechada em 100% para discutir massa emulsionada, embutimento, cozimento e resfriamento.'
+    },
+    {
+      id: 'form_pernil_marinado_base',
+      produtoId: 'prod_pernil_marinado',
+      nome: 'Pernil marinado',
+      pesoReferencia: 1000,
+      baseCalculo: 'massa_carnea',
+      rendimento: 88,
+      itens: [
+        { insumoId: 'ing_pernil_suino', percentual: 100 },
+        { insumoId: 'ing_agua_gelada', percentual: 12 },
+        { insumoId: 'ing_sal', percentual: 1.8 },
+        { insumoId: 'ing_acucar', percentual: 0.8 },
+        { insumoId: 'ing_alho_po', percentual: 0.4 },
+        { insumoId: 'ing_pimenta_reino', percentual: 0.15 }
+      ],
+      observacoes: 'Formulação didática sobre a massa cárnea para comparar ganho de massa, sabor e rendimento após marinada.'
+    },
+    {
+      id: 'form_kibe_base',
+      produtoId: 'prod_kibe',
+      nome: 'Kibe',
+      pesoReferencia: 1000,
+      baseCalculo: 'massa_carnea',
+      rendimento: 80,
+      itens: [
+        { insumoId: 'ing_carne_bovina_magra', percentual: 88 },
+        { insumoId: 'ing_gordura_bovina', percentual: 12 },
+        { insumoId: 'ing_trigo_kibe', percentual: 18 },
+        { insumoId: 'ing_agua_gelada', percentual: 10 },
+        { insumoId: 'ing_sal', percentual: 1.7 },
+        { insumoId: 'ing_alho_po', percentual: 0.4 },
+        { insumoId: 'ing_pimenta_reino', percentual: 0.2 },
+        { insumoId: 'ing_salsa_desidratada', percentual: 0.4 }
+      ],
+      observacoes: 'Formulação para discutir hidratação do trigo, liga, coesão e perda por cocção.'
+    },
+    {
+      id: 'form_nuggets_base',
+      produtoId: 'prod_nuggets',
+      nome: 'Nuggets',
+      pesoReferencia: 1000,
+      baseCalculo: 'massa_carnea',
+      rendimento: 78,
+      itens: [
+        { insumoId: 'ing_peito_frango', percentual: 100 },
+        { insumoId: 'ing_agua_gelada', percentual: 8 },
+        { insumoId: 'ing_amido', percentual: 4 },
+        { insumoId: 'ing_sal', percentual: 1.6 },
+        { insumoId: 'ing_fosfato', percentual: 0.3 },
+        { insumoId: 'ing_alho_po', percentual: 0.3 },
+        { insumoId: 'ing_pimenta_branca', percentual: 0.1 },
+        { insumoId: 'ing_ovo_liquido', percentual: 8 },
+        { insumoId: 'ing_farinha_rosca', percentual: 18 }
+      ],
+      observacoes: 'Formulação didática para observar massa reestruturada, moldagem e aderência da cobertura.'
+    },
+    {
+      id: 'form_presunto_suino_base',
+      produtoId: 'prod_presunto_suino',
+      nome: 'Presunto suíno',
+      pesoReferencia: 1000,
+      baseCalculo: 'massa_carnea',
+      rendimento: 86,
+      itens: [
+        { insumoId: 'ing_pernil_suino', percentual: 100 },
+        { insumoId: 'ing_agua_gelada', percentual: 18 },
+        { insumoId: 'ing_sal', percentual: 2 },
+        { insumoId: 'ing_acucar', percentual: 0.8 },
+        { insumoId: 'ing_fosfato', percentual: 0.35 },
+        { insumoId: 'ing_sal_cura', percentual: 0.25 }
+      ],
+      observacoes: 'Formulação didática para discutir salmoura, cura, cocção, resfriamento e fatiabilidade.'
     }
   ],
   legislacoes: [
@@ -719,10 +1037,26 @@ const CLASS_SCHEDULE = [
   {
     id: 'aula_6',
     aula: 'Aula 6',
+    tema: 'Produtos marinados e empanados',
+    foco: 'Pernil marinado e nuggets: marinada, rendimento, moldagem, empanamento, aderência da cobertura e cocção experimental.',
+    produtos: ['prod_pernil_marinado', 'prod_nuggets'],
+    categorias: ['marinados', 'empanados']
+  },
+  {
+    id: 'aula_7',
+    aula: 'Aula 7',
+    tema: 'Produtos curados, cozidos e reestruturados',
+    foco: 'Presunto suíno e kibe: salmoura/cura, cocção, fatiabilidade, hidratação de ingredientes e estrutura de massa.',
+    produtos: ['prod_presunto_suino', 'prod_kibe'],
+    categorias: ['curados_cozidos', 'reestruturados']
+  },
+  {
+    id: 'aula_8',
+    aula: 'Aula 8',
     tema: 'Discussão técnica e relatório',
     foco: 'Comparação dos roteiros, ajuste de formulações, interpretação de perdas, parâmetros e referências.',
-    produtos: ['prod_hamburguer', 'prod_linguica_frescal', 'prod_pate', 'prod_salsicha'],
-    categorias: ['reestruturados', 'embutidos', 'emulsionados']
+    produtos: ['prod_hamburguer', 'prod_linguica_frescal', 'prod_pate', 'prod_salsicha', 'prod_pernil_marinado', 'prod_kibe', 'prod_nuggets', 'prod_presunto_suino'],
+    categorias: ['reestruturados', 'embutidos', 'emulsionados', 'marinados', 'empanados', 'curados_cozidos']
   }
 ];
 
@@ -1042,6 +1376,7 @@ function renderProdutos() {
   const workspace = $('#produtoWorkspace');
   const selected = activeProductId ? findProduct(activeProductId) : null;
   const visibleSelected = selected && !selected.oculto ? selected : null;
+  $('.content')?.classList.toggle('product-mode', Boolean(visibleSelected && !($('#searchProdutos')?.value || '').trim()));
   if (visibleSelected && !($('#searchProdutos')?.value || '').trim()) {
     overview.hidden = true;
     workspace.hidden = false;
@@ -1124,21 +1459,22 @@ function productWorkspaceHTML(p) {
     { id: 'fluxo', label: 'Fluxograma' },
     { id: 'controle', label: 'Pontos de controle' },
     { id: 'equipamentos', label: 'Equipamentos' },
-    { id: 'formulas', label: 'Formulações do produto' },
+    { id: 'formulas', label: 'Formulação do Produto' },
     { id: 'discussao', label: 'Discussão da prática' },
     { id: 'referencias', label: 'Referências' }
   ];
   return `
     <div class="product-slide-deck" data-slide-deck>
       <aside class="product-slide-summary">
-        <button type="button" class="back-btn product-back-icon" data-product-back title="Voltar aos produtos" aria-label="Voltar aos produtos">↩️</button>
+        <div class="slide-controls">
+          <button type="button" class="back-btn product-back-icon" data-product-back title="Voltar aos produtos" aria-label="Voltar aos produtos">↩</button>
+          <button type="button" class="secondary-btn compact slide-arrow" data-slide-prev aria-label="Slide anterior">←</button>
+          <div class="slide-position" data-slide-position>1 / ${slides.length}</div>
+          <button type="button" class="primary-btn compact slide-arrow" data-slide-next aria-label="Próximo slide">→</button>
+        </div>
+        <span class="summary-divider" aria-hidden="true"></span>
         <div class="product-slide-summary-scroll">
           ${slides.map((slide, index) => `<button type="button" class="slide-jump ${index === 0 ? 'active' : ''}" data-product-slide="${escapeAttr(slide.id)}"><span>${index + 1}</span>${escapeHTML(slide.label)}</button>`).join('')}
-        </div>
-        <div class="slide-controls">
-          <button type="button" class="secondary-btn compact" data-slide-prev>Voltar</button>
-          <div class="slide-position" data-slide-position>1 / ${slides.length}</div>
-          <button type="button" class="primary-btn compact" data-slide-next>Avançar</button>
         </div>
       </aside>
 
@@ -1160,31 +1496,27 @@ function productWorkspaceHTML(p) {
 
         <section class="product-slide" data-slide-panel="fluxo">
           <div class="slide-card">
-            <div class="slide-kicker">${escapeHTML(p.nome)}</div>
-            <h3>Fluxograma</h3>
+            ${slideHeadingHTML('Fluxograma', p.nome)}
             <div class="timeline-list">${timelineHTML(p.fluxo)}</div>
           </div>
         </section>
 
         <section class="product-slide" data-slide-panel="controle">
           <div class="slide-card">
-            <div class="slide-kicker">${escapeHTML(categoryLabel || 'Roteiro')}</div>
-            <h3>Pontos de controle</h3>
+            ${slideHeadingHTML('Pontos de controle')}
             <div class="control-grid">${(p.pontos || []).map(point => `<div class="control-point">${escapeHTML(point)}</div>`).join('')}</div>
           </div>
         </section>
 
         <section class="product-slide" data-slide-panel="equipamentos">
           <div class="slide-card">
-            <div class="slide-kicker">Preparação da bancada</div>
-            <h3>Equipamentos e utensílios</h3>
+            ${slideHeadingHTML('Equipamentos')}
             <div class="equipment-grid">${equipmentHTML(p.equipamentos)}</div>
           </div>
         </section>
 
         <section class="product-slide" data-slide-panel="formulas">
           <div class="slide-card formula-slide-card">
-            <div class="slide-kicker formula-slide-kicker">Formulações do produto</div>
             <div class="formula-work-list">
               ${formulas.map(productFormulaHTML).join('') || emptyHTML('Nenhuma formulação cadastrada para este produto.')}
             </div>
@@ -1193,22 +1525,24 @@ function productWorkspaceHTML(p) {
 
         <section class="product-slide" data-slide-panel="discussao">
           <div class="slide-card">
-            <div class="slide-kicker">Relatório e debate</div>
-            <h3>Discussão da prática</h3>
+            ${slideHeadingHTML('Discussão da prática')}
             <div class="discussion-list">${(p.perguntas || []).map((question, index) => `<div class="discussion-question"><span>${index + 1}</span>${escapeHTML(question)}</div>`).join('')}</div>
           </div>
         </section>
 
         <section class="product-slide" data-slide-panel="referencias">
           <div class="slide-card">
-            <div class="slide-kicker">Referências</div>
-            <h3>Referências vinculadas</h3>
-            <div class="stack-list">${laws.map(lawCardHTML).join('') || emptyHTML('Nenhuma referência vinculada.')}</div>
+            ${slideHeadingHTML('Referências')}
+            <div class="stack-list law-list">${laws.map(lawCardHTML).join('') || emptyHTML('Nenhuma referência vinculada.')}</div>
           </div>
         </section>
       </div>
     </div>
   `;
+}
+
+function slideHeadingHTML(label, productName = '') {
+  return `<h3 class="slide-heading"><span>${escapeHTML(label)}</span>${productName ? `: <strong>${escapeHTML(productName)}</strong>` : ''}</h3>`;
 }
 
 function productFormulaHTML(f) {
@@ -1217,7 +1551,7 @@ function productFormulaHTML(f) {
   return `
     <div class="formula-work-card ${f.bloqueada ? 'formula-locked' : ''}">
       <div class="formula-work-head">
-        <h3>${escapeHTML(cleanFormulaName(f.nome))}</h3>
+        <h3><span>Formulação do Produto</span>: <strong>${escapeHTML(cleanFormulaName(f.nome))}</strong></h3>
         <div class="formula-head-actions">
           ${blendToggleButtonHTML(f, blendState)}
           <button type="button" class="formula-lock-btn ${f.bloqueada ? 'locked' : ''}" data-toggle-formula-lock="${escapeAttr(f.id)}" title="${f.bloqueada ? 'Destravar formulação' : 'Travar formulação'}">${f.bloqueada ? '🔒' : '🔓'}</button>
@@ -1769,11 +2103,9 @@ function renderContentConfig() {
 }
 
 function contentConfigHTML(content) {
-  const format = content.modo === 'slides' ? `${content.imagens.length} slide(s)` : `${content.topicos.length} tópico(s)`;
   return `<button type="button" class="content-list-card" data-edit-content="${escapeAttr(content.id)}">
     <div>
       <strong>${escapeHTML(content.titulo)}</strong>
-      <span>${escapeHTML(format)} · ${(content.produtos || []).length} produto(s)</span>
     </div>
     <b>›</b>
   </button>`;
@@ -2194,7 +2526,7 @@ function renderAulas() {
       ${schedule.map((item, index) => theoryScheduleLessonHTML(item, index)).join('')}
     </div>
     <div class="section-header"><div><h2>Referências legais</h2></div></div>
-    <div class="stack-list">${db.legislacoes.map(lawCardHTML).join('')}</div>`;
+    <div class="stack-list law-list">${db.legislacoes.map(lawCardHTML).join('')}</div>`;
   root.querySelectorAll('[data-theory-lesson]').forEach(btn => btn.addEventListener('click', () => {
     activeTheoryLessonIndex = Number(btn.dataset.theoryLesson);
     activeTheoryImageIndex = 0;
@@ -2225,11 +2557,9 @@ function theoryScheduleLessonHTML(item, index) {
 }
 
 function theorySubjectListHTML(content) {
-  const format = content.modo === 'slides' ? `${content.imagens?.length || 0} slide(s)` : `${content.topicos?.length || 0} tópico(s)`;
   return `<button type="button" class="theory-subject-button" data-view-theory-content="${escapeAttr(content.id)}">
     <div>
       <strong>${escapeHTML(content.titulo)}</strong>
-      <span>${escapeHTML(format)}</span>
     </div>
     <b>›</b>
   </button>`;
@@ -2341,9 +2671,10 @@ function lawCardHTML(law) {
   const product = law.produtoId ? findProduct(law.produtoId) : null;
   return `<details class="law-card">
     <summary class="law-summary">
+      <span class="law-marker" aria-hidden="true">●</span>
       <h3>${escapeHTML(lawDisplayTitle(law))}</h3>
       <p>${escapeHTML(law.resumo || '')}</p>
-      <span aria-hidden="true">+</span>
+      <span class="law-toggle" aria-hidden="true">+</span>
     </summary>
     <div class="law-details">
       <div class="item-subtitle">${escapeHTML(law.orgao || '')}${product ? ' · ' + escapeHTML(product.nome) : ' · Geral'}</div>
