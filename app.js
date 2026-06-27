@@ -224,7 +224,7 @@ const PRODUCT_CATEGORIES = [
       'Como controlar rendimento sem comprometer identidade do produto?'
     ],
     produtos: ['prod_presunto_suino'],
-    insumos: ['ing_pernil_suino', 'ing_agua_gelada', 'ing_sal', 'ing_sal_cura', 'ing_fosfato', 'ing_acucar']
+    insumos: ['ing_pernil_suino', 'ing_agua_gelada', 'ing_sal', 'ing_sal_cura_tipo_1', 'ing_sal_cura_tipo_2', 'ing_fosfato', 'ing_acucar']
   }
 ];
 
@@ -755,7 +755,8 @@ const DEFAULT_DB = {
     ...MEAT_CUT_INGREDIENTS,
     { id: 'ing_agua_gelada', nome: 'Água gelada / gelo', categoria: 'Veículo tecnológico', tipo: 'agua', funcao: 'Ajuda na distribuição dos ingredientes, hidratação e controle de temperatura durante a mistura.', obs: 'O excesso pode deixar a massa pouco coesa ou favorecer exsudação.', gordura: 0, proteina: 0, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
     { id: 'ing_sal', nome: 'Sal', categoria: 'Condimento / sal', tipo: 'sal', funcao: 'Contribui para sabor e favorece a extração de proteínas miofibrilares, aumentando a liga da massa.', obs: 'Em aula, comparar teores de sal mostra diferença de coesão e percepção sensorial.', gordura: 0, proteina: 0, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
-    { id: 'ing_sal_cura', nome: 'Sal de cura', categoria: 'Mistura/preparado comercial', tipo: 'mistura_comercial', subtipo: 'mistura de cura', funcao: 'Mistura usada em produtos curados para discutir cor, sabor, segurança e limites de uso conforme legislação vigente.', obs: 'Usar apenas em contexto didático com orientação docente e conferir concentração e legislação antes de qualquer aplicação real.', gordura: 0, proteina: 0, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
+    { id: 'ing_sal_cura_tipo_1', nome: 'Sal de cura tipo 1', categoria: 'Mistura/preparado comercial', tipo: 'mistura_comercial', subtipo: 'mistura de cura', curaTipo: 1, funcao: 'Mistura de cura de ação curta, normalmente formulada com nitrito. A concentração real deve ser copiada do rótulo do preparado usado na aula.', obs: 'Uso exclusivamente didático e sob orientação docente. Informe a concentração do produto em mãos e confira a legislação vigente antes de qualquer aplicação.', gordura: 0, proteina: 0, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
+    { id: 'ing_sal_cura_tipo_2', nome: 'Sal de cura tipo 2', categoria: 'Mistura/preparado comercial', tipo: 'mistura_comercial', subtipo: 'mistura de cura', curaTipo: 2, funcao: 'Mistura de cura que pode combinar nitrito e nitrato. As concentrações reais devem ser copiadas do rótulo do preparado usado na aula.', obs: 'Uso exclusivamente didático e sob orientação docente. Informe nitrito e nitrato do produto em mãos e confira a legislação vigente antes de qualquer aplicação.', gordura: 0, proteina: 0, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
     { id: 'ing_alho_po', nome: 'Alho em pó', categoria: 'Condimento', tipo: 'condimento', funcao: 'Fornece sabor e aroma característicos.', obs: 'Pode ser substituído por alho fresco, ajustando umidade e intensidade.', gordura: 0, proteina: 0, carboidrato: 70, custo: 0, proteinaNaoCarnea: false, alergeno: false },
     { id: 'ing_pimenta_reino', nome: 'Pimenta-do-reino preta', categoria: 'Condimento', tipo: 'condimento', subtipo: 'moídos', funcao: 'Ajusta pungência e aroma, ajudando a caracterizar o perfil sensorial do produto.', obs: 'Usar pequenas quantidades para não mascarar diferenças entre formulações.', gordura: 3, proteina: 10, carboidrato: 64, custo: 0, proteinaNaoCarnea: false, alergeno: false },
     { id: 'ing_paprica_doce', nome: 'Páprica doce', categoria: 'Condimento', tipo: 'condimento', funcao: 'Contribui para cor e aroma suave em embutidos frescais.', obs: 'Permite discutir padronização visual sem depender de corantes.', gordura: 13, proteina: 14, carboidrato: 54, custo: 0, proteinaNaoCarnea: false, alergeno: false },
@@ -899,6 +900,7 @@ const DEFAULT_DB = {
         { insumoId: 'ing_pernil_suino', percentual: 100 },
         { insumoId: 'ing_agua_gelada', percentual: 12 },
         { insumoId: 'ing_sal', percentual: 1.8 },
+        { insumoId: 'ing_sal_cura_tipo_1', percentual: 0.25, cura: { nitritoPct: '', nitratoPct: '' } },
         { insumoId: 'ing_acucar', percentual: 0.8 },
         { insumoId: 'ing_alho_po', percentual: 0.4 },
         { insumoId: 'ing_pimenta_reino', percentual: 0.15 }
@@ -957,7 +959,7 @@ const DEFAULT_DB = {
         { insumoId: 'ing_sal', percentual: 2 },
         { insumoId: 'ing_acucar', percentual: 0.8 },
         { insumoId: 'ing_fosfato', percentual: 0.35 },
-        { insumoId: 'ing_sal_cura', percentual: 0.25 }
+        { insumoId: 'ing_sal_cura_tipo_1', percentual: 0.25, cura: { nitritoPct: '', nitratoPct: '' } }
       ],
       observacoes: 'Formulação didática para discutir salmoura, cura, cocção, resfriamento e fatiabilidade.'
     }
@@ -1031,6 +1033,20 @@ const DEFAULT_DB = {
         'Tabela de informação nutricional',
         'Rotulagem frontal',
         'Relação entre formulação, composição e comunicação ao consumidor'
+      ]
+    },
+    {
+      id: 'leg_aditivos_carneos_778_211',
+      produtoIds: ['prod_pernil_marinado', 'prod_presunto_suino'],
+      titulo: 'RDC Anvisa nº 778/2023 e IN Anvisa nº 211/2023',
+      orgao: 'Agência Nacional de Vigilância Sanitária',
+      url: 'https://www.gov.br/anvisa/pt-br/setorregulado/regularizacao/alimentos/aditivos-alimentares',
+      resumo: 'Normas vigentes sobre aditivos alimentares e suas condições de uso, incluindo nitritos e nitratos em categorias de produtos cárneos.',
+      pontos: [
+        'Para produtos cárneos industrializados frescos, a referência consolidada é 150 mg/kg para nitrito e 300 mg/kg para nitrato',
+        'A soma residual de nitritos e nitratos não deve superar 150 mg/kg, expressa como nitrito de sódio',
+        'A composição do sal de cura comercial deve ser informada a partir do rótulo do produto utilizado',
+        'O cálculo do app estima a quantidade adicionada e não substitui a determinação do resíduo no produto nem a conferência da categoria legal'
       ]
     }
   ]
@@ -1123,6 +1139,7 @@ let modalZIndex = 1000;
 let pendingConfirmationAction = null;
 let pendingConfirmationText = '';
 let productVisibilityDraft = false;
+let tempProductReferenceDrafts = [];
 let activeTheorySlideController = null;
 const expandedIntensityItems = new Set();
 const theoryImageCache = new Map();
@@ -1174,6 +1191,10 @@ function setupEvents() {
   $('#btnExcluirProduto')?.addEventListener('click', deleteProductFromModal);
   $('#btnToggleProdutoVisibilidade')?.addEventListener('click', toggleProductVisibilityDraft);
   $('#produtoFotos')?.addEventListener('change', handleProductPhotos);
+  $('#btnNovaReferencia')?.addEventListener('click', addProductReferenceDraft);
+  $('#btnVincularReferencia')?.addEventListener('click', linkExistingProductReference);
+  $('#produtoReferenciasEditor')?.addEventListener('input', updateProductReferenceDraft);
+  $('#produtoReferenciasEditor')?.addEventListener('click', removeProductReferenceDraft);
   $('#btnSalvarInsumo')?.addEventListener('click', saveIngredientFromModal);
   $('#btnExcluirInsumo')?.addEventListener('click', deleteIngredientFromModal);
   $('#insumoFoto')?.addEventListener('change', handleIngredientPhoto);
@@ -1284,6 +1305,13 @@ function normalizeDB(data) {
     p.perguntas = Array.isArray(p.perguntas) ? p.perguntas : linesFrom(p.perguntas);
     p.oculto = Boolean(p.oculto);
   });
+  const legacyCureSalt = merged.insumos.find(i => i.id === 'ing_sal_cura');
+  const cureType1 = merged.insumos.find(i => i.id === 'ing_sal_cura_tipo_1');
+  if (legacyCureSalt && cureType1) {
+    cureType1.custo = toNumber(legacyCureSalt.custo || cureType1.custo);
+    cureType1.foto = legacyCureSalt.foto || cureType1.foto || '';
+    merged.insumos = merged.insumos.filter(i => i.id !== 'ing_sal_cura');
+  }
   merged.insumos.forEach(i => {
     if (i.id === 'ing_pimenta_reino' && ['Pimenta-do-reino', 'Pimenta do reino'].includes(i.nome)) i.nome = 'Pimenta-do-reino preta';
     if (i.id === 'ing_pimenta_branca' && i.nome === 'Pimenta branca') i.nome = 'Pimenta branca moída';
@@ -1312,9 +1340,20 @@ function normalizeDB(data) {
     f.pesoReferencia = toNumber(f.pesoReferencia) || 1000;
     f.itens = Array.isArray(f.itens) ? f.itens : [];
     f.itens.forEach(item => {
+      if (item.insumoId === 'ing_sal_cura') item.insumoId = 'ing_sal_cura_tipo_1';
+      if (ingredientSuggestion(merged.insumos.find(ingredient => ingredient.id === item.insumoId))) item.percentual = roundOneDecimal(item.percentual);
       item.removido = item.removido === true;
       if (item.percentualOriginal === undefined) item.percentualOriginal = toNumber(item.percentual);
+      if (isCureSaltId(item.insumoId)) {
+        item.cura = {
+          nitritoPct: numberOrBlank(item.cura?.nitritoPct),
+          nitratoPct: numberOrBlank(item.cura?.nitratoPct)
+        };
+      }
     });
+    if (f.id === 'form_pernil_marinado_base' && !f.itens.some(item => isCureSaltId(item.insumoId))) {
+      f.itens.splice(Math.min(3, f.itens.length), 0, { insumoId: 'ing_sal_cura_tipo_1', percentual: 0.25, percentualOriginal: 0.25, removido: false, cura: { nitritoPct: '', nitratoPct: '' } });
+    }
     f.blendComponentes = normalizeBlendComponents(f.blendComponentes, f, merged.insumos);
     f.materiaPrimaUnica = normalizeSingleMaterial(f.materiaPrimaUnica, f, merged.insumos);
     f.usarBlend = resetLegacyBlendDefault ? false : f.usarBlend === true;
@@ -1322,11 +1361,17 @@ function normalizeDB(data) {
     if (String(f.observacoes || '').startsWith('Percentuais calculados sobre')) f.observacoes = '';
   });
   merged.legislacoes.forEach(law => {
+    law.produtoIds = Array.from(new Set((Array.isArray(law.produtoIds)
+      ? law.produtoIds
+      : law.produtoId
+        ? [law.produtoId]
+        : merged.produtos.map(product => product.id)).filter(id => merged.produtos.some(product => product.id === id))));
     law.pontos = (Array.isArray(law.pontos) ? law.pontos : linesFrom(law.pontos)).map(point => String(point)
       .replace(/^Útil para discutir tabela/i, 'Tabela')
       .replace(/^Útil para discutir rotulagem/i, 'Rotulagem')
       .replace(/^Útil para discutir /i, '')
-      .replace(/^Útil para conectar /i, 'Relação entre '));
+       .replace(/^Útil para conectar /i, 'Relação entre '));
+    delete law.produtoId;
   });
   return merged;
 }
@@ -1507,11 +1552,12 @@ function closeProductWorkspace() {
     if (overview) overview.hidden = false;
     setPage(returnPage);
   }
+  toast('Produto salvo.');
 }
 
 function productWorkspaceHTML(p) {
   const formulas = db.formulacoes.filter(f => f.produtoId === p.id);
-  const laws = db.legislacoes.filter(l => !l.produtoId || l.produtoId === p.id);
+  const laws = uniqueProductLaws(p.id);
   const categoryLabel = productCategoryLabel(p);
   const photo = p.fotos?.[0] || '';
   const mediaStyle = photo ? ` style="background-image: url('${escapeAttr(photo)}')"` : '';
@@ -1594,7 +1640,10 @@ function productWorkspaceHTML(p) {
 
         <section class="product-slide" data-slide-panel="referencias">
           <div class="slide-card">
-            ${slideHeadingHTML('Referências')}
+            <div class="slide-title-row">
+              ${slideHeadingHTML('Referências')}
+              <button type="button" class="secondary-btn compact" data-edit-product-references>Editar referências</button>
+            </div>
             <div class="stack-list law-list">${laws.map(lawCardHTML).join('') || emptyHTML('Nenhuma referência vinculada.')}</div>
           </div>
         </section>
@@ -1643,14 +1692,14 @@ function blendEditorHTML(f, state = formulaBlendState(f)) {
         <span>Matéria-prima cárnea</span>
         ${blendToggleButtonHTML(f, state)}
       </div>
-      <div class="blend-head-metrics">
-        ${state.useBlend ? `<div><small>Peso do blend</small><strong>${fmt(state.blendGrams)} g</strong></div>` : ''}
-        <div><small>Gordura estimada</small><strong>${fmt(state.fatPct)}%</strong></div>
-      </div>
     </div>
     <div class="blend-components">
         ${blendComponentHTML(f, firstComponent, 0, { locked: f.bloqueada, label: state.useBlend ? 'Matéria-prima 1' : 'Matéria-prima', single: !state.useBlend })}
         ${state.useBlend ? blendComponentHTML(f, secondComponent, 1, { locked: f.bloqueada, label: 'Matéria-prima 2' }) : ''}
+        <div class="blend-result-metrics">
+          <div><small>${state.useBlend ? 'Peso do blend' : 'Peso da matéria-prima'}</small><strong>${fmt(state.blendGrams)} g</strong></div>
+          <div><small>Gordura estimada</small><strong>${fmt(state.fatPct)}%</strong></div>
+        </div>
     </div>
   </div>`;
 }
@@ -1734,7 +1783,8 @@ function inlineFormulaRowHTML(f, item) {
     const intensityKey = `${f.id}:${item.insumoId}`;
     const expanded = expandedIntensityItems.has(intensityKey);
     const suggestionHTML = suggestion ? intensityScaleHTML(f, item, pct, suggestion) : '';
-    return `<div class="inline-formula-row ${suggestion ? 'has-intensity' : ''} ${expanded ? 'editing' : ''} ${removed ? 'removed' : ''}" data-formula-row="${escapeAttr(f.id)}" data-formula-row-insumo="${escapeAttr(item.insumoId)}">
+    const cureSalt = isCureSaltIngredient(ing);
+    return `<div class="inline-formula-row ${suggestion ? 'has-intensity' : ''} ${cureSalt ? 'has-cure' : ''} ${expanded ? 'editing' : ''} ${removed ? 'removed' : ''}" data-formula-row="${escapeAttr(f.id)}" data-formula-row-insumo="${escapeAttr(item.insumoId)}">
       <div class="inline-formula-name">
         <button type="button" class="inline-link" data-open-ingredient="${escapeAttr(item.insumoId)}">${escapeHTML(ing?.nome || 'Insumo não encontrado')}</button>
       </div>
@@ -1754,20 +1804,55 @@ function inlineFormulaRowHTML(f, item) {
           ? `<button type="button" class="tiny-btn restore formula-item-restore" data-restore-ingredient-formula="${escapeAttr(f.id)}" data-restore-ingredient-id="${escapeAttr(item.insumoId)}" title="Restaurar insumo"${f.bloqueada ? ' disabled' : ''}>↺</button>`
           : `<button type="button" class="tiny-btn formula-item-remove" data-remove-ingredient-formula="${escapeAttr(f.id)}" data-remove-ingredient-id="${escapeAttr(item.insumoId)}" title="Remover insumo"${f.bloqueada ? ' disabled' : ''}>×</button>`}
       </div>
+      ${cureSalt && !removed ? cureCompositionHTML(f, item, ing) : ''}
     </div>`;
 }
 
+function cureCompositionHTML(formula, item, ingredient) {
+  const nitrite = numberOrBlank(item.cura?.nitritoPct);
+  const nitrate = numberOrBlank(item.cura?.nitratoPct);
+  const metrics = cureSaltMetrics(formula, item);
+  const disabled = formula.bloqueada ? ' disabled' : '';
+  return `<div class="cure-composition-panel">
+    <div class="cure-composition-head">
+      <strong>Composição do ${escapeHTML(ingredient.nome.toLowerCase())}</strong>
+      <small>Copie os teores informados no rótulo do produto em mãos.</small>
+    </div>
+    <div class="cure-composition-grid">
+      <label>Nitrito no sal de cura (%)<input type="number" min="0" max="100" step="0.01" placeholder="Ex.: 6" value="${escapeAttr(nitrite === '' ? '' : fmtInput(nitrite))}" data-cure-nitrite="${escapeAttr(formula.id)}" data-cure-insumo="${escapeAttr(item.insumoId)}"${disabled}></label>
+      <label>Nitrato no sal de cura (%)<input type="number" min="0" max="100" step="0.01" placeholder="${ingredient.curaTipo === 2 ? 'Ex.: 4' : 'Normalmente 0'}" value="${escapeAttr(nitrate === '' ? '' : fmtInput(nitrate))}" data-cure-nitrate="${escapeAttr(formula.id)}" data-cure-insumo="${escapeAttr(item.insumoId)}"${disabled}></label>
+      <div class="cure-result"><span>Nitrito adicionado</span><strong>${metrics.nitriteMgKg === null ? 'Informe o teor' : `${fmt(metrics.nitriteMgKg)} mg/kg`}</strong><small>Referência: 150 mg/kg</small></div>
+      <div class="cure-result"><span>Nitrato adicionado</span><strong>${metrics.nitrateMgKg === null ? 'Informe o teor' : `${fmt(metrics.nitrateMgKg)} mg/kg`}</strong><small>Referência: 300 mg/kg</small></div>
+    </div>
+    <p class="cure-legal-note">Estimativa da quantidade adicionada. A IN Anvisa nº 211/2023 também limita a soma residual de nitritos e nitratos a 150 mg/kg, expressa como nitrito de sódio. Confirme a categoria do produto e o resíduo antes do uso real.</p>
+  </div>`;
+}
+
+function cureSaltMetrics(formula, item) {
+  const compositionWeightKg = (analyzeFormula(formula).finalWeight || toNumber(formula.pesoReferencia) || 1000) / 1000;
+  const mixGrams = formulaItemGrams(formula, item);
+  const nitrite = numberOrBlank(item.cura?.nitritoPct);
+  const nitrate = numberOrBlank(item.cura?.nitratoPct);
+  const mgKg = value => value === '' ? null : mixGrams * toNumber(value) / 100 * 1000 / compositionWeightKg;
+  return { nitriteMgKg: mgKg(nitrite), nitrateMgKg: mgKg(nitrate) };
+}
+
 function intensityScaleHTML(formula, item, current, suggestion) {
-  const levels = Array.from({ length: 5 }, (_, index) => suggestion.suave + (suggestion.acentuado - suggestion.suave) * index / 4);
-  const range = suggestion.acentuado - suggestion.suave;
-  const position = range > 0 ? Math.max(0, Math.min(100, (current - suggestion.suave) / range * 100)) : 0;
-  const endpointCorrection = position * 0.16;
+  const suave = roundOneDecimal(suggestion.suave);
+  const acentuado = roundOneDecimal(suggestion.acentuado);
+  const levels = Array.from({ length: Math.max(2, Math.round((acentuado - suave) * 10) + 1) }, (_, index) => roundOneDecimal(suave + index / 10));
+  const range = acentuado - suave;
+  const roundedCurrent = roundOneDecimal(current);
+  const position = range > 0 ? Math.max(0, Math.min(100, (roundedCurrent - suave) / range * 100)) : 0;
   const exactIndex = levels.findIndex(value => Math.abs(value - current) < 0.001);
   return `<div class="intensity-scale">
-    <div class="intensity-labels"><span>Suave ${fmt(suggestion.suave)}%</span><span>Acentuado ${fmt(suggestion.acentuado)}%</span></div>
     <div class="intensity-track">
-      ${levels.map((value, index) => `<button type="button" class="intensity-dot ${index === exactIndex ? 'selected' : ''}" data-suggestion-formula="${escapeAttr(formula.id)}" data-suggestion-insumo="${escapeAttr(item.insumoId)}" data-suggestion-value="${escapeAttr(fmtInput(value))}" title="${fmt(value)}%" ${formula.bloqueada ? 'disabled' : ''}></button>`).join('')}
-      <span class="intensity-current" style="left:calc(8px + ${position.toFixed(2)}% - ${endpointCorrection.toFixed(2)}px)" title="Valor atual: ${fmt(current)}%"><i>${fmt(current)}%</i></span>
+      ${levels.map((value, index) => `<span class="intensity-stop ${index === 0 ? 'start' : index === levels.length - 1 ? 'end' : ''}">
+        ${index === 0 || index === levels.length - 1 ? `<b>${index === 0 ? 'Suave' : 'Acentuado'}</b>` : ''}
+        <button type="button" class="intensity-dot ${index === exactIndex ? 'selected' : ''}" data-suggestion-formula="${escapeAttr(formula.id)}" data-suggestion-insumo="${escapeAttr(item.insumoId)}" data-suggestion-value="${escapeAttr(value.toFixed(1))}" title="${fmtOneDecimal(value)}%" ${formula.bloqueada ? 'disabled' : ''}></button>
+        ${index === 0 || index === levels.length - 1 ? `<small>${fmtOneDecimal(value)}%</small>` : ''}
+      </span>`).join('')}
+      ${exactIndex < 0 ? `<span class="intensity-current" style="left:${position.toFixed(1)}%" title="Valor atual: ${fmtOneDecimal(roundedCurrent)}%"></span>` : ''}
     </div>
   </div>`;
 }
@@ -1802,6 +1887,14 @@ function bindFormulaControls(root) {
     input.addEventListener('change', () => updateSingleMaterial(input.dataset.singleGrams, { gramas: input.value }));
   });
   root.querySelectorAll('[data-single-fat]').forEach(input => input.addEventListener('change', () => updateSingleMaterial(input.dataset.singleFat, { gorduraCustom: input.value })));
+  root.querySelectorAll('[data-cure-nitrite]').forEach(input => {
+    input.addEventListener('input', () => queueInlineFormulaEdit(() => updateCureComposition(input.dataset.cureNitrite, input.dataset.cureInsumo, { nitritoPct: input.value }, { silent: true })));
+    input.addEventListener('change', () => updateCureComposition(input.dataset.cureNitrite, input.dataset.cureInsumo, { nitritoPct: input.value }));
+  });
+  root.querySelectorAll('[data-cure-nitrate]').forEach(input => {
+    input.addEventListener('input', () => queueInlineFormulaEdit(() => updateCureComposition(input.dataset.cureNitrate, input.dataset.cureInsumo, { nitratoPct: input.value }, { silent: true })));
+    input.addEventListener('change', () => updateCureComposition(input.dataset.cureNitrate, input.dataset.cureInsumo, { nitratoPct: input.value }));
+  });
 }
 
 function handleProductWorkspaceClick(event) {
@@ -1809,6 +1902,10 @@ function handleProductWorkspaceClick(event) {
   if (!target) return;
   if (target.dataset.productBack !== undefined) {
     closeProductWorkspace();
+    return;
+  }
+  if (target.dataset.editProductReferences !== undefined) {
+    openProductModal(activeProductId);
     return;
   }
   if (target.dataset.reportFormula) {
@@ -1897,19 +1994,40 @@ function bindProductSlides(root) {
   root.querySelector('[data-slide-next]')?.addEventListener('click', () => show(index + 1));
   const stage = root.querySelector('.product-slide-stage');
   let pointerStart = null;
+  let touchStart = null;
+  let lastSwipeAt = 0;
+  const completeSwipe = (start, endX, endY) => {
+    if (!start || Date.now() - lastSwipeAt < 250) return;
+    const deltaX = endX - start.x;
+    const deltaY = endY - start.y;
+    if (Math.abs(deltaX) < 55 || Math.abs(deltaX) <= Math.abs(deltaY) * 1.2) return;
+    lastSwipeAt = Date.now();
+    show(index + (deltaX < 0 ? 1 : -1));
+  };
   stage?.addEventListener('pointerdown', event => {
+    if (!window.matchMedia('(max-width: 760px)').matches) return;
     if (event.isPrimary === false || event.target.closest('input, select, textarea, button, a')) return;
     pointerStart = { x: event.clientX, y: event.clientY, id: event.pointerId };
   });
   stage?.addEventListener('pointerup', event => {
     if (!pointerStart || event.pointerId !== pointerStart.id) return;
-    const deltaX = event.clientX - pointerStart.x;
-    const deltaY = event.clientY - pointerStart.y;
+    const start = pointerStart;
     pointerStart = null;
-    if (Math.abs(deltaX) < 55 || Math.abs(deltaX) <= Math.abs(deltaY) * 1.2) return;
-    show(index + (deltaX < 0 ? 1 : -1));
+    completeSwipe(start, event.clientX, event.clientY);
   });
   stage?.addEventListener('pointercancel', () => { pointerStart = null; });
+  stage?.addEventListener('touchstart', event => {
+    if (!window.matchMedia('(max-width: 760px)').matches || event.target.closest('input, select, textarea, button, a')) return;
+    const touch = event.touches[0];
+    if (touch) touchStart = { x: touch.clientX, y: touch.clientY };
+  }, { passive: true });
+  stage?.addEventListener('touchend', event => {
+    const touch = event.changedTouches[0];
+    const start = touchStart;
+    touchStart = null;
+    if (touch) completeSwipe(start, touch.clientX, touch.clientY);
+  }, { passive: true });
+  stage?.addEventListener('touchcancel', () => { touchStart = null; }, { passive: true });
   show(index);
 }
 
@@ -2791,7 +2909,10 @@ function bindInternalLinks(root) {
 }
 
 function lawCardHTML(law) {
-  const product = law.produtoId ? findProduct(law.produtoId) : null;
+  const linkedProducts = (law.produtoIds || []).map(findProduct).filter(Boolean);
+  const linkLabel = linkedProducts.length > 1
+    ? `Compartilhada entre ${linkedProducts.length} produtos`
+    : linkedProducts[0]?.nome || 'Sem produto vinculado';
   return `<details class="law-card">
     <summary class="law-summary">
       <span class="law-marker" aria-hidden="true">●</span>
@@ -2800,11 +2921,29 @@ function lawCardHTML(law) {
       <span class="law-toggle" aria-hidden="true">+</span>
     </summary>
     <div class="law-details">
-      <div class="item-subtitle">${escapeHTML(law.orgao || '')}${product ? ' · ' + escapeHTML(product.nome) : ' · Geral'}</div>
+      <div class="item-subtitle">${escapeHTML(law.orgao || '')} · ${escapeHTML(linkLabel)}</div>
       ${unorderedList(law.pontos || [])}
       ${law.url ? `<button type="button" class="secondary-btn full" data-open-url="${escapeAttr(law.url)}">Abrir referência</button>` : ''}
     </div>
   </details>`;
+}
+
+function lawAppliesToProduct(law, productId) {
+  return Array.isArray(law?.produtoIds) && law.produtoIds.includes(productId);
+}
+
+function lawDedupKey(law) {
+  return String(law?.url || law?.titulo || law?.id || '').trim().toLocaleLowerCase('pt-BR');
+}
+
+function uniqueProductLaws(productId) {
+  const seen = new Set();
+  return db.legislacoes.filter(law => lawAppliesToProduct(law, productId)).filter(law => {
+    const key = lawDedupKey(law);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 function lawDisplayTitle(law) {
@@ -2841,12 +2980,91 @@ function openProductModal(id = null) {
   $('#produtoPontos').value = (p?.pontos || []).join('\n');
   $('#produtoEquipamentos').value = (p?.equipamentos || []).join('\n');
   $('#produtoPerguntas').value = (p?.perguntas || []).join('\n');
+  tempProductReferenceDrafts = p ? uniqueProductLaws(p.id).map(clone) : [];
+  renderProductReferenceDrafts();
   tempProductPhotos = clone(p?.fotos || []);
   $('#produtoFotos').value = '';
   renderProductPhotoPreview();
   $('#btnExcluirProduto').style.display = p ? 'inline-flex' : 'none';
   renderProductVisibilityButton();
   openModal('modalProduto');
+}
+
+function renderProductReferenceDrafts() {
+  const wrap = $('#produtoReferenciasEditor');
+  const select = $('#produtoReferenciaExistente');
+  if (!wrap || !select) return;
+  const linkedIds = new Set(tempProductReferenceDrafts.map(law => law.id));
+  const available = db.legislacoes.filter(law => !linkedIds.has(law.id));
+  select.innerHTML = `<option value="">Selecione uma referência cadastrada</option>${available.map(law => `<option value="${escapeAttr(law.id)}">${escapeHTML(lawDisplayTitle(law))}</option>`).join('')}`;
+  wrap.innerHTML = tempProductReferenceDrafts.length ? tempProductReferenceDrafts.map((law, index) => `
+    <div class="reference-editor-card" data-reference-index="${index}">
+      <div class="reference-editor-head">
+        <strong>Referência ${index + 1}</strong>
+        <button type="button" class="tiny-btn" data-remove-reference="${index}" title="Desvincular deste produto">×</button>
+      </div>
+      <div class="form-grid two-cols">
+        <div class="form-group"><label>Título</label><input type="text" data-reference-field="titulo" value="${escapeAttr(law.titulo || '')}"></div>
+        <div class="form-group"><label>Órgão ou fonte</label><input type="text" data-reference-field="orgao" value="${escapeAttr(law.orgao || '')}"></div>
+      </div>
+      <div class="form-group"><label>Link original</label><input type="url" data-reference-field="url" value="${escapeAttr(law.url || '')}" placeholder="https://..."></div>
+      <div class="form-group"><label>Resumo</label><textarea rows="2" data-reference-field="resumo">${escapeHTML(law.resumo || '')}</textarea></div>
+      <div class="form-group"><label>Pontos principais, um por linha</label><textarea rows="3" data-reference-field="pontos">${escapeHTML((law.pontos || []).join('\n'))}</textarea></div>
+    </div>`).join('') : '<div class="notice-card slim">Nenhuma referência vinculada a este produto.</div>';
+}
+
+function addProductReferenceDraft() {
+  tempProductReferenceDrafts.push({ id: uid('leg'), produtoIds: [], titulo: '', orgao: '', url: '', resumo: '', pontos: [] });
+  renderProductReferenceDrafts();
+  $('#produtoReferenciasEditor .reference-editor-card:last-child input')?.focus();
+}
+
+function linkExistingProductReference() {
+  const id = $('#produtoReferenciaExistente')?.value;
+  const law = db.legislacoes.find(item => item.id === id);
+  if (!law) return toast('Selecione uma referência existente.');
+  tempProductReferenceDrafts.push(clone(law));
+  renderProductReferenceDrafts();
+}
+
+function updateProductReferenceDraft(event) {
+  const field = event.target?.dataset?.referenceField;
+  const index = Number(event.target?.closest('[data-reference-index]')?.dataset.referenceIndex);
+  if (!field || !Number.isInteger(index) || !tempProductReferenceDrafts[index]) return;
+  tempProductReferenceDrafts[index][field] = field === 'pontos' ? linesFrom(event.target.value) : event.target.value;
+}
+
+function removeProductReferenceDraft(event) {
+  const button = event.target.closest('[data-remove-reference]');
+  if (!button) return;
+  tempProductReferenceDrafts.splice(Number(button.dataset.removeReference), 1);
+  renderProductReferenceDrafts();
+}
+
+function saveProductReferences(productId) {
+  const draftIds = new Set(tempProductReferenceDrafts.map(law => law.id));
+  db.legislacoes.forEach(law => {
+    if (lawAppliesToProduct(law, productId) && !draftIds.has(law.id)) {
+      law.produtoIds = law.produtoIds.filter(id => id !== productId);
+    }
+  });
+  tempProductReferenceDrafts.forEach(draft => {
+    if (!String(draft.titulo || '').trim()) return;
+    let law = db.legislacoes.find(item => item.id === draft.id);
+    if (!law) {
+      law = { id: draft.id || uid('leg'), produtoIds: [] };
+      db.legislacoes.push(law);
+    }
+    Object.assign(law, {
+      titulo: String(draft.titulo || '').trim(),
+      orgao: String(draft.orgao || '').trim(),
+      url: String(draft.url || '').trim(),
+      resumo: String(draft.resumo || '').trim(),
+      pontos: Array.isArray(draft.pontos) ? draft.pontos : linesFrom(draft.pontos)
+    });
+    law.produtoIds = Array.from(new Set([...(law.produtoIds || []), productId]));
+  });
+  db.legislacoes = db.legislacoes.filter(law => (law.produtoIds || []).length > 0);
 }
 
 function toggleProductVisibilityDraft() {
@@ -2916,6 +3134,7 @@ function saveProductFromModal() {
   product.categoriaId = product.categoriaIds[0] || inferProductCategoryId(product);
   const idx = db.produtos.findIndex(p => p.id === id);
   if (idx >= 0) db.produtos[idx] = product; else db.produtos.push(product);
+  saveProductReferences(id);
   activeProductId = id;
   db.configs.ultimoProdutoAula = id;
   db.configs.produtoSelecionado = id;
@@ -2942,7 +3161,8 @@ function deleteProductFromModal() {
 function performProductDeletion(id) {
   db.produtos = db.produtos.filter(p => p.id !== id);
   db.formulacoes = db.formulacoes.filter(f => f.produtoId !== id);
-  db.legislacoes.forEach(l => { if (l.produtoId === id) l.produtoId = null; });
+  db.legislacoes.forEach(law => { law.produtoIds = (law.produtoIds || []).filter(productId => productId !== id); });
+  db.legislacoes = db.legislacoes.filter(law => law.produtoIds.length > 0);
   activeProductId = '';
   db.configs.produtoSelecionado = '';
   saveDB();
@@ -3042,6 +3262,7 @@ function openIngredientView(id = null) {
 
 function saveIngredientFromModal() {
   const id = $('#insumoId').value || uid('ing');
+  const existingIngredient = findIngredient(id);
   const ingredient = {
     id,
     nome: $('#insumoNome').value.trim(),
@@ -3057,7 +3278,8 @@ function saveIngredientFromModal() {
     usadoNaFormulacao: $('#insumoUsadoNaFormulacao').checked,
     proteinaNaoCarnea: $('#insumoPnc').checked || isFunctionalProtein({ tipo: $('#insumoTipo').value, subtipo: $('#insumoSubtipo').value, nome: $('#insumoNome').value }),
     alergeno: $('#insumoAlergeno').checked,
-    foto: tempIngredientPhoto
+    foto: tempIngredientPhoto,
+    ...(existingIngredient?.curaTipo ? { curaTipo: existingIngredient.curaTipo } : {})
   };
   if (!ingredient.nome) return toast('Informe o nome do insumo.');
   const idx = db.insumos.findIndex(i => i.id === id);
@@ -3154,7 +3376,11 @@ function getFormulaFromModal(requireName = true) {
     pesoReferencia: toNumber($('#formulaPeso').value) || 1000,
     baseCalculo: $('#formulaBaseCalculo').value || defaultFormulaBase(findProduct($('#formulaProduto').value)),
     rendimento: numberOrBlank($('#formulaRendimento').value),
-    itens: formulaDraftItems.map(item => ({ insumoId: item.insumoId, percentual: toNumber(item.percentual) })).filter(item => item.insumoId),
+    itens: formulaDraftItems.map(item => ({
+      insumoId: item.insumoId,
+      percentual: toNumber(item.percentual),
+      ...(isCureSaltId(item.insumoId) ? { cura: clone(item.cura || { nitritoPct: '', nitratoPct: '' }) } : {})
+    })).filter(item => item.insumoId),
     observacoes: $('#formulaObs').value.trim(),
     usarBlend: existing?.usarBlend === true,
     blendComponentes: clone(existing?.blendComponentes || []),
@@ -3208,8 +3434,19 @@ function updateFormulaItemPercent(formulaId, insumoId, value, options = {}) {
   const formula = findFormula(formulaId);
   if (!formula || !insumoId || formula.bloqueada) return;
   const item = ensureFormulaItem(formula, insumoId);
-  item.percentual = Math.max(0, toNumber(value));
+  const ingredient = findIngredient(insumoId);
+  item.percentual = Math.max(0, ingredientSuggestion(ingredient) ? roundOneDecimal(value) : toNumber(value));
   saveInlineFormulaEdit('Percentual atualizado.', { ...options, formulaId });
+}
+
+function updateCureComposition(formulaId, insumoId, changes = {}, options = {}) {
+  const formula = findFormula(formulaId);
+  if (!formula || formula.bloqueada || !isCureSaltId(insumoId)) return;
+  const item = ensureFormulaItem(formula, insumoId);
+  item.cura = item.cura || { nitritoPct: '', nitratoPct: '' };
+  if (Object.prototype.hasOwnProperty.call(changes, 'nitritoPct')) item.cura.nitritoPct = numberOrBlank(changes.nitritoPct);
+  if (Object.prototype.hasOwnProperty.call(changes, 'nitratoPct')) item.cura.nitratoPct = numberOrBlank(changes.nitratoPct);
+  saveInlineFormulaEdit('Composição do sal de cura atualizada.', { ...options, formulaId });
 }
 
 function addFormulaItemInline(formulaId, insumoId) {
@@ -3220,7 +3457,11 @@ function addFormulaItemInline(formulaId, insumoId) {
   if (existing?.removido) return restoreFormulaItemInline(formulaId, insumoId);
   if (existing) return toast('Esse insumo já está na formulação.');
   const suggestion = ingredientSuggestion(ingredient);
-  formula.itens.push({ insumoId, percentual: suggestion?.suave ?? 0.1 });
+  formula.itens.push({
+    insumoId,
+    percentual: suggestion?.suave ?? 0.1,
+    ...(isCureSaltIngredient(ingredient) ? { cura: { nitritoPct: '', nitratoPct: '' } } : {})
+  });
   saveInlineFormulaEdit('Insumo adicionado.', { formulaId });
 }
 
@@ -3575,7 +3816,7 @@ function ingredientSuggestion(ingredient) {
     ing_sal: { suave: 1.5, acentuado: 2 },
     ing_alho_po: { suave: 0.5, acentuado: 1.5 },
     ing_pimenta_reino: { suave: 0.1, acentuado: 0.4 },
-    ing_pimenta_branca: { suave: 0.1, acentuado: 0.35 },
+    ing_pimenta_branca: { suave: 0.1, acentuado: 0.4 },
     ing_paprica_doce: { suave: 0.2, acentuado: 0.7 },
     ing_cebola_desidratada: { suave: 0.6, acentuado: 1.5 },
     ing_salsa_desidratada: { suave: 0.2, acentuado: 0.8 },
@@ -3587,6 +3828,14 @@ function ingredientSuggestion(ingredient) {
     condimento_especiaria: { suave: 0.3, acentuado: 1 }
   };
   return byType[ingredient?.tipo] || null;
+}
+
+function isCureSaltId(id) {
+  return ['ing_sal_cura_tipo_1', 'ing_sal_cura_tipo_2'].includes(id);
+}
+
+function isCureSaltIngredient(ingredient) {
+  return isCureSaltId(ingredient?.id) || ingredient?.subtipo === 'mistura de cura';
 }
 
 function productCategories(product) {
@@ -3798,6 +4047,11 @@ function buildReport(formula) {
     const ing = findIngredient(item.insumoId);
     const grams = formulaItemGrams(formula, item);
     lines.push(`- ${ing?.nome || 'Insumo'}: ${item.removido ? 'removido da prática' : `${fmt(item.percentual)}% = ${fmt(grams)} g`}`);
+    if (!item.removido && isCureSaltIngredient(ing)) {
+      const cure = cureSaltMetrics(formula, item);
+      lines.push(`  Nitrito no preparado: ${item.cura?.nitritoPct === '' || item.cura?.nitritoPct === undefined ? 'não informado' : `${fmt(item.cura.nitritoPct)}% (${fmt(cure.nitriteMgKg)} mg/kg adicionados)`}`);
+      lines.push(`  Nitrato no preparado: ${item.cura?.nitratoPct === '' || item.cura?.nitratoPct === undefined ? 'não informado' : `${fmt(item.cura.nitratoPct)}% (${fmt(cure.nitrateMgKg)} mg/kg adicionados)`}`);
+    }
   });
   lines.push('');
   lines.push('Resumo técnico estimado:');
@@ -3986,6 +4240,8 @@ function findIngredient(id) { return db.insumos.find(i => i.id === id); }
 function findFormula(id) { return db.formulacoes.find(f => f.id === id); }
 function toNumber(value) { const n = Number(String(value ?? '').replace(',', '.')); return Number.isFinite(n) ? n : 0; }
 function numberOrBlank(value) { if (String(value ?? '').trim() === '') return ''; return toNumber(value); }
+function roundOneDecimal(value) { return Math.round((toNumber(value) + Number.EPSILON) * 10) / 10; }
+function fmtOneDecimal(value) { return roundOneDecimal(value).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }); }
 function fmt(n) { return toNumber(n).toLocaleString('pt-BR', { maximumFractionDigits: 2, minimumFractionDigits: Number.isInteger(toNumber(n)) ? 0 : 1 }); }
 function fmtInput(n) {
   const value = Math.round(toNumber(n) * 100) / 100;
@@ -4006,6 +4262,7 @@ function ingredientSubtypes(type) { return TYPES.find(t => t.value === type)?.su
 function normalizeIngredientType(ingredient = {}) {
   const id = ingredient.id || '';
   const text = [ingredient.nome, ingredient.categoria, ingredient.tipo].join(' ').toLowerCase();
+  if (isCureSaltId(id) || text.includes('sal de cura')) return 'mistura_comercial';
   if (id === 'ing_tripa_suina' || text.includes('tripa') || text.includes('envoltório') || text.includes('embalagem')) return 'envoltorio_apresentacao';
   if (id === 'ing_fosfato' || text.includes('nitrito') || text.includes('nitrato') || text.includes('fosfato') || text.includes('eritorbato')) return 'aditivo_alimentar';
   if (id === 'ing_agua_gelada' || id === 'ing_sal' || id === 'ing_acucar' || text.includes('água') || text.includes('gelo') || /\bsal\b/.test(text) || text.includes('açúcar') || text.includes('acucar') || text.includes('dextrose')) return 'basico_nao_carneo';

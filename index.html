@@ -9,7 +9,7 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon.png" />
   <link rel="apple-touch-icon" href="icon.png" />
-  <link rel="stylesheet" href="style.css?v=49" />
+  <link rel="stylesheet" href="style.css?v=50" />
   <title>Processamento de Alimentos de Origem Animal</title>
 </head>
 <body>
@@ -152,6 +152,20 @@
       <div class="form-group"><label>Pontos de controle, um por linha</label><textarea id="produtoPontos" rows="5"></textarea></div>
       <div class="form-group"><label>Equipamentos e utensílios, um por linha</label><textarea id="produtoEquipamentos" rows="4"></textarea></div>
       <div class="form-group"><label>Perguntas para discussão, uma por linha</label><textarea id="produtoPerguntas" rows="4"></textarea></div>
+
+      <div class="collapsible-box product-reference-editor">
+        <button type="button" class="collapsible-title" data-toggle="produtoReferencias">Referências deste produto</button>
+        <div id="produtoReferencias" class="collapsible-content open">
+          <p class="form-help">Uma referência pode ser vinculada a vários produtos. Quando compartilhada, ela aparece uma única vez em cada roteiro.</p>
+          <div class="reference-link-row">
+            <select id="produtoReferenciaExistente" aria-label="Referência existente"></select>
+            <button type="button" class="secondary-btn compact" id="btnVincularReferencia">Vincular existente</button>
+            <button type="button" class="primary-btn compact" id="btnNovaReferencia">Nova referência</button>
+          </div>
+          <div id="produtoReferenciasEditor" class="reference-editor-list"></div>
+        </div>
+      </div>
+
       <div class="form-group"><label>Fotos do produto ou da prática</label><input id="produtoFotos" type="file" accept="image/*" multiple /></div>
       <div id="produtoFotosPreview" class="photo-strip"></div>
       <div class="modal-actions">
@@ -447,6 +461,6 @@
   </div>
 
   <div id="toast" class="toast"></div>
-  <script src="app.js?v=49"></script>
+  <script src="app.js?v=50"></script>
 </body>
 </html>
