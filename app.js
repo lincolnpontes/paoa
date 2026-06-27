@@ -28,7 +28,7 @@ const MEAT_CUTS = [
   { id: 'peito_frango', nome: 'Peito de frango', comGordura: 6.7, semGordura: 3, fonteCom: 'TACO: peito de frango com pele, cru', fonteSem: 'TACO: peito de frango sem pele, cru' },
   { id: 'coxa_frango', nome: 'Coxa de frango', comGordura: 9.8, semGordura: 4.9, fonteCom: 'TACO: coxa de frango com pele, crua', fonteSem: 'TACO: coxa de frango sem pele, crua' },
   { id: 'sobrecoxa_frango', nome: 'Sobrecoxa de frango', comGordura: 20.9, semGordura: 9.6, fonteCom: 'TACO: sobrecoxa de frango com pele, crua', fonteSem: 'TACO: sobrecoxa de frango sem pele, crua' },
-  { id: 'gordura_bovina', nome: 'Gordura bovina adicionada', comGordura: 100, semGordura: null, fonteCom: 'Gordura de formulação; ajustar conforme análise ou ficha técnica' },
+  { id: 'gordura_bovina', nome: 'Gordura bovina adicionada', comGordura: 100, semGordura: null, fonteCom: 'Gordura de formulação' },
   { id: 'toucinho_suino', nome: 'Toucinho suíno', comGordura: 60.3, semGordura: null, fonteCom: 'TACO: toucinho, cru' },
   { id: 'outro', nome: 'Outro corte ou matéria-prima', comGordura: 0, semGordura: 0, fonteCom: 'Informe o teor analisado ou consultado', fonteSem: 'Informe o teor analisado ou consultado' }
 ];
@@ -1613,9 +1613,8 @@ function productFormulaHTML(f) {
   return `
     <div class="formula-work-card ${f.bloqueada ? 'formula-locked' : ''}" data-formula-card="${escapeAttr(f.id)}">
       <div class="formula-work-head">
-        <h3><span>Formulação do Produto:</span> <strong>${escapeHTML(cleanFormulaName(f.nome))}</strong></h3>
+        <h3><span>Formulação:</span> <strong>${escapeHTML(cleanFormulaName(f.nome))}</strong></h3>
         <div class="formula-head-actions">
-          ${blendToggleButtonHTML(f, blendState)}
           <button type="button" class="formula-lock-btn ${f.bloqueada ? 'locked' : ''}" data-toggle-formula-lock="${escapeAttr(f.id)}" title="${f.bloqueada ? 'Destravar formulação' : 'Travar formulação'}">${f.bloqueada ? '🔒' : '🔓'}</button>
         </div>
       </div>
@@ -1640,7 +1639,10 @@ function blendEditorHTML(f, state = formulaBlendState(f)) {
   const secondComponent = state.components[1] || defaultSecondBlendComponent(f, state);
   return `<div class="blend-editor">
     <div class="blend-editor-head">
-      <span>Matéria-prima cárnea</span>
+      <div class="blend-editor-title">
+        <span>Matéria-prima cárnea</span>
+        ${blendToggleButtonHTML(f, state)}
+      </div>
       <div class="blend-head-metrics">
         ${state.useBlend ? `<div><small>Peso do blend</small><strong>${fmt(state.blendGrams)} g</strong></div>` : ''}
         <div><small>Gordura estimada</small><strong>${fmt(state.fatPct)}%</strong></div>
@@ -1738,7 +1740,6 @@ function inlineFormulaRowHTML(f, item) {
       </div>
       ${suggestion ? `<div class="formula-intensity-cell ${expanded ? 'expanded' : ''}">
         <div class="suggestion-panel">
-          <button type="button" class="intensity-done-btn" data-toggle-intensity="${escapeAttr(intensityKey)}" title="Concluir ajuste" aria-label="Concluir ajuste"${disabled}>&#10004;&#65039;</button>
           ${suggestionHTML}
         </div>
       </div>` : ''}
@@ -1884,8 +1885,11 @@ function bindProductSlides(root) {
     if (position) position.textContent = `${index + 1} / ${panels.length}`;
     const activeJump = jumps[index];
     if (activeJump && summary && summary.scrollWidth > summary.clientWidth) {
-      const targetLeft = activeJump.offsetLeft - (summary.clientWidth - activeJump.offsetWidth) / 2;
-      summary.scrollTo({ left: Math.max(0, targetLeft), behavior: 'smooth' });
+      const summaryRect = summary.getBoundingClientRect();
+      const jumpRect = activeJump.getBoundingClientRect();
+      const targetLeft = summary.scrollLeft + jumpRect.left - summaryRect.left - (summary.clientWidth - jumpRect.width) / 2;
+      const maxLeft = Math.max(0, summary.scrollWidth - summary.clientWidth);
+      summary.scrollTo({ left: Math.max(0, Math.min(maxLeft, targetLeft)), behavior: 'smooth' });
     }
   };
   jumps.forEach((jump, jumpIndex) => jump.addEventListener('click', () => show(jumpIndex)));
@@ -3654,7 +3658,7 @@ function formulaItemGrams(formula, item) {
 function timelineHTML(items) {
   const list = Array.isArray(items) ? items : [];
   return list.map((item, index) => `<div class="timeline-step">
-    <div class="timeline-marker"><span>${index + 1}</span>${index ? '<i aria-hidden="true">⇩</i>' : ''}</div>
+    <div class="timeline-marker"><span>${index + 1}</span>${index ? '<i aria-hidden="true"></i>' : ''}</div>
     <p>${escapeHTML(item)}</p>
   </div>`).join('');
 }
