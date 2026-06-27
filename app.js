@@ -900,7 +900,7 @@ const DEFAULT_DB = {
         { insumoId: 'ing_pernil_suino', percentual: 100 },
         { insumoId: 'ing_agua_gelada', percentual: 12 },
         { insumoId: 'ing_sal', percentual: 1.8 },
-        { insumoId: 'ing_sal_cura_tipo_1', percentual: 0.25, cura: { nitritoPct: '', nitratoPct: '' } },
+        { insumoId: 'ing_sal_cura_tipo_1', percentual: 0.25, cura: { teorPct: '' } },
         { insumoId: 'ing_acucar', percentual: 0.8 },
         { insumoId: 'ing_alho_po', percentual: 0.4 },
         { insumoId: 'ing_pimenta_reino', percentual: 0.15 }
@@ -959,7 +959,7 @@ const DEFAULT_DB = {
         { insumoId: 'ing_sal', percentual: 2 },
         { insumoId: 'ing_acucar', percentual: 0.8 },
         { insumoId: 'ing_fosfato', percentual: 0.35 },
-        { insumoId: 'ing_sal_cura_tipo_1', percentual: 0.25, cura: { nitritoPct: '', nitratoPct: '' } }
+        { insumoId: 'ing_sal_cura_tipo_1', percentual: 0.25, cura: { teorPct: '' } }
       ],
       observacoes: 'Formulação didática para discutir salmoura, cura, cocção, resfriamento e fatiabilidade.'
     }
@@ -1043,9 +1043,9 @@ const DEFAULT_DB = {
       url: 'https://www.gov.br/anvisa/pt-br/setorregulado/regularizacao/alimentos/aditivos-alimentares',
       resumo: 'Normas vigentes sobre aditivos alimentares e suas condições de uso, incluindo nitritos e nitratos em categorias de produtos cárneos.',
       pontos: [
-        'Para produtos cárneos industrializados frescos, a referência consolidada é 150 mg/kg para nitrito e 300 mg/kg para nitrato',
-        'A soma residual de nitritos e nitratos não deve superar 150 mg/kg, expressa como nitrito de sódio',
-        'A composição do sal de cura comercial deve ser informada a partir do rótulo do produto utilizado',
+        'Sal de cura tipo 1: informe o teor de nitrito do preparado e use 150 ppm como limite',
+        'Sal de cura tipo 2: informe o teor combinado de nitrito e nitrato do preparado e use 150 ppm como limite da combinação',
+        'A composição do sal de cura comercial deve ser copiada do rótulo do produto utilizado',
         'O cálculo do app estima a quantidade adicionada e não substitui a determinação do resíduo no produto nem a conferência da categoria legal'
       ]
     }
@@ -1140,6 +1140,7 @@ let pendingConfirmationAction = null;
 let pendingConfirmationText = '';
 let productVisibilityDraft = false;
 let tempProductReferenceDrafts = [];
+let scheduleConfigSnapshot = null;
 let activeTheorySlideController = null;
 const expandedIntensityItems = new Set();
 const theoryImageCache = new Map();
@@ -1169,6 +1170,7 @@ function setupEvents() {
   $$('[data-action="open-ingredient"]').forEach(btn => btn.addEventListener('click', () => openIngredientModal()));
   $$('[data-action="open-formula"]').forEach(btn => btn.addEventListener('click', () => openFormulaModal()));
   $$('[data-open-config-modal]').forEach(btn => btn.addEventListener('click', () => {
+    if (btn.dataset.openConfigModal === 'modalConfigCronograma') beginScheduleConfigSession();
     closeModal('modalConfig');
     openModal(btn.dataset.openConfigModal);
     if (btn.dataset.openConfigModal === 'modalConfigProdutos') renderConfigProdutos();
@@ -1178,7 +1180,13 @@ function setupEvents() {
     if (btn.dataset.openConfigModal === 'modalConfigConteudos') renderContentConfig();
   }));
   $$('[data-config-tab]').forEach(btn => btn.addEventListener('click', () => setConfigTab(btn.dataset.configTab)));
-  $$('[data-close]').forEach(btn => btn.addEventListener('click', () => closeModal(btn.dataset.close)));
+  $$('[data-close]').forEach(btn => btn.addEventListener('click', () => {
+    if (btn.matches('.modal-close[data-close="modalProduto"]') && $('#produtoId')?.value) {
+      saveProductFromModal();
+      return;
+    }
+    closeModal(btn.dataset.close);
+  }));
   $$('[data-toggle]').forEach(btn => btn.addEventListener('click', () => $('#' + btn.dataset.toggle)?.classList.toggle('open')));
   $$('.modal-overlay').forEach(overlay => overlay.addEventListener('click', (ev) => {
     if (ev.target === overlay) closeModal(overlay.id);
@@ -1225,6 +1233,8 @@ function setupEvents() {
   $('#btnArquivarPeriodo')?.addEventListener('click', archiveActivePeriod);
   $('#btnArquivarNovoPeriodo')?.addEventListener('click', () => createPeriod(true));
   $('#btnAdicionarAula')?.addEventListener('click', addScheduleLesson);
+  $('#btnCancelarAulas')?.addEventListener('click', cancelScheduleConfig);
+  $('#btnSalvarAulas')?.addEventListener('click', saveScheduleConfig);
   $('#btnNovoConteudo')?.addEventListener('click', () => openTheoryContentModal());
   $('#conteudoModo')?.addEventListener('change', updateTheoryContentMode);
   $('#conteudoImagens')?.addEventListener('change', handleTheoryContentImages);
@@ -1345,14 +1355,18 @@ function normalizeDB(data) {
       item.removido = item.removido === true;
       if (item.percentualOriginal === undefined) item.percentualOriginal = toNumber(item.percentual);
       if (isCureSaltId(item.insumoId)) {
+        const hasLegacyCure = String(item.cura?.nitritoPct ?? '').trim() !== '' || String(item.cura?.nitratoPct ?? '').trim() !== '';
         item.cura = {
-          nitritoPct: numberOrBlank(item.cura?.nitritoPct),
-          nitratoPct: numberOrBlank(item.cura?.nitratoPct)
+          teorPct: String(item.cura?.teorPct ?? '').trim() !== ''
+            ? numberOrBlank(item.cura.teorPct)
+            : hasLegacyCure
+              ? toNumber(item.cura?.nitritoPct) + toNumber(item.cura?.nitratoPct)
+              : ''
         };
       }
     });
     if (f.id === 'form_pernil_marinado_base' && !f.itens.some(item => isCureSaltId(item.insumoId))) {
-      f.itens.splice(Math.min(3, f.itens.length), 0, { insumoId: 'ing_sal_cura_tipo_1', percentual: 0.25, percentualOriginal: 0.25, removido: false, cura: { nitritoPct: '', nitratoPct: '' } });
+      f.itens.splice(Math.min(3, f.itens.length), 0, { insumoId: 'ing_sal_cura_tipo_1', percentual: 0.25, percentualOriginal: 0.25, removido: false, cura: { teorPct: '' } });
     }
     f.blendComponentes = normalizeBlendComponents(f.blendComponentes, f, merged.insumos);
     f.materiaPrimaUnica = normalizeSingleMaterial(f.materiaPrimaUnica, f, merged.insumos);
@@ -1795,7 +1809,7 @@ function inlineFormulaRowHTML(f, item) {
       </div>` : ''}
       <label class="pct-field">
         <span>%</span>
-        <input type="number" min="0" step="0.1" value="${escapeAttr(fmtInput(pct))}" data-inline-pct-formula="${escapeAttr(f.id)}" data-inline-pct-insumo="${escapeAttr(item.insumoId)}"${disabled}${!expanded && !disabled ? ' readonly' : ''}>
+        <input type="text" inputmode="decimal" pattern="[0-9.,]*" value="${escapeAttr(fmtInput(pct))}" data-inline-pct-formula="${escapeAttr(f.id)}" data-inline-pct-insumo="${escapeAttr(item.insumoId)}"${disabled}${!expanded && !disabled ? ' readonly' : ''}>
       </label>
       <strong class="gram-pill" data-inline-grams="${escapeAttr(f.id)}" data-inline-grams-insumo="${escapeAttr(item.insumoId)}">${fmt(grams)} g</strong>
       <div class="formula-item-actions">
@@ -1809,52 +1823,60 @@ function inlineFormulaRowHTML(f, item) {
 }
 
 function cureCompositionHTML(formula, item, ingredient) {
-  const nitrite = numberOrBlank(item.cura?.nitritoPct);
-  const nitrate = numberOrBlank(item.cura?.nitratoPct);
+  const cureAgents = numberOrBlank(item.cura?.teorPct);
   const metrics = cureSaltMetrics(formula, item);
   const disabled = formula.bloqueada ? ' disabled' : '';
+  const compositionLabel = ingredient.curaTipo === 2
+    ? 'Nitrito + nitrato no sal de cura (%)'
+    : 'Nitrito no sal de cura (%)';
   return `<div class="cure-composition-panel">
     <div class="cure-composition-head">
       <strong>Composição do ${escapeHTML(ingredient.nome.toLowerCase())}</strong>
       <small>Copie os teores informados no rótulo do produto em mãos.</small>
     </div>
     <div class="cure-composition-grid">
-      <label>Nitrito no sal de cura (%)<input type="number" min="0" max="100" step="0.01" placeholder="Ex.: 6" value="${escapeAttr(nitrite === '' ? '' : fmtInput(nitrite))}" data-cure-nitrite="${escapeAttr(formula.id)}" data-cure-insumo="${escapeAttr(item.insumoId)}"${disabled}></label>
-      <label>Nitrato no sal de cura (%)<input type="number" min="0" max="100" step="0.01" placeholder="${ingredient.curaTipo === 2 ? 'Ex.: 4' : 'Normalmente 0'}" value="${escapeAttr(nitrate === '' ? '' : fmtInput(nitrate))}" data-cure-nitrate="${escapeAttr(formula.id)}" data-cure-insumo="${escapeAttr(item.insumoId)}"${disabled}></label>
-      <div class="cure-result"><span>Nitrito adicionado</span><strong>${metrics.nitriteMgKg === null ? 'Informe o teor' : `${fmt(metrics.nitriteMgKg)} mg/kg`}</strong><small>Referência: 150 mg/kg</small></div>
-      <div class="cure-result"><span>Nitrato adicionado</span><strong>${metrics.nitrateMgKg === null ? 'Informe o teor' : `${fmt(metrics.nitrateMgKg)} mg/kg`}</strong><small>Referência: 300 mg/kg</small></div>
+      <label>${compositionLabel}<input type="number" inputmode="decimal" min="0" max="100" step="0.01" placeholder="Informe o rótulo" value="${escapeAttr(cureAgents === '' ? '' : fmtInput(cureAgents))}" data-cure-agents="${escapeAttr(formula.id)}" data-cure-insumo="${escapeAttr(item.insumoId)}"${disabled}></label>
+      <div class="cure-result ${metrics.agentsPpm !== null && metrics.agentsPpm > 150 ? 'over-limit' : ''}"><span>${ingredient.curaTipo === 2 ? 'Nitrito + nitrato adicionados' : 'Nitrito adicionado'}</span><strong>${metrics.agentsPpm === null ? 'Informe o teor' : `${fmt(metrics.agentsPpm)} ppm`}</strong><small>Limite definido: 150 ppm</small></div>
     </div>
-    <p class="cure-legal-note">Estimativa da quantidade adicionada. A IN Anvisa nº 211/2023 também limita a soma residual de nitritos e nitratos a 150 mg/kg, expressa como nitrito de sódio. Confirme a categoria do produto e o resíduo antes do uso real.</p>
+    <p class="cure-legal-note">Estimativa da quantidade adicionada: tipo 1 considera apenas nitrito; tipo 2 considera a combinação nitrito + nitrato. Em ambos, o app adota o limite de 150 ppm. Confirme a categoria legal e o resíduo antes do uso real.</p>
   </div>`;
 }
 
 function cureSaltMetrics(formula, item) {
   const compositionWeightKg = (analyzeFormula(formula).finalWeight || toNumber(formula.pesoReferencia) || 1000) / 1000;
   const mixGrams = formulaItemGrams(formula, item);
-  const nitrite = numberOrBlank(item.cura?.nitritoPct);
-  const nitrate = numberOrBlank(item.cura?.nitratoPct);
-  const mgKg = value => value === '' ? null : mixGrams * toNumber(value) / 100 * 1000 / compositionWeightKg;
-  return { nitriteMgKg: mgKg(nitrite), nitrateMgKg: mgKg(nitrate) };
+  const cureAgents = numberOrBlank(item.cura?.teorPct);
+  const agentsPpm = cureAgents === '' ? null : mixGrams * toNumber(cureAgents) / 100 * 1000 / compositionWeightKg;
+  return { agentsPpm };
 }
 
 function intensityScaleHTML(formula, item, current, suggestion) {
   const suave = roundOneDecimal(suggestion.suave);
   const acentuado = roundOneDecimal(suggestion.acentuado);
-  const levels = Array.from({ length: Math.max(2, Math.round((acentuado - suave) * 10) + 1) }, (_, index) => roundOneDecimal(suave + index / 10));
+  const levels = intensityLevels(suave, acentuado);
   const range = acentuado - suave;
   const roundedCurrent = roundOneDecimal(current);
   const position = range > 0 ? Math.max(0, Math.min(100, (roundedCurrent - suave) / range * 100)) : 0;
-  const exactIndex = levels.findIndex(value => Math.abs(value - current) < 0.001);
+  const exactIndex = levels.findIndex(value => Math.abs(value - roundedCurrent) < 0.001);
   return `<div class="intensity-scale">
     <div class="intensity-track">
       ${levels.map((value, index) => `<span class="intensity-stop ${index === 0 ? 'start' : index === levels.length - 1 ? 'end' : ''}">
         ${index === 0 || index === levels.length - 1 ? `<b>${index === 0 ? 'Suave' : 'Acentuado'}</b>` : ''}
         <button type="button" class="intensity-dot ${index === exactIndex ? 'selected' : ''}" data-suggestion-formula="${escapeAttr(formula.id)}" data-suggestion-insumo="${escapeAttr(item.insumoId)}" data-suggestion-value="${escapeAttr(value.toFixed(1))}" title="${fmtOneDecimal(value)}%" ${formula.bloqueada ? 'disabled' : ''}></button>
-        ${index === 0 || index === levels.length - 1 ? `<small>${fmtOneDecimal(value)}%</small>` : ''}
+        ${index === 0 || index === levels.length - 1 || index === exactIndex ? `<small>${fmtOneDecimal(value)}%</small>` : ''}
       </span>`).join('')}
-      ${exactIndex < 0 ? `<span class="intensity-current" style="left:${position.toFixed(1)}%" title="Valor atual: ${fmtOneDecimal(roundedCurrent)}%"></span>` : ''}
+      ${exactIndex < 0 ? `<span class="intensity-current" style="left:${position.toFixed(1)}%" title="Valor atual: ${fmtOneDecimal(roundedCurrent)}%"><i>${fmtOneDecimal(roundedCurrent)}%</i></span>` : ''}
     </div>
   </div>`;
+}
+
+function intensityLevels(start, end) {
+  const range = Math.max(0, roundOneDecimal(end) - roundOneDecimal(start));
+  const step = Math.max(0.1, Math.ceil((range / 10) * 10 - 0.0001) / 10);
+  const levels = [roundOneDecimal(start)];
+  for (let value = start + step; value < end - 0.0001 && levels.length < 10; value += step) levels.push(roundOneDecimal(value));
+  if (Math.abs(levels[levels.length - 1] - end) > 0.0001) levels.push(roundOneDecimal(end));
+  return levels;
 }
 
 function bindProductWorkspace(root) {
@@ -1872,6 +1894,12 @@ function bindFormulaControls(root) {
   root.querySelectorAll('[data-inline-pct-formula]').forEach(input => {
     input.addEventListener('input', () => queueInlineFormulaEdit(() => updateFormulaItemPercent(input.dataset.inlinePctFormula, input.dataset.inlinePctInsumo, input.value, { silent: true, light: true })));
     input.addEventListener('change', () => updateFormulaItemPercent(input.dataset.inlinePctFormula, input.dataset.inlinePctInsumo, input.value, { light: true }));
+    const selectValue = () => {
+      if (input.readOnly || input.disabled) return;
+      requestAnimationFrame(() => { try { input.select(); } catch (err) { /* type=number may not expose selection in every browser */ } });
+    };
+    input.addEventListener('focus', selectValue);
+    input.addEventListener('click', selectValue);
   });
   root.querySelectorAll('[data-blend-cut]').forEach(input => input.addEventListener('change', () => updateBlendComponent(input.dataset.blendCut, Number(input.dataset.blendIndex), { corteId: input.value, gorduraCustom: '' })));
   root.querySelectorAll('[data-blend-profile]').forEach(input => input.addEventListener('change', () => updateBlendComponent(input.dataset.blendProfile, Number(input.dataset.blendIndex), { perfil: input.value, gorduraCustom: '' })));
@@ -1887,13 +1915,9 @@ function bindFormulaControls(root) {
     input.addEventListener('change', () => updateSingleMaterial(input.dataset.singleGrams, { gramas: input.value }));
   });
   root.querySelectorAll('[data-single-fat]').forEach(input => input.addEventListener('change', () => updateSingleMaterial(input.dataset.singleFat, { gorduraCustom: input.value })));
-  root.querySelectorAll('[data-cure-nitrite]').forEach(input => {
-    input.addEventListener('input', () => queueInlineFormulaEdit(() => updateCureComposition(input.dataset.cureNitrite, input.dataset.cureInsumo, { nitritoPct: input.value }, { silent: true })));
-    input.addEventListener('change', () => updateCureComposition(input.dataset.cureNitrite, input.dataset.cureInsumo, { nitritoPct: input.value }));
-  });
-  root.querySelectorAll('[data-cure-nitrate]').forEach(input => {
-    input.addEventListener('input', () => queueInlineFormulaEdit(() => updateCureComposition(input.dataset.cureNitrate, input.dataset.cureInsumo, { nitratoPct: input.value }, { silent: true })));
-    input.addEventListener('change', () => updateCureComposition(input.dataset.cureNitrate, input.dataset.cureInsumo, { nitratoPct: input.value }));
+  root.querySelectorAll('[data-cure-agents]').forEach(input => {
+    input.addEventListener('input', () => queueInlineFormulaEdit(() => updateCureComposition(input.dataset.cureAgents, input.dataset.cureInsumo, { teorPct: input.value }, { silent: true })));
+    input.addEventListener('change', () => updateCureComposition(input.dataset.cureAgents, input.dataset.cureInsumo, { teorPct: input.value }));
   });
 }
 
@@ -1902,6 +1926,12 @@ function handleProductWorkspaceClick(event) {
   if (!target) return;
   if (target.dataset.productBack !== undefined) {
     closeProductWorkspace();
+    return;
+  }
+  if (target.dataset.slidePrev !== undefined || target.dataset.slideNext !== undefined) {
+    const controller = target.closest('.product-workspace')?._productSlideController;
+    if (!controller) return;
+    controller.show(controller.getIndex() + (target.dataset.slideNext !== undefined ? 1 : -1));
     return;
   }
   if (target.dataset.editProductReferences !== undefined) {
@@ -1935,7 +1965,6 @@ function handleProductWorkspaceClick(event) {
     const input = row?.querySelector('[data-inline-pct-formula]');
     if (input && !input.disabled) {
       input.readOnly = !expandedIntensityItems.has(key);
-      if (expandedIntensityItems.has(key)) input.focus({ preventScroll: true });
     }
     target.setAttribute('aria-expanded', String(expandedIntensityItems.has(key)));
     target.title = expandedIntensityItems.has(key) ? 'Concluir ajuste' : 'Editar quantidade';
@@ -1989,9 +2018,8 @@ function bindProductSlides(root) {
       summary.scrollTo({ left: Math.max(0, Math.min(maxLeft, targetLeft)), behavior: 'smooth' });
     }
   };
+  root._productSlideController = { show, getIndex: () => index };
   jumps.forEach((jump, jumpIndex) => jump.addEventListener('click', () => show(jumpIndex)));
-  root.querySelector('[data-slide-prev]')?.addEventListener('click', () => show(index - 1));
-  root.querySelector('[data-slide-next]')?.addEventListener('click', () => show(index + 1));
   const stage = root.querySelector('.product-slide-stage');
   let pointerStart = null;
   let touchStart = null;
@@ -2326,6 +2354,35 @@ function renderScheduleConfig() {
   root.querySelectorAll('[data-schedule-category]').forEach(input => input.addEventListener('change', () => saveScheduleLinkField(input, 'categorias')));
   root.querySelectorAll('[data-delete-schedule]').forEach(btn => btn.addEventListener('click', () => deleteScheduleLesson(Number(btn.dataset.deleteSchedule))));
   root.querySelectorAll('[data-toggle-schedule-visibility]').forEach(btn => btn.addEventListener('click', () => toggleScheduleVisibility(Number(btn.dataset.toggleScheduleVisibility))));
+}
+
+function beginScheduleConfigSession() {
+  scheduleConfigSnapshot = {
+    periodos: clone(getSchedulePeriods()),
+    periodoAtivoId: db.configs.periodoAtivoId
+  };
+}
+
+function cancelScheduleConfig() {
+  if (scheduleConfigSnapshot) {
+    db.configs.periodos = clone(scheduleConfigSnapshot.periodos);
+    db.configs.periodoAtivoId = scheduleConfigSnapshot.periodoAtivoId;
+    db.configs.cronograma = getActivePeriod()?.aulas || [];
+    saveDB();
+    renderAll();
+  }
+  scheduleConfigSnapshot = null;
+  closeModal('modalConfigCronograma');
+  toast('Alterações das aulas canceladas.');
+}
+
+function saveScheduleConfig() {
+  db.configs.cronograma = getActivePeriod()?.aulas || [];
+  saveDB();
+  scheduleConfigSnapshot = null;
+  closeModal('modalConfigCronograma');
+  renderAll();
+  toast('Aulas salvas.');
 }
 
 function renderContentConfig() {
@@ -2751,6 +2808,7 @@ function renderAulas() {
     return;
   }
   activeTheoryLessonIndex = Math.max(0, Math.min(schedule.length - 1, activeTheoryLessonIndex));
+  const activeLessonLaws = uniqueLawsForProducts(schedule[activeTheoryLessonIndex]?.produtos || []);
   root.innerHTML = `
     <div class="lesson-tabs" role="tablist">
       ${schedule.map((item, index) => `<button type="button" class="lesson-tab ${index === activeTheoryLessonIndex ? 'active' : ''}" data-theory-lesson="${index}">${lessonNumberLabel(index)}</button>`).join('')}
@@ -2759,7 +2817,7 @@ function renderAulas() {
       ${schedule.map((item, index) => theoryScheduleLessonHTML(item, index)).join('')}
     </div>
     <div class="section-header"><div><h2>Referências legais</h2></div></div>
-    <div class="stack-list law-list">${db.legislacoes.map(lawCardHTML).join('')}</div>`;
+    <div class="stack-list law-list">${activeLessonLaws.map(lawCardHTML).join('') || emptyHTML('Nenhuma referência vinculada aos produtos desta aula.')}</div>`;
   root.querySelectorAll('[data-theory-lesson]').forEach(btn => btn.addEventListener('click', () => {
     activeTheoryLessonIndex = Number(btn.dataset.theoryLesson);
     activeTheoryImageIndex = 0;
@@ -2937,8 +2995,13 @@ function lawDedupKey(law) {
 }
 
 function uniqueProductLaws(productId) {
+  return uniqueLawsForProducts([productId]);
+}
+
+function uniqueLawsForProducts(productIds = []) {
+  const wanted = new Set(productIds);
   const seen = new Set();
-  return db.legislacoes.filter(law => lawAppliesToProduct(law, productId)).filter(law => {
+  return db.legislacoes.filter(law => (law.produtoIds || []).some(id => wanted.has(id))).filter(law => {
     const key = lawDedupKey(law);
     if (seen.has(key)) return false;
     seen.add(key);
@@ -3379,7 +3442,7 @@ function getFormulaFromModal(requireName = true) {
     itens: formulaDraftItems.map(item => ({
       insumoId: item.insumoId,
       percentual: toNumber(item.percentual),
-      ...(isCureSaltId(item.insumoId) ? { cura: clone(item.cura || { nitritoPct: '', nitratoPct: '' }) } : {})
+      ...(isCureSaltId(item.insumoId) ? { cura: clone(item.cura || { teorPct: '' }) } : {})
     })).filter(item => item.insumoId),
     observacoes: $('#formulaObs').value.trim(),
     usarBlend: existing?.usarBlend === true,
@@ -3443,9 +3506,8 @@ function updateCureComposition(formulaId, insumoId, changes = {}, options = {}) 
   const formula = findFormula(formulaId);
   if (!formula || formula.bloqueada || !isCureSaltId(insumoId)) return;
   const item = ensureFormulaItem(formula, insumoId);
-  item.cura = item.cura || { nitritoPct: '', nitratoPct: '' };
-  if (Object.prototype.hasOwnProperty.call(changes, 'nitritoPct')) item.cura.nitritoPct = numberOrBlank(changes.nitritoPct);
-  if (Object.prototype.hasOwnProperty.call(changes, 'nitratoPct')) item.cura.nitratoPct = numberOrBlank(changes.nitratoPct);
+  item.cura = item.cura || { teorPct: '' };
+  if (Object.prototype.hasOwnProperty.call(changes, 'teorPct')) item.cura.teorPct = numberOrBlank(changes.teorPct);
   saveInlineFormulaEdit('Composição do sal de cura atualizada.', { ...options, formulaId });
 }
 
@@ -3460,7 +3522,7 @@ function addFormulaItemInline(formulaId, insumoId) {
   formula.itens.push({
     insumoId,
     percentual: suggestion?.suave ?? 0.1,
-    ...(isCureSaltIngredient(ingredient) ? { cura: { nitritoPct: '', nitratoPct: '' } } : {})
+    ...(isCureSaltIngredient(ingredient) ? { cura: { teorPct: '' } } : {})
   });
   saveInlineFormulaEdit('Insumo adicionado.', { formulaId });
 }
@@ -4049,8 +4111,8 @@ function buildReport(formula) {
     lines.push(`- ${ing?.nome || 'Insumo'}: ${item.removido ? 'removido da prática' : `${fmt(item.percentual)}% = ${fmt(grams)} g`}`);
     if (!item.removido && isCureSaltIngredient(ing)) {
       const cure = cureSaltMetrics(formula, item);
-      lines.push(`  Nitrito no preparado: ${item.cura?.nitritoPct === '' || item.cura?.nitritoPct === undefined ? 'não informado' : `${fmt(item.cura.nitritoPct)}% (${fmt(cure.nitriteMgKg)} mg/kg adicionados)`}`);
-      lines.push(`  Nitrato no preparado: ${item.cura?.nitratoPct === '' || item.cura?.nitratoPct === undefined ? 'não informado' : `${fmt(item.cura.nitratoPct)}% (${fmt(cure.nitrateMgKg)} mg/kg adicionados)`}`);
+      const label = ing.curaTipo === 2 ? 'Nitrito + nitrato no preparado' : 'Nitrito no preparado';
+      lines.push(`  ${label}: ${item.cura?.teorPct === '' || item.cura?.teorPct === undefined ? 'não informado' : `${fmt(item.cura.teorPct)}% (${fmt(cure.agentsPpm)} ppm adicionados; limite 150 ppm)`}`);
     }
   });
   lines.push('');
