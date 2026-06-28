@@ -70,6 +70,7 @@ button { -webkit-tap-highlight-color: transparent; }
   flex-shrink: 0;
   backdrop-filter: blur(10px);
 }
+.topbar[hidden] { display: none; }
 .app-kicker {
   color: var(--primary);
   font-size: 11px;
@@ -1301,6 +1302,33 @@ button.item-card:hover { transform: translateY(-1px); border-color: rgba(31,111,
 }
 .large-modal { max-width: 740px; }
 .config-menu-modal { max-width: 500px; }
+#modalConteudoView {
+  padding: 0;
+  background: #fff;
+  overflow: hidden;
+  align-items: stretch;
+}
+#modalConteudoView.show { display: block; }
+#modalConteudoView .content-view-panel {
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 22px clamp(18px, 4vw, 54px) 40px;
+  overflow-y: auto;
+}
+#conteudoViewTitle {
+  font-size: clamp(27px, 4vw, 36px);
+  padding: 4px 52px 14px 0;
+  margin-bottom: 20px;
+}
+#conteudoViewBody .theory-card {
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+}
 .modal-close {
   position: sticky;
   top: 0;

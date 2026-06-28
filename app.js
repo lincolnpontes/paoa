@@ -1,7 +1,7 @@
 'use strict';
 
 const STORAGE_KEY = 'paoa_lab_v1';
-const APP_VERSION = '2.0.0';
+const APP_VERSION = '2.1.0';
 const CURE_LIMIT_PPM = 150;
 const DEFAULT_CURE_CONCENTRATION_PCT = 7;
 const MEAT_CUTS_SOURCE_URL = 'https://nepa.unicamp.br/publicacoes/tabela-taco-pdf/';
@@ -233,7 +233,7 @@ const PRODUCT_CATEGORIES = [
 const DEFAULT_DB = {
   app_id: 'paoa_lab',
   version: APP_VERSION,
-  configs: { ultimoProdutoAula: 'prod_hamburguer', produtoSelecionado: '', filtroInsumo: 'todos', periodoAtivoId: 'periodo_demo', periodos: [], regrasLaboratorio: clone(DEFAULT_RULES), conteudosTeoricos: [] },
+  configs: { ultimoProdutoAula: 'prod_hamburguer', produtoSelecionado: '', filtroInsumo: 'todos', periodoAtivoId: 'periodo_demo', periodos: [], regrasLaboratorio: clone(DEFAULT_RULES), conteudosTeoricos: [], expandedIngredientDefaultsV1: true },
   produtos: [
     {
       id: 'prod_hamburguer',
@@ -774,7 +774,21 @@ const DEFAULT_DB = {
     { id: 'ing_fosfato', nome: 'Fosfato', categoria: 'Aditivo funcional', tipo: 'aditivo', funcao: 'Auxilia na retenção de água, extração proteica e estabilidade de emulsões cárneas, quando permitido.', obs: 'Usar apenas em discussão didática e conferir limites e permissões na legislação vigente para cada produto.', gordura: 0, proteina: 0, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
     { id: 'ing_leite_po', nome: 'Leite em pó', categoria: 'Ingrediente lácteo', tipo: 'lacteo', funcao: 'Contribui para corpo, retenção de água e estabilidade em alguns produtos emulsionados.', obs: 'Ingrediente alergênico; discutir declaração em rótulo quando utilizado.', gordura: 1, proteina: 34, carboidrato: 52, custo: 0, proteinaNaoCarnea: false, alergeno: true },
     { id: 'ing_pimenta_branca', nome: 'Pimenta branca moída', categoria: 'Condimento', tipo: 'condimento', subtipo: 'moídos', funcao: 'Ajusta pungência e aroma com menor impacto visual em massas claras e emulsionadas.', obs: 'Boa opção para comparar sabor suave e acentuado sem alterar muito a aparência.', gordura: 2, proteina: 10, carboidrato: 64, custo: 0, proteinaNaoCarnea: false, alergeno: false },
-    { id: 'ing_amido', nome: 'Amido', categoria: 'Carboidrato', tipo: 'carboidrato', funcao: 'Auxilia na retenção de água e na estabilidade, quando permitido e dentro dos limites do produto.', obs: 'Rendimento, textura e enquadramento legal podem ser comparados quando o teor é alterado.', gordura: 0, proteina: 0, carboidrato: 88, custo: 0, proteinaNaoCarnea: false, alergeno: false }
+    { id: 'ing_amido', nome: 'Amido', categoria: 'Carboidrato', tipo: 'carboidrato', funcao: 'Auxilia na retenção de água e na estabilidade, quando permitido e dentro dos limites do produto.', obs: 'Rendimento, textura e enquadramento legal podem ser comparados quando o teor é alterado.', gordura: 0, proteina: 0, carboidrato: 88, custo: 0, proteinaNaoCarnea: false, alergeno: false },
+    { id: 'ing_fumaca_po', nome: 'Fumaça em pó', categoria: 'Aromatizante', tipo: 'aditivo_alimentar', subtipo: 'aromatizantes', funcao: 'Fornece aroma e sabor defumados de forma concentrada e padronizada.', obs: 'A intensidade varia entre fabricantes; ajustar conforme o produto utilizado.', gordura: 0, proteina: 0, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
+    { id: 'ing_fumaca_liquida', nome: 'Fumaça líquida', categoria: 'Aromatizante', tipo: 'aditivo_alimentar', subtipo: 'aromatizantes', funcao: 'Fornece notas defumadas e pode ser distribuída na fase líquida da formulação.', obs: 'Considerar a concentração e as instruções do fabricante.', gordura: 0, proteina: 0, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
+    { id: 'ing_cebola_po', nome: 'Cebola em pó', categoria: 'Condimento', tipo: 'condimento_especiaria', subtipo: 'em pó', funcao: 'Fornece aroma e dulçor de cebola com boa padronização e baixa adição de umidade.', obs: 'Pode substituir cebola fresca ou desidratada, ajustando a intensidade.', gordura: 1, proteina: 10, carboidrato: 75, custo: 0, proteinaNaoCarnea: false, alergeno: false },
+    { id: 'ing_paprica_defumada', nome: 'Páprica defumada', categoria: 'Condimento', tipo: 'condimento_especiaria', subtipo: 'em pó', funcao: 'Contribui com cor, aroma e sabor defumado.', obs: 'Usar em baixo teor para não dominar os demais condimentos.', gordura: 13, proteina: 14, carboidrato: 54, custo: 0, proteinaNaoCarnea: false, alergeno: false },
+    { id: 'ing_alecrim_po', nome: 'Alecrim em pó', categoria: 'Condimento / erva', tipo: 'condimento_especiaria', subtipo: 'em pó', funcao: 'Adiciona notas herbais intensas e características.', obs: 'A intensidade é alta; ajustar em pequenas quantidades.', gordura: 0, proteina: 0, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
+    { id: 'ing_zaatar', nome: 'Zaatar', categoria: 'Condimento / mistura de especiarias', tipo: 'condimento_especiaria', subtipo: 'naturais', funcao: 'Adiciona perfil herbal, ácido e tostado conforme a composição da mistura.', obs: 'Conferir os ingredientes do produto, pois a composição varia entre fabricantes.', gordura: 0, proteina: 0, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
+    { id: 'ing_cominho', nome: 'Cominho', categoria: 'Condimento', tipo: 'condimento_especiaria', subtipo: 'moídos', funcao: 'Fornece aroma quente e terroso característico.', obs: 'Usar em pequenas quantidades para controlar a intensidade.', gordura: 0, proteina: 0, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
+    { id: 'ing_hortela', nome: 'Hortelã', categoria: 'Condimento / erva', tipo: 'condimento_especiaria', subtipo: 'frescos', funcao: 'Adiciona frescor e aroma herbal, especialmente em kibe e preparações condimentadas.', obs: 'Quando fresca, considerar a umidade e padronizar a higienização.', gordura: 0, proteina: 0, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
+    { id: 'ing_hortela_desidratada', nome: 'Hortelã desidratada', categoria: 'Condimento / erva', tipo: 'condimento_especiaria', subtipo: 'desidratados', funcao: 'Fornece aroma de hortelã com maior estabilidade e padronização.', obs: 'A intensidade pode ser maior que a da erva fresca.', gordura: 0, proteina: 0, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
+    { id: 'ing_glutamato_monossodico', nome: 'Glutamato monossódico', categoria: 'Aditivo alimentar', tipo: 'aditivo_alimentar', subtipo: 'realçadores de sabor', funcao: 'Realça a percepção de sabor umami.', obs: 'Usar conforme a finalidade tecnológica e as condições aplicáveis ao produto.', gordura: 0, proteina: 0, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
+    { id: 'ing_eritorbato_sodio', nome: 'Eritorbato de sódio', categoria: 'Aditivo alimentar', tipo: 'aditivo_alimentar', subtipo: 'antioxidantes', funcao: 'Atua como antioxidante e pode auxiliar na estabilidade de cor em produtos cárneos.', obs: 'Verificar permissão e limite para a categoria do produto.', gordura: 0, proteina: 0, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
+    { id: 'ing_acido_ascorbico', nome: 'Ácido ascórbico', categoria: 'Aditivo alimentar', tipo: 'aditivo_alimentar', subtipo: 'antioxidantes', funcao: 'Atua como antioxidante e regulador de acidez conforme a aplicação.', obs: 'Verificar permissão e limite para a categoria do produto.', gordura: 0, proteina: 0, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
+    { id: 'ing_ascorbato_sodio', nome: 'Ascorbato de sódio', categoria: 'Aditivo alimentar', tipo: 'aditivo_alimentar', subtipo: 'antioxidantes', funcao: 'Atua como antioxidante e pode auxiliar na estabilidade da cor.', obs: 'Verificar permissão e limite para a categoria do produto.', gordura: 0, proteina: 0, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false },
+    { id: 'ing_extrato_alecrim', nome: 'Extrato de alecrim', categoria: 'Aditivo alimentar', tipo: 'aditivo_alimentar', subtipo: 'antioxidantes', funcao: 'Auxilia no controle da oxidação e também pode contribuir com notas herbais.', obs: 'A composição e a concentração variam entre produtos comerciais.', gordura: 0, proteina: 0, carboidrato: 0, custo: 0, proteinaNaoCarnea: false, alergeno: false }
   ],
   formulacoes: [
     {
@@ -789,7 +803,9 @@ const DEFAULT_DB = {
         { insumoId: 'ing_gordura_bovina', percentual: 18 },
         { insumoId: 'ing_agua_gelada', percentual: 3 },
         { insumoId: 'ing_sal', percentual: 1.8 },
-        { insumoId: 'ing_alho_po', percentual: 1.5 }
+        { insumoId: 'ing_alho_po', percentual: 1.5 },
+        { insumoId: 'ing_cebola_po', percentual: 1 },
+        { insumoId: 'ing_fumaca_po', percentual: 0.2 }
       ],
       observacoes: ''
     },
@@ -840,10 +856,11 @@ const DEFAULT_DB = {
       itens: [
         { insumoId: 'ing_pernil_suino', percentual: 72 },
         { insumoId: 'ing_toucinho_suino', percentual: 20 },
-        { insumoId: 'ing_agua_gelada', percentual: 5 },
+        { insumoId: 'ing_agua_gelada', percentual: 4.8 },
         { insumoId: 'ing_sal', percentual: 1.8 },
         { insumoId: 'ing_alho_po', percentual: 0.5 },
         { insumoId: 'ing_paprica_doce', percentual: 0.3 },
+        { insumoId: 'ing_fumaca_po', percentual: 0.2 },
         { insumoId: 'ing_pimenta_reino', percentual: 0.2 },
         { insumoId: 'ing_acucar', percentual: 0.2 }
       ],
@@ -880,14 +897,15 @@ const DEFAULT_DB = {
       itens: [
         { insumoId: 'ing_pernil_suino', percentual: 60 },
         { insumoId: 'ing_toucinho_suino', percentual: 15 },
-        { insumoId: 'ing_agua_gelada', percentual: 18 },
+        { insumoId: 'ing_agua_gelada', percentual: 17.8 },
         { insumoId: 'ing_amido', percentual: 3 },
         { insumoId: 'ing_sal', percentual: 1.8 },
         { insumoId: 'ing_leite_po', percentual: 1 },
         { insumoId: 'ing_acucar', percentual: 0.5 },
         { insumoId: 'ing_alho_po', percentual: 0.3 },
         { insumoId: 'ing_fosfato', percentual: 0.3 },
-        { insumoId: 'ing_pimenta_branca', percentual: 0.1 }
+        { insumoId: 'ing_pimenta_branca', percentual: 0.1 },
+        { insumoId: 'ing_fumaca_po', percentual: 0.2 }
       ],
       observacoes: 'Formulação didática fechada em 100% para discutir massa emulsionada, embutimento, cozimento e resfriamento.'
     },
@@ -924,7 +942,8 @@ const DEFAULT_DB = {
         { insumoId: 'ing_sal', percentual: 1.7 },
         { insumoId: 'ing_alho_po', percentual: 0.4 },
         { insumoId: 'ing_pimenta_reino', percentual: 0.2 },
-        { insumoId: 'ing_salsa_desidratada', percentual: 0.4 }
+        { insumoId: 'ing_salsa_desidratada', percentual: 0.4 },
+        { insumoId: 'ing_hortela', percentual: 1 }
       ],
       observacoes: 'Formulação para discutir hidratação do trigo, liga, coesão e perda por cocção.'
     },
@@ -1246,6 +1265,7 @@ function setupEvents() {
   $('#btnConfirmarAcao')?.addEventListener('click', confirmPendingAction);
   $('#confirmacaoTexto')?.addEventListener('input', updateConfirmationButtonState);
   document.addEventListener('keydown', handleTheoryPresentationKey);
+  document.addEventListener('keydown', handleProductWorkspaceKey);
   $('#btnAddRule')?.addEventListener('click', addLabRule);
   $('#btnExportar')?.addEventListener('click', exportData);
   $('#btnImportar')?.addEventListener('click', () => $('#fileImportar').click());
@@ -1284,6 +1304,7 @@ function loadDB() {
 function normalizeDB(data) {
   const source = data && typeof data === 'object' ? data : {};
   const resetLegacyBlendDefault = source.version !== APP_VERSION;
+  const needsExpandedIngredientDefaults = source.configs?.expandedIngredientDefaultsV1 !== true;
   const merged = Object.assign(clone(DEFAULT_DB), source);
   merged.configs = Object.assign(clone(DEFAULT_DB.configs), source.configs || {});
   merged.configs.regrasLaboratorio = normalizeLabRules(source.configs?.regrasLaboratorio || source.configs?.regras || DEFAULT_RULES);
@@ -1372,12 +1393,14 @@ function normalizeDB(data) {
     if (f.id === 'form_pernil_marinado_base' && !f.itens.some(item => isCureSaltId(item.insumoId))) {
       f.itens.splice(Math.min(3, f.itens.length), 0, { insumoId: 'ing_sal_cura_tipo_1', percentual: 0.2142857, percentualOriginal: 0.2142857, removido: false, cura: { teorPct: 7, ppm: 150 } });
     }
+    if (needsExpandedIngredientDefaults) applyExpandedFormulaDefaults(f);
     f.blendComponentes = normalizeBlendComponents(f.blendComponentes, f, merged.insumos);
     f.materiaPrimaUnica = normalizeSingleMaterial(f.materiaPrimaUnica, f, merged.insumos);
     f.usarBlend = resetLegacyBlendDefault ? false : f.usarBlend === true;
     f.bloqueada = Boolean(f.bloqueada);
     if (String(f.observacoes || '').startsWith('Percentuais calculados sobre')) f.observacoes = '';
   });
+  merged.configs.expandedIngredientDefaultsV1 = true;
   merged.legislacoes.forEach(law => {
     law.produtoIds = Array.from(new Set((Array.isArray(law.produtoIds)
       ? law.produtoIds
@@ -1401,6 +1424,29 @@ function mergeDefaults(current, defaults) {
     if (!ids.has(item.id)) list.push(clone(item));
   });
   return list;
+}
+
+function applyExpandedFormulaDefaults(formula) {
+  if (!Array.isArray(formula.itens)) formula.itens = [];
+  const ensureItem = (insumoId, percentual, balanceWater = false) => {
+    if (formula.itens.some(item => item.insumoId === insumoId)) return;
+    formula.itens.push({ insumoId, percentual, percentualOriginal: percentual, removido: false });
+    if (balanceWater && formula.baseCalculo === 'produto_final') {
+      const water = formula.itens.find(item => item.insumoId === 'ing_agua_gelada' && !item.removido);
+      if (water) {
+        water.percentual = Math.max(0, toNumber(water.percentual) - percentual);
+        water.percentualOriginal = water.percentual;
+      }
+    }
+  };
+  if (formula.id === 'form_hamb_base') {
+    const dehydratedOnion = formula.itens.find(item => item.insumoId === 'ing_cebola_desidratada');
+    if (dehydratedOnion) dehydratedOnion.insumoId = 'ing_cebola_po';
+    else ensureItem('ing_cebola_po', 1);
+    ensureItem('ing_fumaca_po', 0.2);
+  }
+  if (formula.id === 'form_linguica_base' || formula.id === 'form_salsicha_base') ensureItem('ing_fumaca_po', 0.2, true);
+  if (formula.id === 'form_kibe_base') ensureItem('ing_hortela', 1);
 }
 
 function cleanFormulaName(name) {
@@ -1435,6 +1481,8 @@ function renderAll() {
 
 function setPage(page) {
   activePage = page;
+  const topbar = $('.topbar');
+  if (topbar) topbar.hidden = page !== 'Inicio';
   $$('.page').forEach(p => p.classList.remove('active'));
   $('#page' + page)?.classList.add('active');
   $$('.nav-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.page === page));
@@ -1841,13 +1889,12 @@ function cureCompositionHTML(formula, item, ingredient) {
   return `<div class="cure-composition-panel">
     <div class="cure-composition-head">
       <strong>Composição do ${escapeHTML(ingredient.nome.toLowerCase())}</strong>
-      <small>Copie os teores informados no rótulo do produto em mãos.</small>
     </div>
     <div class="cure-composition-grid">
       <label>${compositionLabel}<input type="number" inputmode="decimal" min="0.01" max="100" step="0.01" value="${escapeAttr(fmtInput(cureAgents))}" data-cure-agents="${escapeAttr(formula.id)}" data-cure-insumo="${escapeAttr(item.insumoId)}"${disabled}></label>
       <div class="cure-result"><span>Quantidade calculada para ${fmt(metrics.baseWeightGrams)} g</span><strong>${fmtFixed2(metrics.mixGrams)} g</strong><small>${fmt(metrics.ppm)} ppm · limite legal usado como padrão</small></div>
     </div>
-    <p class="cure-legal-note">O cálculo converte o alvo em ppm para gramas do sal de cura conforme o teor declarado no rótulo. Confirme a categoria legal e o resíduo antes do uso real.</p>
+    <p class="cure-legal-note">O cálculo converte o alvo em ppm para gramas do sal de cura conforme o teor declarado no rótulo.</p>
   </div>`;
 }
 
@@ -2222,15 +2269,24 @@ function scheduleCardHTML(item, index) {
       ${item.local ? `<div class="calendar-local">${escapeHTML(item.local)}</div>` : ''}
       ${item.observacao ? `<div class="calendar-note">${escapeHTML(item.observacao)}</div>` : ''}
       <div class="linked-block">
-        <div class="linked-title">Roteiros da aula</div>
-        ${linkedProductsHTML(item.produtos || [])}
-      </div>
-      <div class="linked-block">
         <div class="linked-title">Teoria relacionada</div>
         <div class="link-chip-row">${categoryChips}</div>
       </div>
+      <div class="linked-block">
+        <div class="linked-title">Roteiros da aula</div>
+        ${linkedProductChipsHTML(item.produtos || [])}
+      </div>
     </div>
   </article>`;
+}
+
+function linkedProductChipsHTML(ids) {
+  const chips = ids.map(id => {
+    const product = findProduct(id);
+    if (!product || product.oculto) return '';
+    return `<button type="button" class="link-chip soft" data-open-product="${escapeAttr(id)}">${escapeHTML(product.nome)}</button>`;
+  }).join('');
+  return `<div class="link-chip-row">${chips || '<span class="muted">Nenhum roteiro vinculado.</span>'}</div>`;
 }
 
 function getSchedulePeriods() {
@@ -2895,7 +2951,7 @@ function openTheoryContentView(id) {
   const content = getTheoryContent(id);
   if (!content) return toast('Conteúdo não encontrado.');
   $('#conteudoViewTitle').textContent = content.titulo;
-  $('#conteudoViewBody').innerHTML = theoryLessonHTML(content);
+  $('#conteudoViewBody').innerHTML = theoryLessonHTML(content, false);
   bindTheorySlides($('#conteudoViewBody'));
   bindInternalLinks($('#conteudoViewBody'));
   openModal('modalConteudoView');
@@ -2946,11 +3002,11 @@ function renderLegislacao() {
   bindLawLinks($('#legislacaoList'));
 }
 
-function theoryLessonHTML(lesson) {
+function theoryLessonHTML(lesson, showTitle = true) {
   const content = getTheoryContent(lesson.id) || lesson;
   const showSlides = content.modo === 'slides' && content.imagens?.length;
   return `<article class="theory-card">
-    <h3>${escapeHTML(content.titulo)}</h3>
+    ${showTitle ? `<h3>${escapeHTML(content.titulo)}</h3>` : ''}
     ${showSlides ? theorySlidesHTML(content.imagens) : `
       <p>${escapeHTML(content.resumo)}</p>
       <div class="theory-columns">
@@ -3935,8 +3991,15 @@ function ingredientSuggestion(ingredient) {
     ing_pimenta_reino: { suave: 0.1, acentuado: 0.4 },
     ing_pimenta_branca: { suave: 0.1, acentuado: 0.4 },
     ing_paprica_doce: { suave: 0.2, acentuado: 0.7 },
+    ing_paprica_defumada: { suave: 0.2, acentuado: 0.7 },
     ing_cebola_desidratada: { suave: 0.6, acentuado: 1.5 },
+    ing_cebola_po: { suave: 0.5, acentuado: 1.5 },
     ing_salsa_desidratada: { suave: 0.2, acentuado: 0.8 },
+    ing_alecrim_po: { suave: 0.1, acentuado: 0.5 },
+    ing_zaatar: { suave: 0.3, acentuado: 1 },
+    ing_cominho: { suave: 0.1, acentuado: 0.5 },
+    ing_hortela: { suave: 0.5, acentuado: 1.5 },
+    ing_hortela_desidratada: { suave: 0.2, acentuado: 0.8 },
     ing_acucar: { suave: 0.2, acentuado: 0.8 }
   };
   if (byId[ingredient?.id]) return byId[ingredient.id];
@@ -4269,7 +4332,7 @@ function resetDemo() {
 
 function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('service-worker.js?v=54').then(registration => registration.update()).catch(err => console.warn('Service worker não registrado', err));
+    navigator.serviceWorker.register('service-worker.js?v=55').then(registration => registration.update()).catch(err => console.warn('Service worker não registrado', err));
   }
 }
 
@@ -4323,6 +4386,17 @@ function confirmPendingAction() {
   pendingConfirmationText = '';
   closeModal('modalConfirmacao');
   action?.();
+}
+function handleProductWorkspaceKey(event) {
+  if (event.defaultPrevented || !['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+  const root = $('#produtoWorkspace');
+  const controller = root?._productSlideController;
+  if (!root || root.hidden || !root.closest('.page')?.classList.contains('active') || !controller) return;
+  if ($('.modal-overlay.show')) return;
+  const tag = String(event.target?.tagName || '').toLowerCase();
+  if (event.target?.isContentEditable || ['input', 'textarea', 'select'].includes(tag)) return;
+  event.preventDefault();
+  controller.show(controller.getIndex() + (event.key === 'ArrowRight' ? 1 : -1));
 }
 function handleTheoryPresentationKey(event) {
   const controller = activeTheorySlideController;
