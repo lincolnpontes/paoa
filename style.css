@@ -880,7 +880,7 @@ button.item-card:hover { transform: translateY(-1px); border-color: rgba(31,111,
 .pct-field {
   grid-area: pct;
   display: grid;
-  grid-template-columns: 18px 1fr;
+  grid-template-columns: 28px 1fr;
   align-items: center;
   gap: 4px;
   color: var(--muted);
@@ -1972,7 +1972,7 @@ button.item-card:hover { transform: translateY(-1px); border-color: rgba(31,111,
     white-space: nowrap;
     font-size: 12px;
   }
-  .pct-field { grid-template-columns: 12px 1fr; gap: 2px; font-size: 10px; }
+  .pct-field { grid-template-columns: 24px 1fr; gap: 2px; font-size: 10px; }
   .pct-field input { min-width: 0; padding: 8px 4px; font-size: 12px; }
   .gram-pill { padding: 8px 3px; font-size: 11px; white-space: nowrap; }
   .formula-item-actions { grid-template-columns: 32px 32px; gap: 4px; }
