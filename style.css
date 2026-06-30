@@ -2052,6 +2052,58 @@ button.item-card:hover { transform: translateY(-1px); border-color: rgba(31,111,
   .formula-item-actions { grid-template-columns: 40px 40px; gap: 7px; }
   .formula-item-actions .tiny-btn,
   .formula-item-actions .intensity-edit-btn { width: 40px; min-width: 40px; height: 40px; }
+  .slide-card { padding: clamp(22px, 1.7vw, 32px); }
+  .slide-card .slide-heading,
+  .slide-heading { margin-bottom: clamp(20px, 1.4vw, 28px); font-size: clamp(29px, 1.85vw, 37px); }
+  .slide-kicker { font-size: clamp(13px, .82vw, 16px); }
+  .timeline-list { gap: clamp(10px, .75vw, 14px); }
+  .timeline-step { grid-template-columns: 44px minmax(0, 1fr); gap: 14px; min-height: 68px; padding: 14px 18px; font-size: clamp(17px, 1.08vw, 21px); line-height: 1.45; }
+  .timeline-marker span { width: 36px; height: 36px; font-size: clamp(14px, .86vw, 17px); }
+  .timeline-step:not(:first-child) .timeline-marker::before { top: -18px; bottom: calc(50% + 18px); }
+  .timeline-step:not(:last-child) .timeline-marker::after { top: calc(50% + 18px); bottom: -18px; }
+  .control-grid, .equipment-grid { gap: clamp(14px, 1vw, 20px); }
+  .control-point { padding: clamp(17px, 1.2vw, 23px); font-size: clamp(17px, 1.08vw, 21px); line-height: 1.5; }
+  .equipment-item { grid-template-columns: 38px minmax(0, 1fr); gap: 13px; min-height: 72px; padding: clamp(16px, 1.15vw, 22px); font-size: clamp(17px, 1.08vw, 21px); line-height: 1.45; }
+  .equipment-item span { width: 32px; height: 32px; font-size: 15px; }
+  .discussion-list { gap: clamp(14px, 1vw, 20px); }
+  .discussion-question { grid-template-columns: 42px minmax(0, 1fr); gap: 14px; padding: clamp(17px, 1.2vw, 23px); font-size: clamp(17px, 1.08vw, 21px); line-height: 1.5; }
+  .discussion-question span { width: 36px; height: 36px; font-size: 16px; }
+  .lesson-tabs { gap: 12px; padding-bottom: 16px; }
+  .lesson-tab { padding: 14px 20px; font-size: clamp(16px, 1vw, 20px); }
+  .theory-lesson-panel { padding: clamp(22px, 1.7vw, 32px); margin-bottom: 22px; }
+  .theory-lesson-header span { font-size: clamp(14px, .9vw, 18px); }
+  .theory-lesson-header h3 { margin: 7px 0 20px; font-size: clamp(28px, 1.85vw, 37px); }
+  .theory-subject-list { gap: 14px; }
+  .theory-subject-button { min-height: 76px; padding: 18px 20px; }
+  .theory-subject-button strong { font-size: clamp(18px, 1.15vw, 23px); }
+  .theory-subject-button b { font-size: 34px; }
+  .linked-block { margin-top: 20px; }
+  .linked-title { margin-bottom: 13px; font-size: clamp(20px, 1.3vw, 26px); }
+  .linked-product-grid { gap: 16px; }
+  .linked-product-card { width: clamp(150px, 9.5vw, 185px); padding: 12px; gap: 10px; }
+  .linked-product-card div { width: clamp(120px, 7.6vw, 148px); }
+  .linked-product-card strong { font-size: clamp(16px, 1vw, 20px); line-height: 1.25; }
+  .theory-card { padding: clamp(22px, 1.7vw, 32px); }
+  .theory-card h3 { font-size: clamp(26px, 1.7vw, 34px); }
+  .theory-card p, .theory-card li { font-size: clamp(16px, 1vw, 20px); line-height: 1.55; }
+  .theory-card h4 { font-size: clamp(15px, .95vw, 19px); }
+  .law-list { gap: clamp(10px, .75vw, 14px); }
+  .law-summary { grid-template-columns: 26px minmax(310px, .9fr) minmax(420px, 1.35fr) 42px; gap: 16px; padding: 16px 18px; }
+  .law-marker { font-size: 22px; }
+  .law-summary h3 { font-size: clamp(18px, 1.15vw, 23px); }
+  .law-summary p { font-size: clamp(15px, .95vw, 19px); line-height: 1.5; }
+  .law-toggle { width: 38px; height: 38px; font-size: 25px; }
+  .law-details { padding: 16px 20px 18px 60px; font-size: clamp(15px, .95vw, 19px); }
+  .calendar-list { gap: 18px; }
+  .calendar-card { grid-template-columns: 112px minmax(0, 1fr); gap: 20px; padding: 20px; }
+  .calendar-body h3 { font-size: clamp(24px, 1.5vw, 30px); }
+  .calendar-body p { font-size: clamp(16px, 1vw, 20px); }
+  .calendar-local, .calendar-note, .link-chip { padding: 9px 13px; font-size: clamp(14px, .88vw, 17px); }
+  .calendar-index { min-height: 112px; }
+  .calendar-index span { font-size: 14px; }
+  .calendar-index strong { font-size: 42px; }
+  .calendar-index b { font-size: 19px; }
+  .calendar-index em { font-size: 13px; }
 }
 
 @media (max-width: 760px) {

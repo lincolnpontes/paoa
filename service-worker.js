@@ -1,9 +1,9 @@
-const CACHE_NAME = 'paoa-v57';
+const CACHE_NAME = 'paoa-v58';
 const ASSETS = [
   './',
   './index.html',
-  './style.css?v=57',
-  './app.js?v=57',
+  './style.css?v=58',
+  './app.js?v=58',
   './manifest.json',
   './icon.png',
   './assets/home-aulas.png',

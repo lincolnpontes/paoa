@@ -1,7 +1,7 @@
 'use strict';
 
 const STORAGE_KEY = 'paoa_lab_v1';
-const APP_VERSION = '2.2.1';
+const APP_VERSION = '2.2.2';
 const SYNC_URL_KEY = 'paoa_sync_url_v1';
 const LAST_LOGIN_KEY = 'paoa_last_login_v1';
 const SESSION_TOKEN_KEY = 'paoa_session_token_v1';
@@ -2365,10 +2365,7 @@ function productWorkspaceHTML(p) {
 
         <section class="product-slide" data-slide-panel="referencias">
           <div class="slide-card">
-            <div class="slide-title-row">
-              ${slideHeadingHTML('Referências')}
-              <button type="button" class="secondary-btn compact" data-edit-product-references>Editar referências</button>
-            </div>
+            ${slideHeadingHTML('Referências')}
             <div class="stack-list law-list">${laws.map(lawCardHTML).join('') || emptyHTML('Nenhuma referência vinculada.')}</div>
           </div>
         </section>
@@ -2904,9 +2901,6 @@ function renderCronograma() {
     </div>` : ''}
     <div class="calendar-list">
       ${schedule.length ? schedule.map(scheduleCardHTML).join('') : emptyHTML('Nenhuma aula cadastrada para este período.')}
-    </div>
-    <div class="notice-card">
-      O cronograma pode ser ajustado conforme a oferta da disciplina. Os roteiros e as aulas teóricas permanecem conectados para consulta rápida durante a prática.
     </div>`;
   bindInternalLinks(root);
   root.querySelectorAll('[data-open-category]').forEach(btn => btn.addEventListener('click', () => setPage('Aulas')));
@@ -5024,7 +5018,7 @@ function resetDemo() {
 
 function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('service-worker.js?v=57').then(registration => registration.update()).catch(err => console.warn('Service worker não registrado', err));
+    navigator.serviceWorker.register('service-worker.js?v=58').then(registration => registration.update()).catch(err => console.warn('Service worker não registrado', err));
   }
 }
 
