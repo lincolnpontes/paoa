@@ -21,6 +21,8 @@ App didático em formato PWA para a disciplina **Processamento de Alimentos de O
 - Guarda uma ou mais fotos por produto.
 - Exporta e importa a base em JSON.
 - Funciona como PWA instalável e pode ser publicado no GitHub Pages.
+- Sincroniza a base entre dispositivos por um Google Apps Script com controle de revisão.
+- Exige login quando a sincronização está configurada e permite criar perfis com permissões detalhadas.
 
 ## Base demonstrativa
 
@@ -60,8 +62,23 @@ http://127.0.0.1:8767/?v=55
 - `assets/`: fotos demonstrativas usadas nos cards de produto.
 - `manifest.json`: configuração do PWA.
 - `service-worker.js`: cache offline básico.
+- `sync-config.js`: endereço público da implantação do Google Apps Script.
+- `google-apps-script-sync.gs`: backend de login, perfis, permissões, backup e sincronização.
 - `icon.png`: ícone do app.
 
 ## Observação sobre legislação
 
 A base legal incluída é didática. Antes de usar as informações em documentos oficiais, processos de registro, inspeção ou rotulagem real, consulte sempre a norma vigente diretamente no órgão competente.
+
+## Configurar login e sincronização
+
+1. Crie um projeto no Google Apps Script e cole o conteúdo de `google-apps-script-sync.gs` em `Code.gs`.
+2. Execute `prepararInstalacao()` uma vez e copie a chave exibida no registro da execução.
+3. Implante como **app da Web**, executando como o proprietário e permitindo acesso a qualquer pessoa.
+4. No PAOA, abra **Configurações > Configurações avançadas > Conectar sincronização**.
+5. Informe a URL terminada em `/exec`, a chave de instalação e defina os logins e senhas iniciais do administrador e dos discentes.
+6. Depois de validar a implantação, copie a mesma URL para `sync-config.js`. Assim, novos dispositivos abrirão diretamente a tela de login.
+
+O navegador guarda somente o último login bem-sucedido. A senha possui seis dígitos, é armazenada no servidor apenas como hash com salt e nunca é salva no navegador. As sessões expiram após seis horas.
+
+O perfil **Discentes** começa com acesso de visualização a Início, Aulas, Produtos, Cronograma e Regras. O perfil **Administrador** começa com todas as permissões. Outros perfis podem combinar separadamente visualização, operação de formulações, gerenciamento de cada área, backups, sincronização e administração de acessos.

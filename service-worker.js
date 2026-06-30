@@ -1,9 +1,9 @@
-const CACHE_NAME = 'paoa-v55';
+const CACHE_NAME = 'paoa-v56';
 const ASSETS = [
   './',
   './index.html',
-  './style.css?v=55',
-  './app.js?v=55',
+  './style.css?v=56',
+  './app.js?v=56',
   './manifest.json',
   './icon.png',
   './assets/home-aulas.png',
@@ -38,6 +38,14 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
+  if (new URL(event.request.url).pathname.endsWith('/sync-config.js')) {
+    event.respondWith(
+      fetch(event.request, { cache: 'no-store' }).catch(() => new Response("window.PAOA_SYNC_URL = '';", {
+        headers: { 'Content-Type': 'application/javascript; charset=utf-8' }
+      }))
+    );
+    return;
+  }
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request)

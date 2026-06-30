@@ -2,14 +2,14 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="theme-color" content="#1F6F68" />
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon.png" />
   <link rel="apple-touch-icon" href="icon.png" />
-  <link rel="stylesheet" href="style.css?v=55" />
+  <link rel="stylesheet" href="style.css?v=56" />
   <title>Processamento de Alimentos de Origem Animal</title>
 </head>
 <body>
@@ -25,8 +25,10 @@
         <div class="app-period" id="activePeriodLabel"></div>
       </div>
       <div class="top-actions">
+        <span class="session-badge" id="sessionBadge" hidden></span>
         <button class="icon-btn" id="btnInstall" title="Instalar app" hidden>⇩</button>
         <button class="icon-btn" id="btnConfig" title="Configurações">⚙️</button>
+        <button class="icon-btn" id="btnLogout" title="Sair" hidden>↪</button>
       </div>
     </header>
 
@@ -283,6 +285,7 @@
         <button type="button" class="config-menu-card" data-open-config-modal="modalConfigConteudos">Gerenciar conteúdos</button>
         <button type="button" class="config-menu-card" data-open-config-modal="modalConfigCronograma">Gerenciar aulas</button>
         <button type="button" class="config-menu-card" data-open-config-modal="modalConfigRegras">Regras do laboratório</button>
+        <button type="button" class="config-menu-card" data-open-config-modal="modalConfigAcessos">Perfis e acessos</button>
         <button type="button" class="config-menu-card" data-open-config-modal="modalConfigAvancadas">Configurações avançadas</button>
       </div>
     </div>
@@ -437,14 +440,120 @@
     <div class="modal">
       <button type="button" class="modal-close" data-close="modalConfigAvancadas" aria-label="Fechar">×</button>
       <div class="modal-title">Configurações avançadas</div>
-        <p class="muted">Os dados ficam salvos neste navegador. Use exportação JSON para backup e para levar a base para outro computador.</p>
+        <p class="muted" id="syncStatusText">Os dados ficam salvos neste navegador. Conecte o Google Apps Script para sincronizar os dispositivos.</p>
+        <div class="sync-status-card" id="syncStatusCard">
+          <span class="sync-status-dot"></span>
+          <div><strong id="syncStatusTitle">Modo local</strong><small id="syncStatusDetail">Sincronização ainda não configurada</small></div>
+        </div>
         <div class="config-grid">
+          <button class="primary-btn full" id="btnConfigurarSync">Conectar sincronização</button>
+          <button class="secondary-btn full" id="btnSyncPull">Baixar dados do servidor</button>
+          <button class="secondary-btn full" id="btnSyncPush">Enviar dados ao servidor</button>
           <button class="secondary-btn full" id="btnExportar">Exportar dados JSON</button>
           <button class="secondary-btn full" id="btnImportar">Importar dados JSON</button>
           <input id="fileImportar" type="file" accept="application/json,.json" hidden />
           <button class="secondary-btn full" id="btnBaixarModelo">Baixar modelo de dados</button>
           <button class="danger-btn full" id="btnResetDemo">Restaurar base demonstrativa</button>
         </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay auth-overlay" id="modalLogin">
+    <div class="modal auth-modal">
+      <div class="auth-brand">
+        <img src="icon.png" alt="" />
+        <div><strong>PAOA DEA</strong><span>Processamento de Alimentos de Origem Animal</span></div>
+      </div>
+      <div class="modal-title">Entrar no aplicativo</div>
+      <p class="muted">Use o login do seu perfil e a senha numérica de seis dígitos.</p>
+      <form id="loginForm" autocomplete="off">
+        <div class="form-group"><label for="loginUsuario">Login</label><input id="loginUsuario" type="text" maxlength="40" autocapitalize="none" spellcheck="false" autocomplete="username" required /></div>
+        <div class="form-group"><label for="loginSenha">Senha</label><input id="loginSenha" type="password" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="current-password" required /></div>
+        <p class="form-error" id="loginError" hidden></p>
+        <button type="submit" class="primary-btn full" id="btnEntrar">Entrar</button>
+      </form>
+      <small class="auth-note">Somente o último login bem-sucedido fica preenchido neste dispositivo. A senha não é salva.</small>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalConfigurarSync">
+    <div class="modal large-modal">
+      <button type="button" class="modal-close" data-close="modalConfigurarSync" aria-label="Fechar">×</button>
+      <div class="modal-title">Conectar Google Apps Script</div>
+      <p class="muted">Na primeira conexão, informe a chave gerada por <strong>prepararInstalacao()</strong> e defina os dois acessos iniciais.</p>
+      <div class="form-group"><label>URL do app da Web</label><input id="syncUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec" /></div>
+      <div id="bootstrapFields">
+        <div class="form-group"><label>Chave de instalação</label><input id="syncBootstrapKey" type="text" maxlength="32" autocomplete="off" /></div>
+        <div class="access-setup-grid">
+          <section class="access-setup-card">
+            <h3>Administrador</h3>
+            <div class="form-group"><label>Nome</label><input id="syncAdminName" type="text" value="Administrador" /></div>
+            <div class="form-group"><label>Login</label><input id="syncAdminLogin" type="text" autocapitalize="none" /></div>
+            <div class="form-group"><label>Senha de 6 dígitos</label><input id="syncAdminPin" type="password" inputmode="numeric" maxlength="6" /></div>
+          </section>
+          <section class="access-setup-card">
+            <h3>Discentes</h3>
+            <div class="form-group"><label>Nome</label><input id="syncStudentName" type="text" value="Discentes" /></div>
+            <div class="form-group"><label>Login compartilhado</label><input id="syncStudentLogin" type="text" autocapitalize="none" /></div>
+            <div class="form-group"><label>Senha de 6 dígitos</label><input id="syncStudentPin" type="password" inputmode="numeric" maxlength="6" /></div>
+          </section>
+        </div>
+      </div>
+      <p class="form-error" id="syncSetupError" hidden></p>
+      <div class="modal-actions">
+        <button type="button" class="secondary-btn" data-close="modalConfigurarSync">Cancelar</button>
+        <button type="button" class="primary-btn" id="btnSalvarSync">Conectar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalConfigAcessos">
+    <div class="modal large-modal access-manager-modal">
+      <button type="button" class="modal-close" data-close="modalConfigAcessos" aria-label="Fechar">×</button>
+      <div class="modal-title">Perfis e acessos</div>
+      <div class="access-manager-grid">
+        <section>
+          <div class="access-section-head"><h3>Perfis</h3><button type="button" class="primary-btn compact" id="btnNovoPerfil">Novo perfil</button></div>
+          <div id="accessProfilesList" class="access-list"></div>
+        </section>
+        <section>
+          <div class="access-section-head"><h3>Usuários</h3><button type="button" class="primary-btn compact" id="btnNovoUsuario">Novo usuário</button></div>
+          <div id="accessUsersList" class="access-list"></div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalPerfilEditor">
+    <div class="modal large-modal">
+      <button type="button" class="modal-close" data-close="modalPerfilEditor" aria-label="Fechar">×</button>
+      <div class="modal-title">Perfil</div>
+      <input type="hidden" id="perfilId" />
+      <div class="form-group"><label>Nome do perfil</label><input id="perfilNome" type="text" /></div>
+      <div class="permission-grid" id="perfilPermissoes"></div>
+      <div class="modal-actions">
+        <button type="button" class="danger-btn" id="btnExcluirPerfil">Excluir</button>
+        <button type="button" class="secondary-btn" data-close="modalPerfilEditor">Cancelar</button>
+        <button type="button" class="primary-btn" id="btnSalvarPerfil">Salvar perfil</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modalUsuarioEditor">
+    <div class="modal">
+      <button type="button" class="modal-close" data-close="modalUsuarioEditor" aria-label="Fechar">×</button>
+      <div class="modal-title">Usuário</div>
+      <input type="hidden" id="usuarioId" />
+      <div class="form-group"><label>Nome</label><input id="usuarioNome" type="text" /></div>
+      <div class="form-group"><label>Login</label><input id="usuarioLogin" type="text" maxlength="40" autocapitalize="none" /></div>
+      <div class="form-group"><label>Perfil</label><select id="usuarioPerfil"></select></div>
+      <div class="form-group"><label>Senha de 6 dígitos <small>(deixe vazia para manter)</small></label><input id="usuarioPin" type="password" inputmode="numeric" maxlength="6" /></div>
+      <label class="check-row"><input id="usuarioAtivo" type="checkbox" checked /> Usuário ativo</label>
+      <div class="modal-actions">
+        <button type="button" class="danger-btn" id="btnExcluirUsuario">Excluir</button>
+        <button type="button" class="secondary-btn" data-close="modalUsuarioEditor">Cancelar</button>
+        <button type="button" class="primary-btn" id="btnSalvarUsuario">Salvar usuário</button>
+      </div>
     </div>
   </div>
 
@@ -465,6 +574,7 @@
   </div>
 
   <div id="toast" class="toast"></div>
-  <script src="app.js?v=55"></script>
+  <script src="sync-config.js?v=56"></script>
+  <script src="app.js?v=56"></script>
 </body>
 </html>

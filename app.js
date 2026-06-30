@@ -1,12 +1,37 @@
 'use strict';
 
 const STORAGE_KEY = 'paoa_lab_v1';
-const APP_VERSION = '2.1.0';
+const APP_VERSION = '2.2.0';
+const SYNC_URL_KEY = 'paoa_sync_url_v1';
+const LAST_LOGIN_KEY = 'paoa_last_login_v1';
+const SESSION_TOKEN_KEY = 'paoa_session_token_v1';
+const SYNC_META_KEY = 'paoa_sync_meta_v1';
+const SYNC_DEBOUNCE_MS = 1400;
 const CURE_LIMIT_PPM = 150;
 const DEFAULT_CURE_CONCENTRATION_PCT = 7;
 const MEAT_CUTS_SOURCE_URL = 'https://nepa.unicamp.br/publicacoes/tabela-taco-pdf/';
 const MEDIA_DB_NAME = 'paoa_media_v1';
 const MEDIA_STORE_NAME = 'theory_slides';
+
+const PERMISSION_DEFS = [
+  { key: 'view.home', group: 'Visualização', label: 'Ver início' },
+  { key: 'view.aulas', group: 'Visualização', label: 'Ver aulas e conteúdos' },
+  { key: 'view.produtos', group: 'Visualização', label: 'Ver produtos e roteiros' },
+  { key: 'view.cronograma', group: 'Visualização', label: 'Ver cronograma' },
+  { key: 'view.regras', group: 'Visualização', label: 'Ver regras do laboratório' },
+  { key: 'formula.use', group: 'Operação', label: 'Alterar formulações durante a aula' },
+  { key: 'manage.products', group: 'Gerenciamento', label: 'Gerenciar produtos, visibilidade e referências' },
+  { key: 'manage.ingredients', group: 'Gerenciamento', label: 'Gerenciar insumos' },
+  { key: 'manage.formulas', group: 'Gerenciamento', label: 'Gerenciar formulações' },
+  { key: 'manage.contents', group: 'Gerenciamento', label: 'Gerenciar conteúdos teóricos' },
+  { key: 'manage.schedule', group: 'Gerenciamento', label: 'Gerenciar períodos, aulas e cronograma' },
+  { key: 'manage.rules', group: 'Gerenciamento', label: 'Gerenciar regras do laboratório' },
+  { key: 'manage.access', group: 'Administração', label: 'Gerenciar perfis e usuários' },
+  { key: 'manage.sync', group: 'Administração', label: 'Configurar e forçar sincronização' },
+  { key: 'data.export', group: 'Dados', label: 'Exportar backup JSON' },
+  { key: 'data.import', group: 'Dados', label: 'Importar backup JSON' },
+  { key: 'data.reset', group: 'Dados', label: 'Restaurar base demonstrativa' }
+];
 
 const MEAT_CUTS = [
   { id: 'acem', nome: 'Acém bovino', comGordura: 5.9, semGordura: 6.1, fonteCom: 'TACO: acém moído, cru', fonteSem: 'TACO: acém sem gordura, cru' },
@@ -1165,6 +1190,17 @@ let scheduleConfigSnapshot = null;
 let activeTheorySlideController = null;
 const expandedIntensityItems = new Set();
 const theoryImageCache = new Map();
+let authState = {
+  token: sessionStorage.getItem(SESSION_TOKEN_KEY) || '',
+  user: null,
+  profile: null,
+  permissions: {},
+  revision: 0
+};
+let accessState = { profiles: [], users: [] };
+let syncTimer = null;
+let syncBusy = false;
+let syncMeta = loadSyncMeta();
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => Array.from(document.querySelectorAll(selector));
@@ -1172,7 +1208,6 @@ const $$ = (selector) => Array.from(document.querySelectorAll(selector));
 window.addEventListener('DOMContentLoaded', init);
 
 async function init() {
-  setTimeout(() => $('#splashScreen')?.classList.add('hide'), 450);
   await hydrateTheoryImageCache();
   await migrateEmbeddedTheoryImages();
   setupEvents();
@@ -1181,6 +1216,10 @@ async function init() {
   if ($('#configAppVersion')) $('#configAppVersion').textContent = `Versão ${APP_VERSION}`;
   renderAll();
   registerServiceWorker();
+  await initializeSync();
+  applyPermissions();
+  updateSyncStatus();
+  setTimeout(() => $('#splashScreen')?.classList.add('hide'), 250);
 }
 
 function setupEvents() {
@@ -1191,6 +1230,8 @@ function setupEvents() {
   $$('[data-action="open-ingredient"]').forEach(btn => btn.addEventListener('click', () => openIngredientModal()));
   $$('[data-action="open-formula"]').forEach(btn => btn.addEventListener('click', () => openFormulaModal()));
   $$('[data-open-config-modal]').forEach(btn => btn.addEventListener('click', () => {
+    const requiredPermission = permissionForConfigModal(btn.dataset.openConfigModal);
+    if (requiredPermission && !(requiredPermission === 'advanced' ? canAdvanced() : can(requiredPermission))) return toast('Seu perfil não possui acesso a esta área.');
     if (btn.dataset.openConfigModal === 'modalConfigCronograma') beginScheduleConfigSession();
     closeModal('modalConfig');
     openModal(btn.dataset.openConfigModal);
@@ -1199,6 +1240,8 @@ function setupEvents() {
     if (btn.dataset.openConfigModal === 'modalConfigCronograma') renderScheduleConfig();
     if (btn.dataset.openConfigModal === 'modalConfigRegras') renderRulesConfig();
     if (btn.dataset.openConfigModal === 'modalConfigConteudos') renderContentConfig();
+    if (btn.dataset.openConfigModal === 'modalConfigAcessos') loadAccessManager();
+    if (btn.dataset.openConfigModal === 'modalConfigAvancadas') updateSyncStatus();
   }));
   $$('[data-config-tab]').forEach(btn => btn.addEventListener('click', () => setConfigTab(btn.dataset.configTab)));
   $$('[data-close]').forEach(btn => btn.addEventListener('click', () => {
@@ -1210,7 +1253,7 @@ function setupEvents() {
   }));
   $$('[data-toggle]').forEach(btn => btn.addEventListener('click', () => $('#' + btn.dataset.toggle)?.classList.toggle('open')));
   $$('.modal-overlay').forEach(overlay => overlay.addEventListener('click', (ev) => {
-    if (ev.target === overlay) closeModal(overlay.id);
+    if (ev.target === overlay && overlay.id !== 'modalLogin') closeModal(overlay.id);
   }));
 
   $('#searchProdutos')?.addEventListener('input', renderProdutos);
@@ -1244,8 +1287,11 @@ function setupEvents() {
   $('#btnCopiarRelatorio')?.addEventListener('click', copyReport);
   $('#btnCopiarRoteiro')?.addEventListener('click', copyLesson);
   $('#btnConfig')?.addEventListener('click', () => {
+    if (syncEnabled() && !authState.user) return showLogin();
     openModal('modalConfig');
   });
+  $('#btnLogout')?.addEventListener('click', logout);
+  $('#loginForm')?.addEventListener('submit', handleLogin);
   $('#periodoAtivoSelect')?.addEventListener('change', () => setActivePeriod($('#periodoAtivoSelect').value));
   $('#periodoNome')?.addEventListener('change', () => savePeriodField('nome', $('#periodoNome').value));
   $('#periodoInicio')?.addEventListener('change', () => savePeriodField('inicio', $('#periodoInicio').value));
@@ -1272,6 +1318,16 @@ function setupEvents() {
   $('#fileImportar')?.addEventListener('change', importData);
   $('#btnBaixarModelo')?.addEventListener('click', downloadTemplate);
   $('#btnResetDemo')?.addEventListener('click', resetDemo);
+  $('#btnConfigurarSync')?.addEventListener('click', openSyncSetup);
+  $('#btnSalvarSync')?.addEventListener('click', saveSyncSetup);
+  $('#btnSyncPull')?.addEventListener('click', requestRemotePull);
+  $('#btnSyncPush')?.addEventListener('click', requestRemotePush);
+  $('#btnNovoPerfil')?.addEventListener('click', () => openProfileEditor());
+  $('#btnSalvarPerfil')?.addEventListener('click', saveProfile);
+  $('#btnExcluirPerfil')?.addEventListener('click', deleteProfile);
+  $('#btnNovoUsuario')?.addEventListener('click', () => openUserEditor());
+  $('#btnSalvarUsuario')?.addEventListener('click', saveUser);
+  $('#btnExcluirUsuario')?.addEventListener('click', deleteUser);
 
   window.addEventListener('beforeinstallprompt', (ev) => {
     ev.preventDefault();
@@ -1453,10 +1509,16 @@ function cleanFormulaName(name) {
   return String(name || '').replace(/\s+base$/i, '').trim();
 }
 
-function saveDB() {
+function saveDB(options = {}) {
   db.version = APP_VERSION;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+    if (!options.skipSync && syncEnabled() && authState.user && hasEditablePermission()) {
+      syncMeta.localDirty = true;
+      saveSyncMeta();
+      scheduleRemoteSave();
+      updateSyncStatus();
+    }
     return true;
   } catch (err) {
     console.error(err);
@@ -1477,9 +1539,12 @@ function renderAll() {
   renderRules();
   renderRulesConfig();
   renderAulas();
+  applyPermissions();
 }
 
 function setPage(page) {
+  const pagePermission = permissionForPage(page);
+  if (pagePermission && !can(pagePermission)) return toast('Seu perfil não possui acesso a esta página.');
   activePage = page;
   const topbar = $('.topbar');
   if (topbar) topbar.hidden = page !== 'Inicio';
@@ -1499,6 +1564,594 @@ function setConfigTab(tab) {
   if (tab === 'produtos') renderConfigProdutos();
   if (tab === 'insumos') renderInsumos();
   if (tab === 'cronograma') renderScheduleConfig();
+}
+
+function loadSyncMeta() {
+  try {
+    return Object.assign({ initialized: false, localDirty: false, conflict: false, lastSyncAt: 0 }, JSON.parse(localStorage.getItem(SYNC_META_KEY) || '{}'));
+  } catch (err) {
+    return { initialized: false, localDirty: false, conflict: false, lastSyncAt: 0 };
+  }
+}
+
+function saveSyncMeta() {
+  localStorage.setItem(SYNC_META_KEY, JSON.stringify(syncMeta));
+}
+
+function getSyncUrl() {
+  return String(localStorage.getItem(SYNC_URL_KEY) || window.PAOA_SYNC_URL || '').trim().replace(/\/+$/, '');
+}
+
+function syncEnabled() {
+  return /^https:\/\/script\.google\.com\/.+\/exec$/i.test(getSyncUrl());
+}
+
+async function initializeSync() {
+  if (!syncEnabled()) {
+    authState.permissions = permissionMap(true);
+    return;
+  }
+  try {
+    const status = await syncRequest('status');
+    syncMeta.initialized = status.initialized === true;
+    saveSyncMeta();
+    if (!status.initialized) {
+      authState.permissions = permissionMap(true);
+      toast('O servidor está pronto para a configuração inicial.');
+      return;
+    }
+    if (authState.token) {
+      try {
+        const payload = await syncRequest('pull', {});
+        await applySessionPayload(payload);
+        return;
+      } catch (err) {
+        clearSession();
+      }
+    }
+    showLogin();
+  } catch (err) {
+    authState.permissions = permissionMap(false);
+    showLogin('Não foi possível acessar o servidor. Verifique sua conexão e tente novamente.');
+  }
+}
+
+async function syncRequest(action, payload = {}, urlOverride = '') {
+  const url = String(urlOverride || getSyncUrl()).trim().replace(/\/+$/, '');
+  if (!url) throw new Error('Informe a URL do Google Apps Script.');
+  const body = Object.assign({ action }, payload);
+  if (authState.token && !['status', 'login', 'bootstrap'].includes(action)) body.token = authState.token;
+  const response = await fetch(url, {
+    method: 'POST',
+    redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(body)
+  });
+  if (!response.ok) throw new Error(`Servidor indisponível (${response.status}).`);
+  const result = await response.json();
+  if (!result.ok && !result.conflict) throw new Error(result.error || 'Não foi possível concluir a operação.');
+  return result;
+}
+
+function showLogin(message = '') {
+  document.body.classList.add('auth-locked');
+  $('#loginUsuario').value = localStorage.getItem(LAST_LOGIN_KEY) || '';
+  $('#loginSenha').value = '';
+  $('#loginError').textContent = message;
+  $('#loginError').hidden = !message;
+  openModal('modalLogin');
+  requestAnimationFrame(() => ($('#loginUsuario').value ? $('#loginSenha') : $('#loginUsuario'))?.focus());
+}
+
+async function handleLogin(event) {
+  event.preventDefault();
+  const login = $('#loginUsuario').value.trim();
+  const pin = $('#loginSenha').value;
+  const button = $('#btnEntrar');
+  $('#loginError').hidden = true;
+  if (!/^\d{6}$/.test(pin)) {
+    $('#loginError').textContent = 'A senha deve ter exatamente seis dígitos.';
+    $('#loginError').hidden = false;
+    return;
+  }
+  button.disabled = true;
+  button.textContent = 'Entrando...';
+  try {
+    const payload = await syncRequest('login', { login, pin });
+    authState.token = payload.token;
+    sessionStorage.setItem(SESSION_TOKEN_KEY, payload.token);
+    localStorage.setItem(LAST_LOGIN_KEY, payload.user.login);
+    await applySessionPayload(payload);
+    $('#loginSenha').value = '';
+    closeModal('modalLogin');
+    document.body.classList.remove('auth-locked');
+    toast(`Olá, ${payload.user.name}.`);
+  } catch (err) {
+    $('#loginSenha').value = '';
+    $('#loginError').textContent = err.message;
+    $('#loginError').hidden = false;
+    $('#loginSenha').focus();
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Entrar';
+  }
+}
+
+async function applySessionPayload(payload) {
+  authState.user = payload.user || null;
+  authState.profile = payload.profile || null;
+  authState.permissions = permissionMap(false, payload.permissions || payload.profile?.permissions || {});
+  authState.revision = Number(payload.revision || 0);
+  syncMeta.initialized = true;
+  syncMeta.conflict = false;
+  syncMeta.localDirty = false;
+  syncMeta.lastSyncAt = Date.now();
+  if (payload.data) await adoptRemoteData(payload.data);
+  syncMeta.lastFingerprint = fingerprintData(await buildSyncData());
+  saveSyncMeta();
+  applyPermissions();
+  updateSyncStatus();
+}
+
+async function adoptRemoteData(remoteData) {
+  const localUi = {
+    filtroInsumo: db.configs?.filtroInsumo || 'todos',
+    produtoSelecionado: '',
+    ultimoProdutoAula: db.configs?.ultimoProdutoAula || ''
+  };
+  const incoming = clone(remoteData);
+  for (const content of incoming.configs?.conteudosTeoricos || []) {
+    content.imagens = await Promise.all((content.imagens || []).map(image => String(image).startsWith('data:image/') ? storeTheoryImage(image) : image));
+  }
+  db = normalizeDB(incoming);
+  Object.assign(db.configs, localUi);
+  selectedIngredientFilter = db.configs.filtroInsumo || 'todos';
+  activeProductId = '';
+  saveDB({ skipSync: true });
+  await hydrateTheoryImageCache();
+  renderAll();
+}
+
+async function buildSyncData() {
+  const payload = clone(db);
+  payload.app_id = 'paoa_lab';
+  payload.configs = payload.configs || {};
+  delete payload.configs.filtroInsumo;
+  delete payload.configs.produtoSelecionado;
+  delete payload.configs.ultimoProdutoAula;
+  for (const content of payload.configs.conteudosTeoricos || []) {
+    content.imagens = (content.imagens || []).map(resolveTheoryImage);
+  }
+  return payload;
+}
+
+function fingerprintData(data) {
+  const text = JSON.stringify(data || {});
+  let hash = 2166136261;
+  for (let index = 0; index < text.length; index += 1) {
+    hash ^= text.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return `${text.length}:${(hash >>> 0).toString(16)}`;
+}
+
+function scheduleRemoteSave() {
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => pushRemoteData().catch(err => console.warn('Sincronização pendente', err)), SYNC_DEBOUNCE_MS);
+}
+
+async function pushRemoteData(force = false) {
+  if (syncBusy || !syncEnabled() || !authState.user || !hasEditablePermission()) return false;
+  syncBusy = true;
+  updateSyncStatus('Enviando alterações...');
+  try {
+    const syncData = await buildSyncData();
+    const fingerprint = fingerprintData(syncData);
+    if (!force && fingerprint === syncMeta.lastFingerprint) {
+      syncMeta.localDirty = false;
+      saveSyncMeta();
+      return true;
+    }
+    const result = await syncRequest('save', { data: syncData, baseRevision: authState.revision, force });
+    if (result.conflict) {
+      syncMeta.conflict = true;
+      syncMeta.localDirty = true;
+      saveSyncMeta();
+      toast('Há uma versão mais recente no servidor. A sincronização foi pausada.');
+      return false;
+    }
+    authState.revision = Number(result.revision || authState.revision);
+    syncMeta.localDirty = false;
+    syncMeta.conflict = false;
+    syncMeta.lastSyncAt = Date.now();
+    syncMeta.lastFingerprint = fingerprint;
+    saveSyncMeta();
+    return true;
+  } finally {
+    syncBusy = false;
+    updateSyncStatus();
+  }
+}
+
+async function pullRemoteData() {
+  if (!syncEnabled() || !authState.user) return false;
+  syncBusy = true;
+  updateSyncStatus('Baixando dados...');
+  try {
+    const payload = await syncRequest('pull');
+    await applySessionPayload(payload);
+    toast('Dados atualizados pelo servidor.');
+    return true;
+  } finally {
+    syncBusy = false;
+    updateSyncStatus();
+  }
+}
+
+function requestRemotePull() {
+  if (!authState.user) return showLogin();
+  const run = () => pullRemoteData().catch(err => toast(err.message));
+  if (!syncMeta.localDirty) return run();
+  openConfirmation({
+    title: 'Baixar dados do servidor',
+    message: 'As alterações locais ainda não enviadas serão descartadas.',
+    confirmLabel: 'Baixar e substituir',
+    action: run
+  });
+}
+
+function requestRemotePush() {
+  if (!can('manage.sync')) return toast('Seu perfil não pode forçar a sincronização.');
+  openConfirmation({
+    title: 'Enviar dados ao servidor',
+    message: 'Esta ação substituirá as áreas permitidas mesmo se outro dispositivo tiver enviado uma versão mais recente.',
+    confirmLabel: 'Enviar mesmo assim',
+    action: () => pushRemoteData(true).then(ok => ok && toast('Dados enviados ao servidor.')).catch(err => toast(err.message))
+  });
+}
+
+async function logout() {
+  if (authState.token) syncRequest('logout').catch(() => {});
+  clearSession();
+  closeModal('modalConfig');
+  showLogin();
+}
+
+function clearSession() {
+  sessionStorage.removeItem(SESSION_TOKEN_KEY);
+  authState = { token: '', user: null, profile: null, permissions: permissionMap(false), revision: 0 };
+  applyPermissions();
+}
+
+function permissionMap(value, source = {}) {
+  const result = {};
+  PERMISSION_DEFS.forEach(item => result[item.key] = Object.prototype.hasOwnProperty.call(source, item.key) ? source[item.key] === true : value === true);
+  return result;
+}
+
+function can(permission) {
+  if (!syncEnabled() || !syncMeta.initialized) return true;
+  return authState.permissions?.[permission] === true;
+}
+
+function requirePermission(permission, message = 'Seu perfil não possui permissão para esta ação.') {
+  if (can(permission)) return true;
+  toast(message);
+  return false;
+}
+
+function canEditFormula() {
+  return can('formula.use') || can('manage.formulas');
+}
+
+function hasEditablePermission() {
+  return ['formula.use', 'manage.products', 'manage.ingredients', 'manage.formulas', 'manage.contents', 'manage.schedule', 'manage.rules', 'data.import', 'data.reset'].some(can);
+}
+
+function permissionForPage(page) {
+  return ({ Inicio: 'view.home', Aulas: 'view.aulas', Produtos: 'view.produtos', Cronograma: 'view.cronograma', Regras: 'view.regras' })[page] || '';
+}
+
+function permissionForConfigModal(id) {
+  return ({
+    modalConfigProdutos: 'manage.products',
+    modalConfigInsumos: 'manage.ingredients',
+    modalConfigConteudos: 'manage.contents',
+    modalConfigCronograma: 'manage.schedule',
+    modalConfigRegras: 'manage.rules',
+    modalConfigAcessos: 'manage.access',
+    modalConfigAvancadas: 'advanced'
+  })[id] || '';
+}
+
+function canAdvanced() {
+  return ['manage.sync', 'data.export', 'data.import', 'data.reset'].some(can);
+}
+
+function applyPermissions() {
+  const pageTargets = { Inicio: 'view.home', Aulas: 'view.aulas', Produtos: 'view.produtos', Cronograma: 'view.cronograma', Regras: 'view.regras' };
+  $$('.nav-btn[data-page], [data-page-target]').forEach(el => {
+    const page = el.dataset.page || el.dataset.pageTarget;
+    el.hidden = Boolean(pageTargets[page]) && !can(pageTargets[page]);
+  });
+  const configPermissions = {
+    modalConfigProdutos: 'manage.products', modalConfigInsumos: 'manage.ingredients', modalConfigConteudos: 'manage.contents',
+    modalConfigCronograma: 'manage.schedule', modalConfigRegras: 'manage.rules', modalConfigAcessos: 'manage.access', modalConfigAvancadas: 'advanced'
+  };
+  $$('[data-open-config-modal]').forEach(el => {
+    const permission = configPermissions[el.dataset.openConfigModal];
+    el.hidden = el.dataset.openConfigModal === 'modalConfigAcessos' && !syncMeta.initialized
+      ? true
+      : permission === 'advanced' ? !canAdvanced() : !can(permission);
+  });
+  const hasConfigAccess = Object.values(configPermissions).some(permission => permission === 'advanced' ? canAdvanced() : can(permission));
+  if ($('#btnConfig')) $('#btnConfig').hidden = syncEnabled() && syncMeta.initialized && !hasConfigAccess;
+  if ($('#btnLogout')) $('#btnLogout').hidden = !authState.user;
+  if ($('#sessionBadge')) {
+    $('#sessionBadge').hidden = !authState.user;
+    $('#sessionBadge').textContent = authState.user ? `${authState.user.name} · ${authState.profile?.name || ''}` : '';
+  }
+  if ($('#btnExportar')) $('#btnExportar').hidden = !can('data.export');
+  if ($('#btnImportar')) $('#btnImportar').hidden = !can('data.import');
+  if ($('#btnBaixarModelo')) $('#btnBaixarModelo').hidden = !can('data.export');
+  if ($('#btnResetDemo')) $('#btnResetDemo').hidden = !can('data.reset');
+  if ($('#btnConfigurarSync')) $('#btnConfigurarSync').hidden = !can('manage.sync');
+  if ($('#btnSyncPush')) $('#btnSyncPush').hidden = !can('manage.sync') || !syncEnabled();
+  if ($('#btnSyncPull')) $('#btnSyncPull').hidden = !syncEnabled() || !authState.user;
+  document.body.classList.toggle('formula-readonly', !can('formula.use') && !can('manage.formulas'));
+  enforceFormulaReadOnly();
+  if (permissionForPage(activePage) && !can(permissionForPage(activePage))) {
+    const fallback = Object.keys(pageTargets).find(page => can(pageTargets[page]));
+    if (fallback) setPage(fallback);
+  }
+}
+
+function enforceFormulaReadOnly() {
+  const locked = document.body.classList.contains('formula-readonly');
+  $$('.inline-formula-row input, .inline-formula-row select, .blend-editor input, .blend-editor select, .single-component input, .single-component select').forEach(control => {
+    if (locked && !control.disabled) {
+      control.dataset.permissionDisabled = 'true';
+      control.disabled = true;
+    } else if (!locked && control.dataset.permissionDisabled === 'true') {
+      delete control.dataset.permissionDisabled;
+      control.disabled = false;
+    }
+  });
+}
+
+function updateSyncStatus(temporaryText = '') {
+  const title = $('#syncStatusTitle');
+  const detail = $('#syncStatusDetail');
+  const card = $('#syncStatusCard');
+  if (!title || !detail || !card) return;
+  card.classList.toggle('connected', syncEnabled() && Boolean(authState.user));
+  card.classList.toggle('conflict', syncMeta.conflict === true);
+  if (!syncEnabled()) {
+    title.textContent = 'Modo local';
+    detail.textContent = 'Sincronização ainda não configurada';
+  } else if (temporaryText) {
+    title.textContent = 'Sincronizando';
+    detail.textContent = temporaryText;
+  } else if (syncMeta.conflict) {
+    title.textContent = 'Conflito de versões';
+    detail.textContent = 'Escolha baixar o servidor ou forçar o envio local';
+  } else if (!authState.user) {
+    title.textContent = syncMeta.initialized ? 'Aguardando login' : 'Servidor não inicializado';
+    detail.textContent = getSyncUrl();
+  } else {
+    title.textContent = syncMeta.localDirty ? 'Alterações pendentes' : 'Sincronizado';
+    detail.textContent = syncMeta.lastSyncAt ? `Última sincronização: ${new Date(syncMeta.lastSyncAt).toLocaleString('pt-BR')}` : getSyncUrl();
+  }
+  if ($('#syncStatusText')) $('#syncStatusText').textContent = syncEnabled()
+    ? 'Os dados locais são mantidos para uso offline e sincronizados com o Google Apps Script.'
+    : 'Os dados ficam salvos neste navegador. Conecte o Google Apps Script para sincronizar os dispositivos.';
+}
+
+function openSyncSetup() {
+  if (!can('manage.sync')) return toast('Seu perfil não pode configurar a sincronização.');
+  $('#syncUrl').value = getSyncUrl();
+  $('#syncBootstrapKey').value = '';
+  $('#syncAdminPin').value = '';
+  $('#syncStudentPin').value = '';
+  $('#syncSetupError').hidden = true;
+  $('#bootstrapFields').hidden = syncMeta.initialized === true;
+  $('#btnSalvarSync').textContent = syncMeta.initialized ? 'Salvar URL' : 'Conectar';
+  openModal('modalConfigurarSync');
+}
+
+async function saveSyncSetup() {
+  const url = $('#syncUrl').value.trim().replace(/\/+$/, '');
+  const error = $('#syncSetupError');
+  const button = $('#btnSalvarSync');
+  error.hidden = true;
+  if (!/^https:\/\/script\.google\.com\/.+\/exec$/i.test(url)) {
+    error.textContent = 'Use a URL de implantação do Apps Script terminada em /exec.';
+    error.hidden = false;
+    return;
+  }
+  button.disabled = true;
+  button.textContent = 'Conectando...';
+  try {
+    const status = await syncRequest('status', {}, url);
+    if (!status.initialized) {
+      const adminPin = $('#syncAdminPin').value;
+      const studentPin = $('#syncStudentPin').value;
+      if (!/^\d{6}$/.test(adminPin) || !/^\d{6}$/.test(studentPin)) throw new Error('As duas senhas devem ter exatamente seis dígitos.');
+      await syncRequest('bootstrap', {
+        bootstrapKey: $('#syncBootstrapKey').value.trim(),
+        adminName: $('#syncAdminName').value.trim(),
+        adminLogin: $('#syncAdminLogin').value.trim(),
+        adminPin,
+        studentName: $('#syncStudentName').value.trim(),
+        studentLogin: $('#syncStudentLogin').value.trim(),
+        studentPin,
+        data: await buildSyncData()
+      }, url);
+      localStorage.setItem(LAST_LOGIN_KEY, $('#syncAdminLogin').value.trim().toLowerCase());
+      syncMeta.initialized = true;
+      toast('Servidor configurado. Entre com o perfil administrador.');
+    } else {
+      syncMeta.initialized = true;
+      toast('Endereço de sincronização salvo.');
+    }
+    localStorage.setItem(SYNC_URL_KEY, url);
+    syncMeta.localDirty = false;
+    syncMeta.conflict = false;
+    saveSyncMeta();
+    clearSession();
+    $('#syncBootstrapKey').value = '';
+    $('#syncAdminPin').value = '';
+    $('#syncStudentPin').value = '';
+    closeModal('modalConfigurarSync');
+    closeModal('modalConfigAvancadas');
+    showLogin();
+  } catch (err) {
+    error.textContent = err.message;
+    error.hidden = false;
+  } finally {
+    button.disabled = false;
+    button.textContent = syncMeta.initialized ? 'Salvar URL' : 'Conectar';
+  }
+}
+
+async function loadAccessManager() {
+  if (!can('manage.access')) return;
+  const rootProfiles = $('#accessProfilesList');
+  const rootUsers = $('#accessUsersList');
+  rootProfiles.innerHTML = '<p class="muted">Carregando perfis...</p>';
+  rootUsers.innerHTML = '<p class="muted">Carregando usuários...</p>';
+  try {
+    const result = await syncRequest('list_access');
+    accessState = { profiles: result.profiles || [], users: result.users || [] };
+    renderAccessManager();
+  } catch (err) {
+    rootProfiles.innerHTML = `<p class="form-error">${escapeHTML(err.message)}</p>`;
+    rootUsers.innerHTML = '';
+  }
+}
+
+function renderAccessManager() {
+  const profiles = $('#accessProfilesList');
+  const users = $('#accessUsersList');
+  if (!profiles || !users) return;
+  profiles.innerHTML = accessState.profiles.map(profile => {
+    const enabled = Object.values(profile.permissions || {}).filter(Boolean).length;
+    return `<button type="button" class="access-list-card" data-profile-id="${escapeAttr(profile.id)}"><span><strong>${escapeHTML(profile.name)}</strong><small>${enabled} permissões${profile.system ? ' · perfil principal' : ''}</small></span><b>›</b></button>`;
+  }).join('') || emptyHTML('Nenhum perfil cadastrado.');
+  users.innerHTML = accessState.users.map(user => {
+    const profile = accessState.profiles.find(item => item.id === user.profileId);
+    return `<button type="button" class="access-list-card${user.active === false ? ' inactive' : ''}" data-user-id="${escapeAttr(user.id)}"><span><strong>${escapeHTML(user.name || user.login)}</strong><small>${escapeHTML(user.login)} · ${escapeHTML(profile?.name || 'Sem perfil')}${user.active === false ? ' · inativo' : ''}</small></span><b>›</b></button>`;
+  }).join('') || emptyHTML('Nenhum usuário cadastrado.');
+  profiles.querySelectorAll('[data-profile-id]').forEach(button => button.addEventListener('click', () => openProfileEditor(button.dataset.profileId)));
+  users.querySelectorAll('[data-user-id]').forEach(button => button.addEventListener('click', () => openUserEditor(button.dataset.userId)));
+}
+
+function openProfileEditor(id = '') {
+  const profile = accessState.profiles.find(item => item.id === id) || { id: '', name: '', permissions: permissionMap(false), system: false };
+  $('#perfilId').value = profile.id;
+  $('#perfilNome').value = profile.name;
+  $('#btnExcluirPerfil').hidden = !profile.id || profile.system === true;
+  const groups = Array.from(new Set(PERMISSION_DEFS.map(item => item.group)));
+  $('#perfilPermissoes').innerHTML = groups.map(group => `<fieldset><legend>${escapeHTML(group)}</legend>${PERMISSION_DEFS.filter(item => item.group === group).map(item => `<label class="permission-option"><input type="checkbox" data-permission-key="${escapeAttr(item.key)}" ${profile.permissions?.[item.key] ? 'checked' : ''} /><span>${escapeHTML(item.label)}</span></label>`).join('')}</fieldset>`).join('');
+  openModal('modalPerfilEditor');
+}
+
+async function saveProfile() {
+  const button = $('#btnSalvarPerfil');
+  const profile = {
+    id: $('#perfilId').value,
+    name: $('#perfilNome').value.trim(),
+    permissions: {}
+  };
+  $$('[data-permission-key]').forEach(input => profile.permissions[input.dataset.permissionKey] = input.checked);
+  button.disabled = true;
+  try {
+    const result = await syncRequest('save_profile', { profile });
+    accessState = { profiles: result.profiles || [], users: result.users || [] };
+    renderAccessManager();
+    closeModal('modalPerfilEditor');
+    toast('Perfil salvo.');
+  } catch (err) {
+    toast(err.message);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+function deleteProfile() {
+  const id = $('#perfilId').value;
+  const profile = accessState.profiles.find(item => item.id === id);
+  if (!profile) return;
+  openConfirmation({
+    title: 'Excluir perfil', message: `Excluir o perfil “${profile.name}”?`, confirmLabel: 'Excluir perfil',
+    action: async () => {
+      try {
+        const result = await syncRequest('delete_profile', { profileId: id });
+        accessState = { profiles: result.profiles || [], users: result.users || [] };
+        renderAccessManager();
+        closeModal('modalPerfilEditor');
+        toast('Perfil excluído.');
+      } catch (err) { toast(err.message); }
+    }
+  });
+}
+
+function openUserEditor(id = '') {
+  const user = accessState.users.find(item => item.id === id) || { id: '', name: '', login: '', profileId: accessState.profiles[0]?.id || '', active: true };
+  $('#usuarioId').value = user.id;
+  $('#usuarioNome').value = user.name;
+  $('#usuarioLogin').value = user.login;
+  $('#usuarioPin').value = '';
+  $('#usuarioAtivo').checked = user.active !== false;
+  $('#usuarioPerfil').innerHTML = accessState.profiles.map(profile => `<option value="${escapeAttr(profile.id)}">${escapeHTML(profile.name)}</option>`).join('');
+  $('#usuarioPerfil').value = user.profileId;
+  $('#btnExcluirUsuario').hidden = !user.id || user.id === authState.user?.id;
+  openModal('modalUsuarioEditor');
+}
+
+async function saveUser() {
+  const button = $('#btnSalvarUsuario');
+  const user = {
+    id: $('#usuarioId').value,
+    name: $('#usuarioNome').value.trim(),
+    login: $('#usuarioLogin').value.trim(),
+    pin: $('#usuarioPin').value,
+    profileId: $('#usuarioPerfil').value,
+    active: $('#usuarioAtivo').checked
+  };
+  if (!user.id && !/^\d{6}$/.test(user.pin)) return toast('Defina uma senha de seis dígitos para o novo usuário.');
+  if (user.pin && !/^\d{6}$/.test(user.pin)) return toast('A senha deve ter exatamente seis dígitos.');
+  button.disabled = true;
+  try {
+    const result = await syncRequest('save_user', { user });
+    accessState = { profiles: result.profiles || [], users: result.users || [] };
+    renderAccessManager();
+    $('#usuarioPin').value = '';
+    closeModal('modalUsuarioEditor');
+    toast('Usuário salvo.');
+  } catch (err) {
+    toast(err.message);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+function deleteUser() {
+  const id = $('#usuarioId').value;
+  const user = accessState.users.find(item => item.id === id);
+  if (!user) return;
+  openConfirmation({
+    title: 'Excluir usuário', message: `Excluir o acesso de “${user.login}”?`, confirmLabel: 'Excluir usuário',
+    action: async () => {
+      try {
+        const result = await syncRequest('delete_user', { userId: id });
+        accessState = { profiles: result.profiles || [], users: result.users || [] };
+        renderAccessManager();
+        closeModal('modalUsuarioEditor');
+        toast('Usuário excluído.');
+      } catch (err) { toast(err.message); }
+    }
+  });
 }
 
 function renderActivePeriodLabel() {
@@ -1543,6 +2196,7 @@ function renderProdutos() {
     workspace.hidden = false;
     workspace.innerHTML = productWorkspaceHTML(visibleSelected);
     bindProductWorkspace(workspace);
+    enforceFormulaReadOnly();
     return;
   }
   overview.hidden = false;
@@ -2549,6 +3203,7 @@ function renderTheoryContentImages() {
 }
 
 function saveTheoryContent() {
+  if (!requirePermission('manage.contents')) return;
   const id = $('#conteudoId').value || uid('conteudo');
   const existing = getTheoryContent(id);
   const content = {
@@ -2583,6 +3238,7 @@ function saveTheoryContent() {
 }
 
 function deleteTheoryContent() {
+  if (!requirePermission('manage.contents')) return;
   const id = $('#conteudoId').value;
   const content = getTheoryContent(id);
   if (!content || content.padrao) return;
@@ -2721,6 +3377,7 @@ function saveLabRuleField(input) {
 }
 
 function addLabRule() {
+  if (!requirePermission('manage.rules')) return;
   db.configs.regrasLaboratorio = normalizeLabRules(db.configs.regrasLaboratorio);
   const next = db.configs.regrasLaboratorio.length + 1;
   db.configs.regrasLaboratorio.push({ id: uid('regra'), numero: String(next).padStart(2, '0'), titulo: 'Nova regra', texto: '' });
@@ -2731,6 +3388,7 @@ function addLabRule() {
 }
 
 function deleteLabRule(id) {
+  if (!requirePermission('manage.rules')) return;
   if (!id) return;
   if (!confirm('Excluir esta regra?')) return;
   db.configs.regrasLaboratorio = db.configs.regrasLaboratorio.filter(rule => rule.id !== id);
@@ -2741,6 +3399,7 @@ function deleteLabRule(id) {
 }
 
 function saveScheduleField(input) {
+  if (!requirePermission('manage.schedule')) return;
   const index = Number(input.dataset.scheduleIndex);
   const field = input.dataset.scheduleField;
   const schedule = getSchedule();
@@ -2778,6 +3437,7 @@ function saveScheduleLinkField(input, field) {
 }
 
 function setActivePeriod(id) {
+  if (!requirePermission('manage.schedule')) return;
   if (!getSchedulePeriods().some(period => period.id === id)) return;
   db.configs.periodoAtivoId = id;
   saveDB();
@@ -3116,6 +3776,7 @@ function bindLawLinks(root) {
 }
 
 function openProductModal(id = null) {
+  if (!requirePermission('manage.products')) return;
   const p = id ? findProduct(id) : null;
   productVisibilityDraft = Boolean(p?.oculto);
   $('#produtoId').value = p?.id || '';
@@ -3256,6 +3917,7 @@ function renderProductPhotoPreview() {
 }
 
 function saveProductFromModal() {
+  if (!requirePermission('manage.products')) return;
   const id = $('#produtoId').value || uid('prod');
   const categoriaIds = multiSelectValues($('#produtoCategoriaDidatica'));
   const product = {
@@ -3299,6 +3961,7 @@ function saveProductFromModal() {
 }
 
 function deleteProductFromModal() {
+  if (!requirePermission('manage.products')) return;
   const id = $('#produtoId').value;
   if (!id) return;
   const product = findProduct(id);
@@ -3345,6 +4008,7 @@ function populateProductCategoryOptions() {
 }
 
 function openIngredientModal(id = null) {
+  if (!requirePermission('manage.ingredients')) return;
   const i = id ? findIngredient(id) : null;
   $('#insumoId').value = i?.id || '';
   $('#insumoNome').value = i?.nome || '';
@@ -3415,6 +4079,7 @@ function openIngredientView(id = null) {
 }
 
 function saveIngredientFromModal() {
+  if (!requirePermission('manage.ingredients')) return;
   const id = $('#insumoId').value || uid('ing');
   const existingIngredient = findIngredient(id);
   const ingredient = {
@@ -3449,6 +4114,7 @@ function saveIngredientFromModal() {
 }
 
 function deleteIngredientFromModal() {
+  if (!requirePermission('manage.ingredients')) return;
   const id = $('#insumoId').value;
   if (!id) return;
   const used = db.formulacoes.some(f => f.itens.some(item => item.insumoId === id));
@@ -3461,6 +4127,7 @@ function deleteIngredientFromModal() {
 }
 
 function openFormulaModal(id = null, productId = null) {
+  if (!requirePermission('manage.formulas')) return;
   renderFormulaFilters();
   const f = id ? findFormula(id) : null;
   const selectedProduct = productId || activeProductId || db.produtos[0]?.id || '';
@@ -3544,6 +4211,7 @@ function getFormulaFromModal(requireName = true) {
 }
 
 function saveFormulaFromModal() {
+  if (!requirePermission('manage.formulas')) return;
   const formula = getFormulaFromModal(true);
   if (!formula.produtoId) return toast('Selecione um produto.');
   if (!formula.nome) return toast('Informe o nome da formulação.');
@@ -3565,6 +4233,7 @@ function saveFormulaFromModal() {
 }
 
 function deleteFormulaFromModal() {
+  if (!requirePermission('manage.formulas')) return;
   const id = $('#formulaId').value;
   if (!id) return;
   if (!confirm('Excluir esta formulação?')) return;
@@ -3576,6 +4245,7 @@ function deleteFormulaFromModal() {
 }
 
 function updateFormulaWeight(formulaId, value, options = {}) {
+  if (!canEditFormula()) return;
   const formula = findFormula(formulaId);
   if (!formula) return;
   formula.pesoReferencia = Math.max(1, toNumber(value) || 1);
@@ -3583,6 +4253,7 @@ function updateFormulaWeight(formulaId, value, options = {}) {
 }
 
 function updateFormulaBase(formulaId, value, options = {}) {
+  if (!canEditFormula()) return;
   const formula = findFormula(formulaId);
   if (!formula) return;
   formula.baseCalculo = value === 'produto_final' ? 'produto_final' : 'massa_carnea';
@@ -3590,6 +4261,7 @@ function updateFormulaBase(formulaId, value, options = {}) {
 }
 
 function updateFormulaItemPercent(formulaId, insumoId, value, options = {}) {
+  if (!canEditFormula()) return;
   const formula = findFormula(formulaId);
   if (!formula || !insumoId || formula.bloqueada) return;
   const item = ensureFormulaItem(formula, insumoId);
@@ -3599,6 +4271,7 @@ function updateFormulaItemPercent(formulaId, insumoId, value, options = {}) {
 }
 
 function updateCureComposition(formulaId, insumoId, changes = {}, options = {}) {
+  if (!canEditFormula()) return;
   const formula = findFormula(formulaId);
   if (!formula || formula.bloqueada || !isCureSaltId(insumoId)) return;
   const item = ensureFormulaItem(formula, insumoId);
@@ -3610,6 +4283,7 @@ function updateCureComposition(formulaId, insumoId, changes = {}, options = {}) 
 }
 
 function updateCurePpm(formulaId, insumoId, value, options = {}) {
+  if (!canEditFormula()) return;
   const formula = findFormula(formulaId);
   if (!formula || formula.bloqueada || !isCureSaltId(insumoId)) return;
   const item = ensureFormulaItem(formula, insumoId);
@@ -3621,6 +4295,7 @@ function updateCurePpm(formulaId, insumoId, value, options = {}) {
 }
 
 function addFormulaItemInline(formulaId, insumoId) {
+  if (!canEditFormula()) return;
   const formula = findFormula(formulaId);
   const ingredient = findIngredient(insumoId);
   if (!formula || !ingredient || formula.bloqueada) return;
@@ -3639,6 +4314,7 @@ function addFormulaItemInline(formulaId, insumoId) {
 }
 
 function removeFormulaItemInline(formulaId, insumoId) {
+  if (!canEditFormula()) return;
   const formula = findFormula(formulaId);
   if (!formula || formula.bloqueada) return;
   const item = (formula.itens || []).find(row => row.insumoId === insumoId);
@@ -3653,6 +4329,7 @@ function removeFormulaItemInline(formulaId, insumoId) {
 }
 
 function restoreFormulaItemInline(formulaId, insumoId) {
+  if (!canEditFormula()) return;
   const formula = findFormula(formulaId);
   if (!formula || formula.bloqueada) return;
   const item = (formula.itens || []).find(row => row.insumoId === insumoId);
@@ -3663,6 +4340,7 @@ function restoreFormulaItemInline(formulaId, insumoId) {
 }
 
 function requestFormulaItemRemoval(formulaId, insumoId) {
+  if (!canEditFormula()) return;
   const formula = findFormula(formulaId);
   if (!formula || formula.bloqueada) return;
   const ingredient = findIngredient(insumoId);
@@ -3675,6 +4353,7 @@ function requestFormulaItemRemoval(formulaId, insumoId) {
 }
 
 function toggleFormulaLock(formulaId) {
+  if (!canEditFormula()) return;
   const formula = findFormula(formulaId);
   if (!formula) return;
   formula.bloqueada = !formula.bloqueada;
@@ -3682,6 +4361,7 @@ function toggleFormulaLock(formulaId) {
 }
 
 function updateFormulaBlend(formulaId, changes = {}, options = {}) {
+  if (!canEditFormula()) return;
   const formula = findFormula(formulaId);
   if (!formula || formula.bloqueada) return;
   const previous = formulaBlendState(formula);
@@ -3726,6 +4406,7 @@ function defaultSecondBlendComponent(formula, state = {}) {
 }
 
 function updateBlendComponent(formulaId, index, changes = {}, options = {}) {
+  if (!canEditFormula()) return;
   const formula = findFormula(formulaId);
   if (!formula || formula.bloqueada) return;
   formula.blendComponentes = normalizeBlendComponents(formula.blendComponentes, formula);
@@ -3745,6 +4426,7 @@ function updateBlendComponent(formulaId, index, changes = {}, options = {}) {
 }
 
 function addBlendComponent(formulaId) {
+  if (!canEditFormula()) return;
   const formula = findFormula(formulaId);
   if (!formula || formula.bloqueada) return;
   formula.blendComponentes = normalizeBlendComponents(formula.blendComponentes, formula);
@@ -3754,6 +4436,7 @@ function addBlendComponent(formulaId) {
 }
 
 function removeBlendComponent(formulaId, index) {
+  if (!canEditFormula()) return;
   const formula = findFormula(formulaId);
   if (!formula || formula.bloqueada) return;
   formula.blendComponentes = normalizeBlendComponents(formula.blendComponentes, formula);
@@ -3765,6 +4448,7 @@ function removeBlendComponent(formulaId, index) {
 }
 
 function updateSingleMaterial(formulaId, changes = {}, options = {}) {
+  if (!canEditFormula()) return;
   const formula = findFormula(formulaId);
   if (!formula || formula.bloqueada) return;
   formula.materiaPrimaUnica = normalizeSingleMaterial(formula.materiaPrimaUnica, formula);
@@ -4286,6 +4970,7 @@ async function copyLesson() {
 }
 
 function exportData() {
+  if (!requirePermission('data.export')) return;
   const backup = clone(db);
   (backup.configs?.conteudosTeoricos || []).forEach(content => {
     content.imagens = (content.imagens || []).map(resolveTheoryImage);
@@ -4299,6 +4984,7 @@ function downloadTemplate() {
 }
 
 async function importData(ev) {
+  if (!requirePermission('data.import')) return;
   const file = ev.target.files?.[0];
   if (!file) return;
   try {
@@ -4322,6 +5008,7 @@ async function importData(ev) {
 }
 
 function resetDemo() {
+  if (!requirePermission('data.reset')) return;
   if (!confirm('Restaurar a base demonstrativa? Seus dados atuais serão substituídos neste navegador.')) return;
   db = normalizeDB(clone(DEFAULT_DB));
   saveDB();
@@ -4332,7 +5019,7 @@ function resetDemo() {
 
 function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('service-worker.js?v=55').then(registration => registration.update()).catch(err => console.warn('Service worker não registrado', err));
+    navigator.serviceWorker.register('service-worker.js?v=56').then(registration => registration.update()).catch(err => console.warn('Service worker não registrado', err));
   }
 }
 
