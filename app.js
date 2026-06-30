@@ -1,12 +1,13 @@
 'use strict';
 
 const STORAGE_KEY = 'paoa_lab_v1';
-const APP_VERSION = '2.2.2';
+const APP_VERSION = '2.3.0';
 const SYNC_URL_KEY = 'paoa_sync_url_v1';
 const LAST_LOGIN_KEY = 'paoa_last_login_v1';
 const SESSION_TOKEN_KEY = 'paoa_session_token_v1';
 const SYNC_META_KEY = 'paoa_sync_meta_v1';
 const SYNC_DEBOUNCE_MS = 1400;
+const SYNC_POLL_MS = 15000;
 const CURE_LIMIT_PPM = 150;
 const DEFAULT_CURE_CONCENTRATION_PCT = 7;
 const MEAT_CUTS_SOURCE_URL = 'https://nepa.unicamp.br/publicacoes/tabela-taco-pdf/';
@@ -1199,6 +1200,7 @@ let authState = {
 };
 let accessState = { profiles: [], users: [] };
 let syncTimer = null;
+let syncPollTimer = null;
 let syncBusy = false;
 let syncMeta = loadSyncMeta();
 
@@ -1341,6 +1343,12 @@ function setupEvents() {
     await pendingInstallPrompt.userChoice;
     pendingInstallPrompt = null;
     $('#btnInstall').hidden = true;
+  });
+
+  window.addEventListener('online', requestBackgroundSync);
+  window.addEventListener('focus', requestBackgroundSync);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') requestBackgroundSync();
   });
 }
 
@@ -1569,9 +1577,9 @@ function setConfigTab(tab) {
 
 function loadSyncMeta() {
   try {
-    return Object.assign({ initialized: false, localDirty: false, conflict: false, lastSyncAt: 0 }, JSON.parse(localStorage.getItem(SYNC_META_KEY) || '{}'));
+    return Object.assign({ initialized: false, localDirty: false, conflict: false, lastSyncAt: 0, serverTime: 0, serverUpdatedAt: 0, serverSectionFingerprints: {}, forceAllData: false }, JSON.parse(localStorage.getItem(SYNC_META_KEY) || '{}'));
   } catch (err) {
-    return { initialized: false, localDirty: false, conflict: false, lastSyncAt: 0 };
+    return { initialized: false, localDirty: false, conflict: false, lastSyncAt: 0, serverTime: 0, serverUpdatedAt: 0, serverSectionFingerprints: {}, forceAllData: false };
   }
 }
 
@@ -1595,6 +1603,7 @@ async function initializeSync() {
   try {
     const status = await syncRequest('status');
     syncMeta.initialized = status.initialized === true;
+    syncMeta.serverTime = Number(status.serverTime || syncMeta.serverTime || 0);
     saveSyncMeta();
     if (!status.initialized) {
       authState.permissions = permissionMap(true);
@@ -1686,12 +1695,18 @@ async function applySessionPayload(payload) {
   syncMeta.initialized = true;
   syncMeta.conflict = false;
   syncMeta.localDirty = false;
-  syncMeta.lastSyncAt = Date.now();
+  syncMeta.serverTime = Number(payload.serverTime || syncMeta.serverTime || 0);
+  syncMeta.serverUpdatedAt = Number(payload.updatedAt || syncMeta.serverUpdatedAt || 0);
+  syncMeta.lastSyncAt = Number(payload.serverTime || payload.updatedAt || syncMeta.lastSyncAt || 0);
   if (payload.data) await adoptRemoteData(payload.data);
-  syncMeta.lastFingerprint = fingerprintData(await buildSyncData());
+  const canonicalData = await buildSyncData();
+  syncMeta.lastFingerprint = fingerprintData(canonicalData);
+  syncMeta.serverSectionFingerprints = syncSectionFingerprints(canonicalData);
+  syncMeta.forceAllData = false;
   saveSyncMeta();
   applyPermissions();
   updateSyncStatus();
+  startSyncMonitor();
 }
 
 async function adoptRemoteData(remoteData) {
@@ -1736,6 +1751,66 @@ function fingerprintData(data) {
   return `${text.length}:${(hash >>> 0).toString(16)}`;
 }
 
+function syncSectionPayloads(data) {
+  const source = data || {};
+  const configs = source.configs || {};
+  return {
+    products: { produtos: source.produtos || [], legislacoes: source.legislacoes || [] },
+    ingredients: source.insumos || [],
+    formulas: source.formulacoes || [],
+    contents: configs.conteudosTeoricos || [],
+    schedule: { periodos: configs.periodos || [], periodoAtivoId: configs.periodoAtivoId || '', cronograma: configs.cronograma || [] },
+    rules: configs.regrasLaboratorio || []
+  };
+}
+
+function syncSectionFingerprints(data) {
+  return Object.fromEntries(Object.entries(syncSectionPayloads(data)).map(([section, value]) => [section, fingerprintData(value)]));
+}
+
+function editableSyncSections() {
+  const sections = [];
+  if (can('manage.products')) sections.push('products');
+  if (can('manage.ingredients')) sections.push('ingredients');
+  if (can('manage.formulas') || can('formula.use')) sections.push('formulas');
+  if (can('manage.contents')) sections.push('contents');
+  if (can('manage.schedule')) sections.push('schedule');
+  if (can('manage.rules')) sections.push('rules');
+  return sections;
+}
+
+function changedSyncSections(data, force = false) {
+  if (syncMeta.forceAllData && (can('data.import') || can('data.reset'))) return ['all_data'];
+  const editable = editableSyncSections();
+  if (force) return editable;
+  const baseline = syncMeta.serverSectionFingerprints || {};
+  const current = syncSectionFingerprints(data);
+  if (!Object.keys(baseline).length) return editable;
+  return editable.filter(section => current[section] !== baseline[section]);
+}
+
+function mergeSyncSections(remoteData, localData, sections) {
+  if (sections.includes('all_data')) return clone(localData);
+  const merged = clone(remoteData || {});
+  const local = localData || {};
+  merged.configs = merged.configs || {};
+  const localConfigs = local.configs || {};
+  if (sections.includes('products')) {
+    merged.produtos = clone(local.produtos || []);
+    merged.legislacoes = clone(local.legislacoes || []);
+  }
+  if (sections.includes('ingredients')) merged.insumos = clone(local.insumos || []);
+  if (sections.includes('formulas')) merged.formulacoes = clone(local.formulacoes || []);
+  if (sections.includes('contents')) merged.configs.conteudosTeoricos = clone(localConfigs.conteudosTeoricos || []);
+  if (sections.includes('schedule')) {
+    merged.configs.periodos = clone(localConfigs.periodos || []);
+    merged.configs.periodoAtivoId = localConfigs.periodoAtivoId || '';
+    merged.configs.cronograma = clone(localConfigs.cronograma || []);
+  }
+  if (sections.includes('rules')) merged.configs.regrasLaboratorio = clone(localConfigs.regrasLaboratorio || []);
+  return merged;
+}
+
 function scheduleRemoteSave() {
   clearTimeout(syncTimer);
   syncTimer = setTimeout(() => pushRemoteData().catch(err => console.warn('Sincronização pendente', err)), SYNC_DEBOUNCE_MS);
@@ -1746,27 +1821,40 @@ async function pushRemoteData(force = false) {
   syncBusy = true;
   updateSyncStatus('Enviando alterações...');
   try {
-    const syncData = await buildSyncData();
-    const fingerprint = fingerprintData(syncData);
-    if (!force && fingerprint === syncMeta.lastFingerprint) {
+    let syncData = await buildSyncData();
+    const sections = changedSyncSections(syncData, force);
+    if (!sections.length) {
       syncMeta.localDirty = false;
+      syncMeta.conflict = false;
       saveSyncMeta();
       return true;
     }
-    const result = await syncRequest('save', { data: syncData, baseRevision: authState.revision, force });
+    let result = await syncRequest('save', { data: syncData, sections, baseRevision: authState.revision, force });
     if (result.conflict) {
-      syncMeta.conflict = true;
-      syncMeta.localDirty = true;
-      saveSyncMeta();
-      toast('Há uma versão mais recente no servidor. A sincronização foi pausada.');
-      return false;
+      // Compatibilidade com uma implantação anterior do servidor: baixa a
+      // revisão mais recente, reaplica somente as áreas locais alteradas e
+      // tenta novamente sem depender do relógio deste computador.
+      const remote = await syncRequest('pull');
+      syncData = mergeSyncSections(remote.data, syncData, sections);
+      authState.revision = Number(remote.revision || result.revision || authState.revision);
+      result = await syncRequest('save', { data: syncData, sections, baseRevision: authState.revision, force: false });
+      if (result.conflict) throw new Error('O servidor recebeu outra alteração durante a conciliação. Tente novamente.');
     }
-    authState.revision = Number(result.revision || authState.revision);
-    syncMeta.localDirty = false;
-    syncMeta.conflict = false;
-    syncMeta.lastSyncAt = Date.now();
-    syncMeta.lastFingerprint = fingerprint;
-    saveSyncMeta();
+    if (result.data) {
+      await applySessionPayload(result);
+    } else {
+      authState.revision = Number(result.revision || authState.revision);
+      syncMeta.localDirty = false;
+      syncMeta.conflict = false;
+      syncMeta.serverTime = Number(result.serverTime || syncMeta.serverTime || 0);
+      syncMeta.serverUpdatedAt = Number(result.updatedAt || syncMeta.serverUpdatedAt || 0);
+      syncMeta.lastSyncAt = Number(result.serverTime || result.updatedAt || syncMeta.lastSyncAt || 0);
+      syncMeta.lastFingerprint = fingerprintData(syncData);
+      syncMeta.serverSectionFingerprints = syncSectionFingerprints(syncData);
+      syncMeta.forceAllData = false;
+      saveSyncMeta();
+    }
+    if (result.rebased) toast('Alterações conciliadas automaticamente pelo servidor.');
     return true;
   } finally {
     syncBusy = false;
@@ -1774,19 +1862,72 @@ async function pushRemoteData(force = false) {
   }
 }
 
-async function pullRemoteData() {
-  if (!syncEnabled() || !authState.user) return false;
+async function pullRemoteData(options = {}) {
+  if (syncBusy || !syncEnabled() || !authState.user) return false;
   syncBusy = true;
   updateSyncStatus('Baixando dados...');
   try {
     const payload = await syncRequest('pull');
     await applySessionPayload(payload);
-    toast('Dados atualizados pelo servidor.');
+    if (!options.quiet) toast('Dados atualizados pelo servidor.');
     return true;
   } finally {
     syncBusy = false;
     updateSyncStatus();
   }
+}
+
+function startSyncMonitor() {
+  stopSyncMonitor();
+  if (!syncEnabled() || !authState.user) return;
+  syncPollTimer = setInterval(requestBackgroundSync, SYNC_POLL_MS);
+}
+
+function stopSyncMonitor() {
+  if (syncPollTimer) clearInterval(syncPollTimer);
+  syncPollTimer = null;
+}
+
+function requestBackgroundSync() {
+  if (!syncEnabled() || !authState.user || !navigator.onLine) return;
+  checkRemoteRevision().catch((err) => {
+    if (/sess[aã]o expirada|entre novamente/i.test(err.message || '')) {
+      clearSession();
+      showLogin('Sua sessão expirou. Entre novamente para continuar sincronizando.');
+      return;
+    }
+    console.warn('Verificação de sincronização pendente', err);
+  });
+}
+
+async function checkRemoteRevision() {
+  if (syncBusy || !syncEnabled() || !authState.user) return false;
+  let status;
+  let fullPayload = null;
+  try {
+    status = await syncRequest('check');
+  } catch (err) {
+    // O servidor anterior ainda não tinha a verificação leve. O pull mantém a
+    // sincronização automática funcionando até o novo Code.gs ser publicado.
+    if (!/a[cç][aã]o inv[aá]lida/i.test(err.message || '')) throw err;
+    fullPayload = await syncRequest('pull');
+    status = fullPayload;
+  }
+  syncMeta.serverTime = Number(status.serverTime || syncMeta.serverTime || 0);
+  syncMeta.serverUpdatedAt = Number(status.updatedAt || syncMeta.serverUpdatedAt || 0);
+  saveSyncMeta();
+  const remoteRevision = Number(status.revision || 0);
+  if (remoteRevision > Number(authState.revision || 0)) {
+    if (syncMeta.localDirty) return pushRemoteData();
+    if (fullPayload) {
+      await applySessionPayload(fullPayload);
+      return true;
+    }
+    return pullRemoteData({ quiet: true });
+  }
+  if (syncMeta.localDirty) return pushRemoteData();
+  updateSyncStatus();
+  return true;
 }
 
 function requestRemotePull() {
@@ -1819,6 +1960,8 @@ async function logout() {
 }
 
 function clearSession() {
+  stopSyncMonitor();
+  clearTimeout(syncTimer);
   sessionStorage.removeItem(SESSION_TOKEN_KEY);
   authState = { token: '', user: null, profile: null, permissions: permissionMap(false), revision: 0 };
   applyPermissions();
@@ -1948,7 +2091,7 @@ function updateSyncStatus(temporaryText = '') {
     detail.textContent = syncMeta.lastSyncAt ? `Última sincronização: ${new Date(syncMeta.lastSyncAt).toLocaleString('pt-BR')}` : getSyncUrl();
   }
   if ($('#syncStatusText')) $('#syncStatusText').textContent = syncEnabled()
-    ? 'Os dados locais são mantidos para uso offline e sincronizados com o Google Apps Script.'
+    ? 'Os dados locais são mantidos para uso offline e conciliados pela revisão e pelo horário do servidor.'
     : 'Os dados ficam salvos neste navegador. Conecte o Google Apps Script para sincronizar os dispositivos.';
 }
 
@@ -2002,6 +2145,10 @@ async function saveSyncSetup() {
     localStorage.setItem(SYNC_URL_KEY, url);
     syncMeta.localDirty = false;
     syncMeta.conflict = false;
+    syncMeta.serverTime = Number(status.serverTime || 0);
+    syncMeta.serverUpdatedAt = 0;
+    syncMeta.serverSectionFingerprints = {};
+    syncMeta.forceAllData = false;
     saveSyncMeta();
     clearSession();
     $('#syncBootstrapKey').value = '';
@@ -4994,6 +5141,7 @@ async function importData(ev) {
     for (const content of db.configs?.conteudosTeoricos || []) {
       content.imagens = await Promise.all((content.imagens || []).map(image => String(image).startsWith('data:image/') ? storeTheoryImage(image) : image));
     }
+    syncMeta.forceAllData = true;
     saveDB();
     renderAll();
     closeModal('modalConfig');
@@ -5010,6 +5158,7 @@ function resetDemo() {
   if (!requirePermission('data.reset')) return;
   if (!confirm('Restaurar a base demonstrativa? Seus dados atuais serão substituídos neste navegador.')) return;
   db = normalizeDB(clone(DEFAULT_DB));
+  syncMeta.forceAllData = true;
   saveDB();
   renderAll();
   closeModal('modalConfig');
@@ -5018,7 +5167,7 @@ function resetDemo() {
 
 function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('service-worker.js?v=58').then(registration => registration.update()).catch(err => console.warn('Service worker não registrado', err));
+    navigator.serviceWorker.register('service-worker.js?v=60').then(registration => registration.update()).catch(err => console.warn('Service worker não registrado', err));
   }
 }
 

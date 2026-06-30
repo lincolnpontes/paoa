@@ -79,6 +79,8 @@ A base legal incluída é didática. Antes de usar as informações em documento
 5. Informe a URL terminada em `/exec`, a chave de instalação e defina os logins e senhas iniciais do administrador e dos discentes.
 6. Depois de validar a implantação, copie a mesma URL para `sync-config.js`. Assim, novos dispositivos abrirão diretamente a tela de login.
 
+Ao atualizar o `Code.gs`, use **Implantar > Gerenciar implantações > Editar > Nova versão** para que a URL `/exec` passe a executar o código novo. O aplicativo verifica o servidor periodicamente e também ao voltar para a tela ou recuperar a internet. Revisões e horários usados na conciliação são sempre emitidos pelo servidor; o relógio de cada dispositivo não decide qual cópia é a mais recente.
+
 O navegador guarda somente o último login bem-sucedido. A senha possui seis dígitos, é armazenada no servidor apenas como hash com salt e nunca é salva no navegador. As sessões expiram após seis horas.
 
 O perfil **Discentes** começa com acesso de visualização a Início, Aulas, Produtos, Cronograma e Regras. O perfil **Administrador** começa com todas as permissões. Outros perfis podem combinar separadamente visualização, operação de formulações, gerenciamento de cada área, backups, sincronização e administração de acessos.
