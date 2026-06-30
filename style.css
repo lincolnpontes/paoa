@@ -1714,6 +1714,15 @@ button.item-card:hover { transform: translateY(-1px); border-color: rgba(31,111,
   box-shadow: var(--shadow);
 }
 .config-menu-card:hover { border-color: #BCD2CC; background: #F7FBFA; transform: translateY(-1px); }
+.config-menu-card[data-open-config-modal="modalConfigAvancadas"] {
+  background: #E87832;
+  border-color: #D86320;
+  color: #fff;
+}
+.config-menu-card[data-open-config-modal="modalConfigAvancadas"]:hover {
+  background: #D96827;
+  border-color: #BF551B;
+}
 .config-tabs {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -1980,21 +1989,24 @@ button.item-card:hover { transform: translateY(-1px); border-color: rgba(31,111,
   .app-period { font-size: clamp(16px, 1.05vw, 21px); }
   .icon-btn { width: clamp(48px, 3.2vw, 60px); height: clamp(48px, 3.2vw, 60px); font-size: clamp(21px, 1.5vw, 28px); }
   .session-badge { max-width: 360px; padding: 9px 13px; font-size: clamp(13px, .85vw, 16px); }
-  .content { padding: clamp(24px, 2.2vw, 46px) clamp(28px, 3vw, 64px) calc(var(--bottom-nav-height) + 30px); font-size: clamp(15px, .92vw, 18px); }
+  .content { padding: clamp(30px, 2.6vw, 52px) clamp(28px, 3vw, 64px) calc(var(--bottom-nav-height) + 30px); font-size: clamp(15px, .92vw, 18px); }
   .page { width: min(100%, 1800px); margin-inline: auto; }
+  #pageInicio { padding-top: clamp(8px, .8vw, 16px); }
   .home-summary-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(16px, 1.4vw, 28px); }
   .summary-action { min-height: clamp(150px, 11vw, 205px); }
   .summary-action-media { min-height: clamp(150px, 11vw, 205px); }
   .summary-action-copy { padding: clamp(24px, 2vw, 40px); }
   .summary-action-copy strong { font-size: clamp(25px, 1.7vw, 34px); }
-  .home-external-links { margin-top: 20px; }
-  .lpdc-link { font-size: clamp(25px, 1.7vw, 34px); }
-  .instagram-link { width: clamp(50px, 3.4vw, 64px); height: clamp(50px, 3.4vw, 64px); }
-  .instagram-link img { width: 65%; height: 65%; }
+  .home-external-links { margin-top: clamp(26px, 2vw, 40px); gap: clamp(26px, 2vw, 38px); }
+  .lpdc-link { font-size: clamp(30px, 2vw, 42px); padding: 10px 14px; }
+  .instagram-link { width: clamp(64px, 4.2vw, 80px); height: clamp(64px, 4.2vw, 80px); }
+  .instagram-link img { width: 68%; height: 68%; }
   input, select, textarea { font-size: clamp(15px, .9vw, 18px); padding: clamp(11px, .8vw, 15px); }
+  .form-group label { font-size: clamp(13px, .82vw, 16px); margin-bottom: 7px; }
   .primary-btn, .secondary-btn, .danger-btn { min-height: clamp(48px, 3.1vw, 58px); padding: 13px 18px; font-size: clamp(14px, .9vw, 17px); }
-  .item-card { min-height: clamp(84px, 6vw, 112px); padding: clamp(14px, 1.2vw, 22px); }
+  .item-card { grid-template-columns: clamp(70px, 5vw, 90px) minmax(0, 1fr); gap: clamp(16px, 1.4vw, 24px); min-height: clamp(100px, 7vw, 128px); padding: clamp(14px, 1.2vw, 22px); }
   .item-avatar { width: clamp(58px, 4.5vw, 82px); height: clamp(58px, 4.5vw, 82px); font-size: clamp(22px, 1.8vw, 32px); }
+  .item-card > div:last-child { min-width: 0; }
   .item-title { font-size: clamp(17px, 1.2vw, 23px); }
   .item-subtitle { font-size: clamp(13px, .9vw, 17px); }
   .modal { width: min(94vw, 760px); padding: clamp(22px, 2vw, 38px); font-size: clamp(15px, .92vw, 18px); }
@@ -2010,6 +2022,36 @@ button.item-card:hover { transform: translateY(-1px); border-color: rgba(31,111,
   .rule-card { padding: clamp(18px, 1.5vw, 28px); }
   .rule-card strong { font-size: clamp(17px, 1.1vw, 22px); }
   .section-header h2 { font-size: clamp(23px, 1.7vw, 34px); }
+  .product-slide-summary { padding: clamp(10px, .8vw, 15px); gap: clamp(10px, .8vw, 16px); }
+  .slide-jump { min-width: clamp(175px, 10.5vw, 210px); min-height: 58px; padding: 12px 11px; grid-template-columns: 32px minmax(0, 1fr); gap: 10px; font-size: clamp(15px, .95vw, 18px); align-items: center; }
+  .slide-jump span { width: 30px; height: 30px; font-size: clamp(13px, .8vw, 16px); }
+  .slide-position { font-size: clamp(14px, .88vw, 17px); min-width: 58px; }
+  .product-back-icon, .slide-arrow { width: clamp(50px, 3.2vw, 60px); min-width: clamp(50px, 3.2vw, 60px); height: clamp(50px, 3.2vw, 60px); }
+  .formula-work-card { padding: clamp(18px, 1.35vw, 26px); }
+  .formula-work-head h3 { font-size: clamp(25px, 1.55vw, 31px); }
+  .blend-editor-head { min-height: 66px; padding: 10px 16px; font-size: clamp(18px, 1.1vw, 22px); }
+  .blend-toggle-group > strong, .blend-toggle-button strong { font-size: clamp(17px, 1.05vw, 21px); }
+  .single-component .blend-component-main,
+  .blend-component-main { grid-template-columns: minmax(260px, 1.5fr) minmax(190px, .85fr) minmax(190px, 1fr) 130px; gap: clamp(12px, 1vw, 18px); }
+  .blend-component-main input,
+  .blend-component-main select { height: clamp(54px, 3.2vw, 62px); padding: 9px 12px; font-size: clamp(16px, 1vw, 20px); line-height: 1.2; }
+  .blend-component-row { padding: clamp(14px, 1vw, 20px); }
+  .blend-component-row small, .blend-source { font-size: clamp(13px, .82vw, 16px); }
+  .blend-result-metrics > div { padding: 14px 16px; }
+  .blend-result-metrics small, .blend-summary span { font-size: clamp(11px, .72vw, 14px); }
+  .blend-result-metrics strong, .blend-summary strong { font-size: clamp(24px, 1.55vw, 31px); }
+  .inline-formula-head { padding: 14px 16px; font-size: clamp(18px, 1.1vw, 22px); }
+  .inline-formula-head small { font-size: clamp(13px, .82vw, 16px); }
+  .inline-formula-row,
+  .inline-formula-row:not(.has-intensity) { grid-template-columns: minmax(260px, 1fr) 118px 128px 94px; gap: clamp(12px, .9vw, 17px); padding: 14px 16px; }
+  .inline-formula-row.has-intensity.editing { grid-template-columns: minmax(220px, .8fr) minmax(380px, 1.2fr) 118px 128px 94px; }
+  .inline-link { font-size: clamp(16px, 1vw, 20px); }
+  .pct-field { grid-template-columns: 34px minmax(0, 1fr); font-size: clamp(14px, .88vw, 17px); gap: 7px; }
+  .pct-field input { padding: 10px 8px; font-size: clamp(16px, 1vw, 20px); }
+  .gram-pill { padding: 11px 8px; font-size: clamp(15px, .95vw, 19px); font-weight: 850; }
+  .formula-item-actions { grid-template-columns: 40px 40px; gap: 7px; }
+  .formula-item-actions .tiny-btn,
+  .formula-item-actions .intensity-edit-btn { width: 40px; min-width: 40px; height: 40px; }
 }
 
 @media (max-width: 760px) {

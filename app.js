@@ -1,7 +1,7 @@
 'use strict';
 
 const STORAGE_KEY = 'paoa_lab_v1';
-const APP_VERSION = '2.2.0';
+const APP_VERSION = '2.2.1';
 const SYNC_URL_KEY = 'paoa_sync_url_v1';
 const LAST_LOGIN_KEY = 'paoa_last_login_v1';
 const SESSION_TOKEN_KEY = 'paoa_session_token_v1';
@@ -1249,12 +1249,12 @@ function setupEvents() {
       saveProductFromModal();
       return;
     }
-    closeModal(btn.dataset.close);
+    const modalId = btn.dataset.close;
+    closeModal(modalId);
+    if (btn.classList.contains('modal-close') && isConfigManagerModal(modalId)) openModal('modalConfig');
   }));
   $$('[data-toggle]').forEach(btn => btn.addEventListener('click', () => $('#' + btn.dataset.toggle)?.classList.toggle('open')));
-  $$('.modal-overlay').forEach(overlay => overlay.addEventListener('click', (ev) => {
-    if (ev.target === overlay && overlay.id !== 'modalLogin') closeModal(overlay.id);
-  }));
+  // Modais fecham somente por controles explícitos. Clicar no fundo não descarta o painel aberto.
 
   $('#searchProdutos')?.addEventListener('input', renderProdutos);
   $('#searchConfigProdutos')?.addEventListener('input', renderConfigProdutos);
@@ -1548,6 +1548,7 @@ function setPage(page) {
   activePage = page;
   const topbar = $('.topbar');
   if (topbar) topbar.hidden = page !== 'Inicio';
+  if (page !== 'Produtos') $('.content')?.classList.remove('product-mode');
   $$('.page').forEach(p => p.classList.remove('active'));
   $('#page' + page)?.classList.add('active');
   $$('.nav-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.page === page));
@@ -1862,6 +1863,10 @@ function permissionForConfigModal(id) {
     modalConfigAcessos: 'manage.access',
     modalConfigAvancadas: 'advanced'
   })[id] || '';
+}
+
+function isConfigManagerModal(id) {
+  return ['modalConfigProdutos', 'modalConfigInsumos', 'modalConfigConteudos', 'modalConfigCronograma', 'modalConfigRegras', 'modalConfigAcessos', 'modalConfigAvancadas'].includes(id);
 }
 
 function canAdvanced() {
@@ -5019,7 +5024,7 @@ function resetDemo() {
 
 function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('service-worker.js?v=56').then(registration => registration.update()).catch(err => console.warn('Service worker não registrado', err));
+    navigator.serviceWorker.register('service-worker.js?v=57').then(registration => registration.update()).catch(err => console.warn('Service worker não registrado', err));
   }
 }
 
