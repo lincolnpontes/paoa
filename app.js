@@ -1,7 +1,7 @@
 'use strict';
 
 const STORAGE_KEY = 'paoa_lab_v1';
-const APP_VERSION = '2.3.0';
+const APP_VERSION = '2.4.0';
 const SYNC_URL_KEY = 'paoa_sync_url_v1';
 const LAST_LOGIN_KEY = 'paoa_last_login_v1';
 const SESSION_TOKEN_KEY = 'paoa_session_token_v1';
@@ -160,8 +160,8 @@ const PRODUCT_CATEGORIES = [
       'Por que sal e mistura mecânica ajudam na coesão?',
       'Como interpretar percentuais sobre massa cárnea em vez de produto final?'
     ],
-    produtos: ['prod_hamburguer', 'prod_kafta', 'prod_almondega', 'prod_kibe', 'prod_nuggets'],
-    insumos: ['ing_carne_bovina_magra', 'ing_gordura_bovina', 'ing_sal', 'ing_agua_gelada', 'ing_alho_po', 'ing_farinha_rosca', 'ing_trigo_kibe']
+    produtos: ['prod_hamburguer', 'prod_hamburguer_frango', 'prod_kafta', 'prod_almondega', 'prod_kibe', 'prod_nuggets'],
+    insumos: ['ing_carne_bovina_magra', 'ing_gordura_bovina', 'ing_peito_frango', 'ing_sal', 'ing_agua_gelada', 'ing_alho_po', 'ing_farinha_rosca', 'ing_trigo_kibe']
   },
   {
     id: 'embutidos',
@@ -179,7 +179,7 @@ const PRODUCT_CATEGORIES = [
       'Por que o produto frescal exige atenção maior à refrigeração?',
       'Que falhas de processo aparecem durante o embutimento?'
     ],
-    produtos: ['prod_linguica_frescal', 'prod_salsicha'],
+    produtos: ['prod_linguica_frescal', 'prod_linguica_frango', 'prod_salsicha'],
     insumos: ['ing_pernil_suino', 'ing_toucinho_suino', 'ing_sal', 'ing_agua_gelada', 'ing_tripa_suina', 'ing_paprica_doce']
   },
   {
@@ -772,6 +772,83 @@ const DEFAULT_DB = {
         'O resfriamento influenciou fatiabilidade?',
         'Quais cuidados legais e de segurança devem ser conferidos antes de uso real?'
       ]
+    },
+    {
+      id: 'prod_hamburguer_frango',
+      nome: 'Hambúrguer de Frango',
+      categoria: 'Produto cárneo reestruturado de aves',
+      categoriaId: 'reestruturados',
+      categoriaIds: ['reestruturados'],
+      especie: 'frango',
+      tipo: 'hamburguer',
+      descricao: 'Produto cárneo reestruturado elaborado com carne de frango moída, moldado em porções padronizadas e destinado à cocção completa.',
+      objetivo: 'Avaliar a influência da proporção entre peito e sobrecoxa, do sal, da água gelada e da mistura sobre liga, suculência, rendimento e estabilidade do hambúrguer de frango.',
+      parametros: { gorduraMax: 25, proteinaMin: 15, carbMax: 3, proteinaNaoCarneaMax: 4, proibeProteinaNaoCarnea: false, mostrarValidacao: true },
+      fotos: [],
+      fluxo: [
+        'Receber peito e sobrecoxa de frango refrigerados, conferir integridade e registrar a temperatura',
+        'Realizar toalete, padronizar cubos e manter a matéria-prima refrigerada até a moagem',
+        'Moer separadamente as matérias-primas na granulometria definida para a prática',
+        'Pesar carne, água gelada, sal, condimentos e demais ingredientes conforme a formulação travada',
+        'Misturar primeiro a carne com o sal e depois incorporar água gelada e ingredientes secos até obter massa coesa',
+        'Monitorar a temperatura da massa e interromper a mistura se houver aquecimento excessivo',
+        'Moldar unidades com peso e espessura padronizados e registrar a massa antes da cocção',
+        'Realizar cocção completa, medir a temperatura no centro geométrico e registrar a massa final',
+        'Calcular rendimento e avaliar coesão, suculência, textura, cor e liberação de líquido'
+      ],
+      pontos: [
+        'Prevenir contaminação cruzada durante o trabalho com carne de aves',
+        'Manter a massa fria para preservar a extração proteica e a estabilidade',
+        'Padronizar espessura para comparar tempo de cocção e rendimento',
+        'Assegurar cocção completa no centro do produto',
+        'Conferir os parâmetros legais aplicáveis ao hambúrguer'
+      ],
+      equipamentos: ['Balança de bancada', 'Moedor de carne', 'Bowls de aço inox', 'Espátula ou misturador', 'Modelador de hambúrguer', 'Chapa, forno ou grill', 'Termômetro tipo espeto', 'Bandejas e material de identificação'],
+      perguntas: [
+        'Como a proporção entre peito e sobrecoxa alterou gordura e suculência?',
+        'A intensidade de mistura foi suficiente para desenvolver liga sem endurecer o produto?',
+        'Quais diferenças tecnológicas foram observadas em relação ao hambúrguer bovino?',
+        'A formulação e o produto coccionado atenderam aos controles definidos para a prática?'
+      ]
+    },
+    {
+      id: 'prod_linguica_frango',
+      nome: 'Linguiça de Frango',
+      categoria: 'Embutido cárneo fresco de aves',
+      categoriaId: 'embutidos',
+      categoriaIds: ['embutidos'],
+      especie: 'frango',
+      tipo: 'linguica_frescal',
+      descricao: 'Embutido fresco elaborado com carne de frango moída, condimentada e embutida, mantido sob refrigeração e destinado à cocção completa.',
+      objetivo: 'Relacionar proporção de cortes, granulometria, temperatura, mistura e embutimento com coesão, suculência, calibre, rendimento e segurança da linguiça de frango.',
+      parametros: { gorduraMax: 30, proteinaMin: 12, carbMax: '', proteinaNaoCarneaMax: 2.5, proibeProteinaNaoCarnea: false, mostrarValidacao: true },
+      fotos: [],
+      fluxo: [
+        'Receber peito e sobrecoxa de frango refrigerados, conferir integridade e registrar a temperatura',
+        'Executar toalete, cortar em cubos compatíveis com o moedor e manter sob refrigeração',
+        'Preparar, lavar e hidratar o envoltório conforme o material utilizado',
+        'Moer as matérias-primas na granulometria definida, evitando aquecimento e formação de pasta',
+        'Pesar sal, água gelada, condimentos e demais ingredientes conforme a formulação travada',
+        'Misturar a carne com o sal e incorporar os demais ingredientes até distribuição uniforme e boa coesão',
+        'Abastecer a embutidora, retirar bolsas de ar e embutir com pressão regular',
+        'Torcer ou amarrar gomos de calibre e comprimento padronizados e identificar o lote',
+        'Manter refrigerado até a cocção experimental, realizar cocção completa e registrar temperaturas',
+        'Calcular rendimento e avaliar calibre, coesão, suculência, perda de gordura e aparência'
+      ],
+      pontos: [
+        'Prevenir contaminação cruzada e reduzir o tempo da carne de aves fora de refrigeração',
+        'Evitar aquecimento durante moagem, mistura e embutimento',
+        'Controlar bolsas de ar, pressão de enchimento e uniformidade dos gomos',
+        'Manter o produto cru refrigerado e realizar cocção completa',
+        'Conferir gordura, proteína e proteína agregada aplicáveis à linguiça frescal'
+      ],
+      equipamentos: ['Balança de bancada', 'Moedor de carne', 'Bowls ou misturador', 'Embutidora', 'Tripa ou envoltório adequado', 'Barbante ou amarrador', 'Agulha fina para retirada de ar', 'Termômetro e bandejas'],
+      perguntas: [
+        'Como a proporção entre peito e sobrecoxa influenciou suculência e rendimento?',
+        'A granulometria e a mistura produziram coesão adequada?',
+        'Quais cuidados adicionais são necessários ao processar carne de aves?',
+        'Como o calibre alterou o tempo necessário para cocção completa?'
+      ]
     }
   ],
   insumos: [
@@ -914,6 +991,46 @@ const DEFAULT_DB = {
       observacoes: 'Formulação didática em 100% do produto final para observar estabilidade, espalhabilidade e efeito do processamento fino.'
     },
     {
+      id: 'form_hamburguer_frango_base',
+      produtoId: 'prod_hamburguer_frango',
+      nome: 'Hambúrguer de Frango',
+      pesoReferencia: 1000,
+      baseCalculo: 'massa_carnea',
+      rendimento: 82,
+      materiaPrimaUnica: { id: 'materia_hamb_frango', corteId: 'peito_frango', perfil: 'sem_gordura', gramas: 1000, gorduraCustom: '' },
+      itens: [
+        { insumoId: 'ing_peito_frango', percentual: 100 },
+        { insumoId: 'ing_agua_gelada', percentual: 3 },
+        { insumoId: 'ing_sal', percentual: 1.7 },
+        { insumoId: 'ing_alho_po', percentual: 0.4 },
+        { insumoId: 'ing_cebola_po', percentual: 0.7 },
+        { insumoId: 'ing_paprica_doce', percentual: 0.3 },
+        { insumoId: 'ing_pimenta_branca', percentual: 0.15 },
+        { insumoId: 'ing_fumaca_po', percentual: 0.2 }
+      ],
+      observacoes: 'Formulação didática para comparar liga, suculência e rendimento em matéria-prima de aves.'
+    },
+    {
+      id: 'form_linguica_frango_base',
+      produtoId: 'prod_linguica_frango',
+      nome: 'Linguiça de Frango',
+      pesoReferencia: 2000,
+      baseCalculo: 'produto_final',
+      rendimento: 92,
+      materiaPrimaUnica: { id: 'materia_linguica_frango', corteId: 'peito_frango', perfil: 'sem_gordura', gramas: 1860, gorduraCustom: '' },
+      itens: [
+        { insumoId: 'ing_peito_frango', percentual: 93 },
+        { insumoId: 'ing_agua_gelada', percentual: 4 },
+        { insumoId: 'ing_sal', percentual: 1.8 },
+        { insumoId: 'ing_alho_po', percentual: 0.4 },
+        { insumoId: 'ing_paprica_doce', percentual: 0.3 },
+        { insumoId: 'ing_fumaca_po', percentual: 0.2 },
+        { insumoId: 'ing_pimenta_branca', percentual: 0.1 },
+        { insumoId: 'ing_acucar', percentual: 0.2 }
+      ],
+      observacoes: 'Formulação didática para observar moagem, coesão, embutimento, calibre e cocção completa em produto de aves.'
+    },
+    {
       id: 'form_salsicha_base',
       produtoId: 'prod_salsicha',
       nome: 'Salsicha',
@@ -1014,7 +1131,7 @@ const DEFAULT_DB = {
   legislacoes: [
     {
       id: 'leg_hamburguer_724_2022',
-      produtoId: 'prod_hamburguer',
+      produtoIds: ['prod_hamburguer', 'prod_hamburguer_frango'],
       titulo: 'Portaria SDA/MAPA nº 724/2022',
       orgao: 'Ministério da Agricultura e Pecuária',
       url: 'https://www.gov.br/agricultura/pt-br/assuntos/inspecao/produtos-animal/legislacao/Port7242022RThamburguer1.pdf',
@@ -1029,7 +1146,7 @@ const DEFAULT_DB = {
     },
     {
       id: 'leg_linguica_in4_2000',
-      produtoId: 'prod_linguica_frescal',
+      produtoIds: ['prod_linguica_frescal', 'prod_linguica_frango'],
       titulo: 'IN SDA/MAPA nº 4/2000 - RTIQ de Linguiça',
       orgao: 'Ministério da Agricultura e Pecuária',
       url: 'https://www.gov.br/agricultura/pt-br/assuntos/inspecao/produtos-animal/legislacao/IN042000salsichamortadelalinguia.pdf',
@@ -1115,7 +1232,7 @@ const CLASS_SCHEDULE = [
     aula: 'Aula 2',
     tema: 'Produtos reestruturados',
     foco: 'Hambúrguer, kafta e almôndega: liga, gordura, modelagem, rendimento e discussão de textura.',
-    produtos: ['prod_hamburguer', 'prod_kafta', 'prod_almondega'],
+    produtos: ['prod_hamburguer', 'prod_hamburguer_frango', 'prod_kafta', 'prod_almondega'],
     categorias: ['reestruturados']
   },
   {
@@ -1123,7 +1240,7 @@ const CLASS_SCHEDULE = [
     aula: 'Aula 3',
     tema: 'Produtos embutidos frescais',
     foco: 'Linguiça frescal: moagem, mistura, embutimento, calibre, conservação refrigerada e perda por cocção.',
-    produtos: ['prod_linguica_frescal'],
+    produtos: ['prod_linguica_frescal', 'prod_linguica_frango'],
     categorias: ['embutidos']
   },
   {
@@ -1300,6 +1417,8 @@ function setupEvents() {
   $('#periodoFim')?.addEventListener('change', () => savePeriodField('fim', $('#periodoFim').value));
   $('#btnNovoPeriodo')?.addEventListener('click', () => createPeriod(false));
   $('#btnArquivarPeriodo')?.addEventListener('click', archiveActivePeriod);
+  $('#btnVerRelatorios')?.addEventListener('click', openSavedReports);
+  $('#relatoriosPeriodoSelect')?.addEventListener('change', renderSavedReports);
   $('#btnArquivarNovoPeriodo')?.addEventListener('click', () => createPeriod(true));
   $('#btnAdicionarAula')?.addEventListener('click', addScheduleLesson);
   $('#btnCancelarAulas')?.addEventListener('click', cancelScheduleConfig);
@@ -1397,6 +1516,7 @@ function normalizeDB(data) {
     p.parametros = Object.assign({ gorduraMax: '', proteinaMin: '', carbMax: '', proteinaNaoCarneaMax: '', proibeProteinaNaoCarnea: false, mostrarValidacao: true }, p.parametros || {});
     p.fotos = Array.isArray(p.fotos) ? p.fotos.map(src => IMAGE_MIGRATIONS[src] || src) : [];
     p.fluxo = Array.isArray(p.fluxo) ? p.fluxo : linesFrom(p.fluxo);
+    p.protocolo = Array.isArray(p.protocolo) && p.protocolo.length ? p.protocolo : clone(defaultProduct?.protocolo || p.fluxo || []);
     p.pontos = Array.isArray(p.pontos) ? p.pontos : linesFrom(p.pontos);
     p.equipamentos = Array.isArray(p.equipamentos) ? p.equipamentos : (defaultProduct?.equipamentos ? clone(defaultProduct.equipamentos) : linesFrom(p.equipamentos));
     p.perguntas = Array.isArray(p.perguntas) ? p.perguntas : linesFrom(p.perguntas);
@@ -1476,6 +1596,8 @@ function normalizeDB(data) {
       .replace(/^Útil para discutir rotulagem/i, 'Rotulagem')
       .replace(/^Útil para discutir /i, '')
        .replace(/^Útil para conectar /i, 'Relação entre '));
+    if (law.id === 'leg_hamburguer_724_2022') law.produtoIds = Array.from(new Set([...law.produtoIds, 'prod_hamburguer_frango']));
+    if (law.id === 'leg_linguica_in4_2000') law.produtoIds = Array.from(new Set([...law.produtoIds, 'prod_linguica_frango']));
     delete law.produtoId;
   });
   return merged;
@@ -1577,9 +1699,9 @@ function setConfigTab(tab) {
 
 function loadSyncMeta() {
   try {
-    return Object.assign({ initialized: false, localDirty: false, conflict: false, lastSyncAt: 0, serverTime: 0, serverUpdatedAt: 0, serverSectionFingerprints: {}, forceAllData: false }, JSON.parse(localStorage.getItem(SYNC_META_KEY) || '{}'));
+    return Object.assign({ initialized: false, localDirty: false, conflict: false, lastSyncAt: 0, serverTime: 0, serverObservedAtLocal: 0, serverUpdatedAt: 0, serverSectionFingerprints: {}, forceAllData: false }, JSON.parse(localStorage.getItem(SYNC_META_KEY) || '{}'));
   } catch (err) {
-    return { initialized: false, localDirty: false, conflict: false, lastSyncAt: 0, serverTime: 0, serverUpdatedAt: 0, serverSectionFingerprints: {}, forceAllData: false };
+    return { initialized: false, localDirty: false, conflict: false, lastSyncAt: 0, serverTime: 0, serverObservedAtLocal: 0, serverUpdatedAt: 0, serverSectionFingerprints: {}, forceAllData: false };
   }
 }
 
@@ -1604,6 +1726,7 @@ async function initializeSync() {
     const status = await syncRequest('status');
     syncMeta.initialized = status.initialized === true;
     syncMeta.serverTime = Number(status.serverTime || syncMeta.serverTime || 0);
+    if (status.serverTime) syncMeta.serverObservedAtLocal = Date.now();
     saveSyncMeta();
     if (!status.initialized) {
       authState.permissions = permissionMap(true);
@@ -1696,6 +1819,7 @@ async function applySessionPayload(payload) {
   syncMeta.conflict = false;
   syncMeta.localDirty = false;
   syncMeta.serverTime = Number(payload.serverTime || syncMeta.serverTime || 0);
+  if (payload.serverTime) syncMeta.serverObservedAtLocal = Date.now();
   syncMeta.serverUpdatedAt = Number(payload.updatedAt || syncMeta.serverUpdatedAt || 0);
   syncMeta.lastSyncAt = Number(payload.serverTime || payload.updatedAt || syncMeta.lastSyncAt || 0);
   if (payload.data) await adoptRemoteData(payload.data);
@@ -1847,6 +1971,7 @@ async function pushRemoteData(force = false) {
       syncMeta.localDirty = false;
       syncMeta.conflict = false;
       syncMeta.serverTime = Number(result.serverTime || syncMeta.serverTime || 0);
+      if (result.serverTime) syncMeta.serverObservedAtLocal = Date.now();
       syncMeta.serverUpdatedAt = Number(result.updatedAt || syncMeta.serverUpdatedAt || 0);
       syncMeta.lastSyncAt = Number(result.serverTime || result.updatedAt || syncMeta.lastSyncAt || 0);
       syncMeta.lastFingerprint = fingerprintData(syncData);
@@ -1914,6 +2039,7 @@ async function checkRemoteRevision() {
     status = fullPayload;
   }
   syncMeta.serverTime = Number(status.serverTime || syncMeta.serverTime || 0);
+  if (status.serverTime) syncMeta.serverObservedAtLocal = Date.now();
   syncMeta.serverUpdatedAt = Number(status.updatedAt || syncMeta.serverUpdatedAt || 0);
   saveSyncMeta();
   const remoteRevision = Number(status.revision || 0);
@@ -2528,21 +2654,39 @@ function slideHeadingHTML(label, productName = '') {
 function productFormulaHTML(f) {
   const analysis = analyzeFormula(f);
   const blendState = formulaBlendState(f);
+  const product = findProduct(f.produtoId);
+  const savedReport = latestSavedFormulaReport(f.id);
   return `
     <div class="formula-work-card ${f.bloqueada ? 'formula-locked' : ''}" data-formula-card="${escapeAttr(f.id)}">
       <div class="formula-work-head">
         <h3><span>Formulação:</span> <strong>${escapeHTML(cleanFormulaName(f.nome))}</strong></h3>
         <div class="formula-head-actions">
+          <button type="button" class="formula-save-report-btn ${latestSavedFormulaReport(f.id) ? 'saved' : ''}" data-save-formula-report="${escapeAttr(f.id)}" title="${f.bloqueada ? 'Salvar esta formulação no histórico do período' : 'Trave a formulação antes de salvar'}"${f.bloqueada ? '' : ' disabled'}>💾 <span>Salvar</span></button>
           <button type="button" class="formula-lock-btn ${f.bloqueada ? 'locked' : ''}" data-toggle-formula-lock="${escapeAttr(f.id)}" title="${f.bloqueada ? 'Destravar formulação' : 'Travar formulação'}">${f.bloqueada ? '🔒' : '🔓'}</button>
         </div>
       </div>
       ${blendEditorHTML(f, blendState)}
       ${inlineFormulaEditorHTML(f)}
+      ${processingProtocolHTML(product)}
       <div class="formula-analysis-wrap">${analysisHTML(analysis)}</div>
       <div class="product-action-row">
-        <button type="button" class="secondary-btn compact" data-report-formula="${escapeAttr(f.id)}">Relatório</button>
+        <button type="button" class="secondary-btn compact ${savedReport ? '' : 'report-locked'}" data-report-formula="${escapeAttr(f.id)}" title="${savedReport ? 'Abrir o último relatório salvo neste período' : 'Trave e salve a formulação para liberar o relatório'}">${savedReport ? 'Relatório salvo' : '🔒 Relatório'}</button>
+        ${savedReport ? '' : '<small class="report-lock-reason">Disponível após travar e salvar a formulação neste período.</small>'}
       </div>
     </div>`;
+}
+
+function processingProtocolHTML(product) {
+  const steps = product?.protocolo?.length ? product.protocolo : product?.fluxo || [];
+  return `<section class="processing-protocol">
+    <div class="processing-protocol-head">
+      <div><span>Procedimento operacional</span><h4>Protocolo tecnológico de processamento</h4></div>
+      <small>${escapeHTML(product?.nome || '')}</small>
+    </div>
+    <div class="processing-protocol-alert"><strong>Antes de iniciar:</strong> conferir higienização, identificação do lote, temperatura das matérias-primas, equipamentos e formulação travada.</div>
+    <ol class="processing-protocol-steps">${steps.map(step => `<li>${escapeHTML(step)}</li>`).join('')}</ol>
+    <div class="processing-protocol-alert closing"><strong>Encerramento:</strong> registrar massas, temperaturas, rendimento, desvios observados e identificação das amostras.</div>
+  </section>`;
 }
 
 function blendToggleButtonHTML(f, state = formulaBlendState(f)) {
@@ -2824,6 +2968,10 @@ function handleProductWorkspaceClick(event) {
   }
   if (target.dataset.reportFormula) {
     showFormulaReport(target.dataset.reportFormula);
+    return;
+  }
+  if (target.dataset.saveFormulaReport) {
+    saveFormulaReport(target.dataset.saveFormulaReport);
     return;
   }
   if (target.dataset.openIngredient) {
@@ -3140,7 +3288,26 @@ function normalizeSchedulePeriods(source = [], legacySchedule = []) {
     inicio: period.inicio || '',
     fim: period.fim || '',
     arquivado: Boolean(period.arquivado),
-    aulas: normalizeSchedule(period.aulas || period.cronograma || (index === 0 ? legacySchedule : []), !hasSourcePeriods && index === 0)
+    aulas: normalizeSchedule(period.aulas || period.cronograma || (index === 0 ? legacySchedule : []), !hasSourcePeriods && index === 0),
+    relatorios: normalizePracticeReports(period.relatorios || period.relatoriosAulas || [])
+  }));
+}
+
+function normalizePracticeReports(source = []) {
+  return (Array.isArray(source) ? source : []).map((report, index) => ({
+    id: report.id || uid('relatorio'),
+    sequencia: Math.max(1, Number(report.sequencia || index + 1)),
+    formulaId: report.formulaId || '',
+    produtoId: report.produtoId || '',
+    aulaId: report.aulaId || '',
+    aulaLabel: report.aulaLabel || '',
+    aulaTema: report.aulaTema || '',
+    periodoId: report.periodoId || '',
+    periodoNome: report.periodoNome || '',
+    salvoEm: Number(report.salvoEm || 0),
+    revisaoServidor: Number(report.revisaoServidor || 0),
+    formula: report.formula && typeof report.formula === 'object' ? report.formula : null,
+    texto: String(report.texto || '')
   }));
 }
 
@@ -3585,6 +3752,7 @@ function saveScheduleLinkField(input, field) {
 function setActivePeriod(id) {
   if (!requirePermission('manage.schedule')) return;
   if (!getSchedulePeriods().some(period => period.id === id)) return;
+  if (db.configs.periodoAtivoId !== id) prepareFormulasForPeriodChange();
   db.configs.periodoAtivoId = id;
   saveDB();
   renderActivePeriodLabel();
@@ -3592,6 +3760,7 @@ function setActivePeriod(id) {
   renderContentConfig();
   renderCronograma();
   renderAulas();
+  renderProdutos();
 }
 
 function savePeriodField(field, value) {
@@ -3609,8 +3778,9 @@ function createPeriod(archiveCurrent = false) {
   const current = getActivePeriod();
   if (archiveCurrent && current) current.arquivado = true;
   const year = new Date().getFullYear();
-  const period = { id: uid('periodo'), nome: `Novo período ${year}`, inicio: '', fim: '', arquivado: false, aulas: [] };
+  const period = { id: uid('periodo'), nome: `Novo período ${year}`, inicio: '', fim: '', arquivado: false, aulas: [], relatorios: [] };
   getSchedulePeriods().push(period);
+  prepareFormulasForPeriodChange();
   db.configs.periodoAtivoId = period.id;
   saveDB();
   renderActivePeriodLabel();
@@ -3618,6 +3788,7 @@ function createPeriod(archiveCurrent = false) {
   renderContentConfig();
   renderCronograma();
   renderAulas();
+  renderProdutos();
   toast(archiveCurrent ? 'Período arquivado e novo período criado.' : 'Novo período criado.');
 }
 
@@ -3938,6 +4109,7 @@ function openProductModal(id = null) {
   $('#paramProibePnc').checked = Boolean(p?.parametros?.proibeProteinaNaoCarnea);
   $('#paramMostrarValidacao').checked = p?.parametros?.mostrarValidacao !== false;
   $('#produtoFluxo').value = (p?.fluxo || []).join('\n');
+  $('#produtoProtocolo').value = (p?.protocolo || p?.fluxo || []).join('\n');
   $('#produtoPontos').value = (p?.pontos || []).join('\n');
   $('#produtoEquipamentos').value = (p?.equipamentos || []).join('\n');
   $('#produtoPerguntas').value = (p?.perguntas || []).join('\n');
@@ -4086,6 +4258,7 @@ function saveProductFromModal() {
     },
     fotos: tempProductPhotos,
     fluxo: linesFrom($('#produtoFluxo').value),
+    protocolo: linesFrom($('#produtoProtocolo').value),
     pontos: linesFrom($('#produtoPontos').value),
     equipamentos: linesFrom($('#produtoEquipamentos').value),
     perguntas: linesFrom($('#produtoPerguntas').value)
@@ -4542,9 +4715,10 @@ function updateFormulaBlend(formulaId, changes = {}, options = {}) {
 function defaultSecondBlendComponent(formula, state = {}) {
   const first = state.singleComponent || state.components?.[0] || normalizeSingleMaterial(formula.materiaPrimaUnica, formula);
   const isPork = first.corteId.includes('suino');
+  const isChicken = first.corteId.includes('frango');
   return {
     id: uid('blend'),
-    corteId: isPork ? 'toucinho_suino' : 'gordura_bovina',
+    corteId: isPork ? 'toucinho_suino' : isChicken ? 'sobrecoxa_frango' : 'gordura_bovina',
     perfil: 'com_gordura',
     gramas: 0,
     gorduraCustom: ''
@@ -4752,7 +4926,8 @@ function normalizeBlendComponents(source, formula, ingredients = db.insumos) {
       ing_carne_bovina_magra: 'acem',
       ing_gordura_bovina: 'gordura_bovina',
       ing_pernil_suino: 'pernil_suino',
-      ing_toucinho_suino: 'toucinho_suino'
+      ing_toucinho_suino: 'toucinho_suino',
+      ing_peito_frango: 'peito_frango'
     };
     return {
       id: uid('blend'),
@@ -4814,7 +4989,8 @@ function ingredientSuggestion(ingredient) {
   const name = String(ingredient?.nome || '').toLowerCase();
   const isSeasoning = ingredient?.tipo === 'condimento_especiaria';
   const isSaltOrSugar = ['ing_sal', 'ing_acucar'].includes(ingredient?.id) || /\bsal\b/.test(name) || name.includes('açúcar') || name.includes('acucar') || name.includes('dextrose');
-  if (!ingredient || (!isSeasoning && !isSaltOrSugar)) return null;
+  const isSensoryAdditive = ['aromatizantes', 'realçadores de sabor'].includes(ingredient?.subtipo);
+  if (!ingredient || (!isSeasoning && !isSaltOrSugar && !isSensoryAdditive)) return null;
   const byId = {
     ing_sal: { suave: 1.5, acentuado: 2 },
     ing_alho_po: { suave: 0.5, acentuado: 1.5 },
@@ -4830,14 +5006,24 @@ function ingredientSuggestion(ingredient) {
     ing_cominho: { suave: 0.1, acentuado: 0.5 },
     ing_hortela: { suave: 0.5, acentuado: 1.5 },
     ing_hortela_desidratada: { suave: 0.2, acentuado: 0.8 },
-    ing_acucar: { suave: 0.2, acentuado: 0.8 }
+    ing_acucar: { suave: 0.2, acentuado: 0.8 },
+    ing_fumaca_po: { suave: 0.1, acentuado: 0.5 },
+    ing_fumaca_liquida: { suave: 0.2, acentuado: 1 },
+    ing_glutamato_monossodico: { suave: 0.1, acentuado: 0.5 }
   };
   if (byId[ingredient?.id]) return byId[ingredient.id];
   const byType = {
     basico_nao_carneo: { suave: 1.5, acentuado: 2 },
     condimento_especiaria: { suave: 0.3, acentuado: 1 }
   };
+  if (ingredient?.subtipo === 'aromatizantes') return { suave: 0.1, acentuado: 0.5 };
+  if (ingredient?.subtipo === 'realçadores de sabor') return { suave: 0.1, acentuado: 0.5 };
   return byType[ingredient?.tipo] || null;
+}
+
+function prepareFormulasForPeriodChange() {
+  db.formulacoes.forEach(formula => formula.bloqueada = false);
+  expandedIntensityItems.clear();
 }
 
 function isCureSaltId(id) {
@@ -5020,14 +5206,61 @@ function analysisHTML(a) {
   ${importantAlerts.length ? `<div class="alert-list">${importantAlerts.map(alert => `<div class="alert ${alert.type}">${escapeHTML(alert.text)}</div>`).join('')}</div>` : ''}`;
 }
 
+function latestSavedFormulaReport(formulaId, period = getActivePeriod()) {
+  const reports = normalizePracticeReports(period?.relatorios || []).filter(report => report.formulaId === formulaId);
+  return reports.sort((a, b) => b.sequencia - a.sequencia)[0] || null;
+}
+
+function currentServerReferenceTime() {
+  if (!syncMeta.serverTime) return Date.now();
+  const elapsed = syncMeta.serverObservedAtLocal ? Math.max(0, Date.now() - Number(syncMeta.serverObservedAtLocal)) : 0;
+  return Number(syncMeta.serverTime) + elapsed;
+}
+
+function saveFormulaReport(formulaId) {
+  if (!canEditFormula()) return;
+  const formula = findFormula(formulaId);
+  const period = getActivePeriod();
+  if (!formula || !period) return toast('Formulação ou período não encontrado.');
+  if (!formula.bloqueada) return toast('Trave a formulação antes de salvar no histórico.');
+  period.relatorios = normalizePracticeReports(period.relatorios || []);
+  const sequence = period.relatorios.reduce((max, report) => Math.max(max, Number(report.sequencia || 0)), 0) + 1;
+  const lessonIndex = (period.aulas || []).findIndex(lesson => (lesson.produtos || []).includes(formula.produtoId));
+  const lesson = lessonIndex >= 0 ? period.aulas[lessonIndex] : null;
+  const snapshot = clone(formula);
+  const savedAt = currentServerReferenceTime();
+  const report = {
+    id: uid('relatorio'),
+    sequencia: sequence,
+    formulaId: formula.id,
+    produtoId: formula.produtoId,
+    aulaId: lesson?.id || '',
+    aulaLabel: lesson ? lessonNumberLabel(lessonIndex) : 'Aula não vinculada',
+    aulaTema: lesson?.tema || '',
+    periodoId: period.id,
+    periodoNome: period.nome,
+    salvoEm: savedAt,
+    revisaoServidor: Number(authState.revision || 0),
+    formula: snapshot,
+    texto: ''
+  };
+  report.texto = buildReport(snapshot, { period, lesson, lessonIndex, sequence, savedAt });
+  period.relatorios.push(report);
+  saveDB();
+  refreshActiveFormulaCard(formulaId);
+  toast(`Formulação salva no histórico de ${period.nome}.`);
+}
+
 function showFormulaReport(formulaId = null) {
   const formula = formulaId ? findFormula(formulaId) : getFormulaFromModal(false);
   if (!formula) return toast('Formulação não encontrada.');
-  $('#relatorioTexto').value = buildReport(formula);
+  const report = latestSavedFormulaReport(formula.id);
+  if (!report) return toast('Relatório bloqueado: trave e salve a formulação neste período primeiro.');
+  $('#relatorioTexto').value = report.texto;
   openModal('modalRelatorio');
 }
 
-function buildReport(formula) {
+function buildReport(formula, context = {}) {
   const product = findProduct(formula.produtoId);
   const analysis = analyzeFormula(formula);
   const lines = [];
@@ -5035,6 +5268,9 @@ function buildReport(formula) {
   lines.push('');
   lines.push(`Produto: ${product?.nome || 'Não informado'}`);
   lines.push(`Formulação: ${cleanFormulaName(formula.nome)}`);
+  if (context.period) lines.push(`Período: ${context.period.nome}`);
+  if (context.lesson) lines.push(`${lessonNumberLabel(context.lessonIndex)}: ${context.lesson.tema || 'Aula prática'}`);
+  if (context.sequence) lines.push(`Registro no histórico: ${context.sequence}`);
   lines.push(`Base de cálculo: ${analysis.baseLabel}`);
   lines.push(`Peso base: ${fmt(formula.pesoReferencia)} g`);
   lines.push(`Massa final estimada: ${fmt(analysis.finalWeight)} g`);
@@ -5081,12 +5317,52 @@ function buildReport(formula) {
     lines.push(formula.observacoes);
   }
   lines.push('');
-  lines.push('Roteiro da prática:');
-  (product?.fluxo || []).forEach((step, idx) => lines.push(`${idx + 1}. ${step}`));
+  lines.push('Protocolo tecnológico de processamento:');
+  (product?.protocolo?.length ? product.protocolo : product?.fluxo || []).forEach((step, idx) => lines.push(`${idx + 1}. ${step}`));
   lines.push('');
   lines.push('Perguntas para discussão:');
   (product?.perguntas || []).forEach(q => lines.push(`- ${q}`));
   return lines.join('\n');
+}
+
+function openSavedReports() {
+  const select = $('#relatoriosPeriodoSelect');
+  if (!select) return;
+  const periods = getSchedulePeriods();
+  select.innerHTML = periods.map(period => `<option value="${escapeAttr(period.id)}" ${period.id === db.configs.periodoAtivoId ? 'selected' : ''}>${escapeHTML(period.nome)}${period.arquivado ? ' (arquivado)' : ''}</option>`).join('');
+  renderSavedReports();
+  openModal('modalRelatoriosPeriodo');
+}
+
+function renderSavedReports() {
+  const periodId = $('#relatoriosPeriodoSelect')?.value || db.configs.periodoAtivoId;
+  const period = getPeriodById(getSchedulePeriods(), periodId);
+  const root = $('#relatoriosPeriodoList');
+  if (!root || !period) return;
+  const reports = normalizePracticeReports(period.relatorios || []).sort((a, b) => b.sequencia - a.sequencia);
+  root.innerHTML = reports.length ? reports.map(report => {
+    const product = findProduct(report.produtoId);
+    const formulaName = cleanFormulaName(report.formula?.nome || findFormula(report.formulaId)?.nome || 'Formulação');
+    return `<button type="button" class="saved-report-card" data-open-saved-report="${escapeAttr(report.id)}" data-report-period="${escapeAttr(period.id)}">
+      <span class="saved-report-sequence">${String(report.sequencia).padStart(2, '0')}</span>
+      <span><strong>${escapeHTML(report.aulaLabel || 'Aula')} · ${escapeHTML(product?.nome || formulaName)}</strong><small>${escapeHTML(report.aulaTema || formulaName)} · ${escapeHTML(formatSavedReportDate(report.salvoEm))}</small></span>
+      <b>›</b>
+    </button>`;
+  }).join('') : emptyHTML('Nenhuma formulação foi salva neste período.');
+  root.querySelectorAll('[data-open-saved-report]').forEach(button => button.addEventListener('click', () => openSavedReport(button.dataset.reportPeriod, button.dataset.openSavedReport)));
+}
+
+function openSavedReport(periodId, reportId) {
+  const period = getPeriodById(getSchedulePeriods(), periodId);
+  const report = normalizePracticeReports(period?.relatorios || []).find(item => item.id === reportId);
+  if (!report) return toast('Relatório não encontrado.');
+  $('#relatorioTexto').value = report.texto;
+  openModal('modalRelatorio');
+}
+
+function formatSavedReportDate(value) {
+  if (!Number(value)) return 'registro salvo';
+  return new Date(Number(value)).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
 }
 
 async function copyReport() {
@@ -5167,7 +5443,7 @@ function resetDemo() {
 
 function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('service-worker.js?v=60').then(registration => registration.update()).catch(err => console.warn('Service worker não registrado', err));
+    navigator.serviceWorker.register('service-worker.js?v=61').then(registration => registration.update()).catch(err => console.warn('Service worker não registrado', err));
   }
 }
 

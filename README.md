@@ -10,10 +10,12 @@ App didático em formato PWA para a disciplina **Processamento de Alimentos de O
 - Organiza os insumos por categoria principal e subdivisão.
 - Inclui cronograma de aulas no menu principal.
 - Permite criar e arquivar períodos, definir datas e vincular produtos e teoria a cada aula.
+- Salva formulações travadas como relatórios imutáveis no histórico do período e da aula correspondente.
 - Exibe as aulas teóricas por encontro e aceita conteúdo em texto ou imagens de slides.
 - Monta formulações em porcentagem e calcula automaticamente os gramas para qualquer peso de lote.
 - Diferencia percentuais sobre massa cárnea/carne base e percentuais sobre 100% do produto final.
 - Permite abrir um produto como um roteiro em slides, com sumário interno e edição das formulações no painel.
+- Exibe um protocolo tecnológico de processamento entre a formulação e o painel de análise.
 - Traz conteúdo teórico conectado ao cronograma, com links internos para roteiros e insumos citados.
 - Monta blends com vários cortes ou matérias-primas, peso individual e estimativa de gordura baseada em referências de composição.
 - Estima gordura, proteína, carboidratos, proteína agregada e custo do lote.
@@ -31,6 +33,7 @@ A base inicial inclui:
 - Hambúrguer bovino com formulação base sobre massa cárnea e referência ao RTIQ da Portaria SDA/MAPA nº 724/2022.
 - Kafta bovina e almôndega bovina como roteiros demonstrativos de produtos reestruturados.
 - Linguiça frescal suína com formulação base, foto demonstrativa, roteiro de aula, limites de gordura/proteína e referência ao RTIQ da IN SDA/MAPA nº 4/2000.
+- Hambúrguer de Frango e Linguiça de Frango com formulações, protocolos e controles específicos para matéria-prima de aves.
 - Patê cárneo e salsicha como roteiros demonstrativos de produtos emulsionados.
 - Referências gerais para RIISPOA e rotulagem nutricional Anvisa.
 

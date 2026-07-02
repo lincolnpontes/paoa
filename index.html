@@ -9,7 +9,7 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon.png" />
   <link rel="apple-touch-icon" href="icon.png" />
-  <link rel="stylesheet" href="style.css?v=60" />
+  <link rel="stylesheet" href="style.css?v=61" />
   <title>Processamento de Alimentos de Origem Animal</title>
 </head>
 <body>
@@ -151,6 +151,7 @@
       </div>
 
       <div class="form-group"><label>Fluxograma de processamento, uma etapa por linha</label><textarea id="produtoFluxo" rows="5"></textarea></div>
+      <div class="form-group"><label>Protocolo tecnológico de processamento, uma orientação por linha</label><textarea id="produtoProtocolo" rows="6"></textarea></div>
       <div class="form-group"><label>Pontos de controle, um por linha</label><textarea id="produtoPontos" rows="5"></textarea></div>
       <div class="form-group"><label>Equipamentos e utensílios, um por linha</label><textarea id="produtoEquipamentos" rows="4"></textarea></div>
       <div class="form-group"><label>Perguntas para discussão, uma por linha</label><textarea id="produtoPerguntas" rows="4"></textarea></div>
@@ -283,7 +284,7 @@
         <button type="button" class="config-menu-card" data-open-config-modal="modalConfigProdutos">Gerenciar produtos</button>
         <button type="button" class="config-menu-card" data-open-config-modal="modalConfigInsumos">Gerenciar insumos</button>
         <button type="button" class="config-menu-card" data-open-config-modal="modalConfigConteudos">Gerenciar conteúdos</button>
-        <button type="button" class="config-menu-card" data-open-config-modal="modalConfigCronograma">Gerenciar aulas</button>
+        <button type="button" class="config-menu-card" data-open-config-modal="modalConfigCronograma">Período e Aulas</button>
         <button type="button" class="config-menu-card" data-open-config-modal="modalConfigRegras">Regras do laboratório</button>
         <button type="button" class="config-menu-card" data-open-config-modal="modalConfigAcessos">Perfis e acessos</button>
         <button type="button" class="config-menu-card" data-open-config-modal="modalConfigAvancadas">Configurações avançadas</button>
@@ -319,7 +320,7 @@
   <div class="modal-overlay" id="modalConfigCronograma">
     <div class="modal large-modal">
       <button type="button" class="modal-close" data-close="modalConfigCronograma" aria-label="Fechar">×</button>
-      <div class="modal-title">Gerenciar aulas</div>
+      <div class="modal-title">Período e Aulas</div>
         <div class="period-panel">
           <div class="form-grid two-cols">
             <div class="form-group">
@@ -338,6 +339,7 @@
           </div>
           <div class="period-actions">
             <button type="button" class="secondary-btn compact" id="btnArquivarPeriodo">Arquivar período</button>
+            <button type="button" class="secondary-btn compact" id="btnVerRelatorios">Ver relatórios</button>
             <button type="button" class="primary-btn compact" id="btnAdicionarAula">Adicionar aula</button>
           </div>
         </div>
@@ -458,6 +460,18 @@
     </div>
   </div>
 
+  <div class="modal-overlay" id="modalRelatoriosPeriodo">
+    <div class="modal large-modal">
+      <button type="button" class="modal-close" data-close="modalRelatoriosPeriodo" aria-label="Fechar">×</button>
+      <div class="modal-title">Relatórios das aulas</div>
+      <div class="form-group reports-period-filter">
+        <label>Período</label>
+        <select id="relatoriosPeriodoSelect"></select>
+      </div>
+      <div id="relatoriosPeriodoList" class="saved-report-list"></div>
+    </div>
+  </div>
+
   <div class="modal-overlay auth-overlay" id="modalLogin">
     <div class="modal auth-modal">
       <div class="auth-brand">
@@ -574,7 +588,7 @@
   </div>
 
   <div id="toast" class="toast"></div>
-  <script src="sync-config.js?v=60"></script>
-  <script src="app.js?v=60"></script>
+  <script src="sync-config.js?v=61"></script>
+  <script src="app.js?v=61"></script>
 </body>
 </html>
