@@ -9,7 +9,7 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="icon.png" />
   <link rel="apple-touch-icon" href="icon.png" />
-  <link rel="stylesheet" href="style.css?v=61" />
+  <link rel="stylesheet" href="style.css?v=62" />
   <title>Processamento de Alimentos de Origem Animal</title>
 </head>
 <body>
@@ -28,7 +28,7 @@
         <span class="session-badge" id="sessionBadge" hidden></span>
         <button class="icon-btn" id="btnInstall" title="Instalar app" hidden>⇩</button>
         <button class="icon-btn" id="btnConfig" title="Configurações">⚙️</button>
-        <button class="icon-btn" id="btnLogout" title="Sair" hidden>↪</button>
+        <button class="icon-btn" id="btnLogout" title="Sair do perfil" aria-label="Sair do perfil" hidden>➜]</button>
       </div>
     </header>
 
@@ -222,7 +222,7 @@
   <div class="modal-overlay" id="modalFormula">
     <div class="modal large-modal">
       <button type="button" class="modal-close" data-close="modalFormula" aria-label="Fechar">×</button>
-      <div class="modal-title">Formulação</div>
+      <div class="modal-title" id="formulaModalTitle">Formulação</div>
       <input type="hidden" id="formulaId" />
       <div class="form-grid two-cols">
         <div class="form-group"><label>Produto</label><select id="formulaProduto"></select></div>
@@ -242,6 +242,13 @@
         <div class="form-group"><label>Rendimento esperado (%)</label><input id="formulaRendimento" type="number" step="0.01" placeholder="Opcional" /></div>
         <div class="formula-help">Ex.: alho em pó a 1,5% sobre 1.000 g de carne = 15 g de alho.</div>
       </div>
+      <section class="base-meat-editor">
+        <div class="base-meat-editor-head">
+          <div><span>Matéria-prima cárnea base</span><strong>Definição da carne ou do blend</strong></div>
+          <label class="base-blend-toggle"><input id="formulaUsarBlend" type="checkbox" /> Utilizar blend</label>
+        </div>
+        <div id="formulaMeatBaseRows" class="base-meat-rows"></div>
+      </section>
       <div class="formula-table-wrap">
         <table class="formula-table">
           <thead><tr><th>Insumo</th><th>%</th><th>g</th><th></th></tr></thead>
@@ -284,9 +291,9 @@
         <button type="button" class="config-menu-card" data-open-config-modal="modalConfigProdutos">Gerenciar produtos</button>
         <button type="button" class="config-menu-card" data-open-config-modal="modalConfigInsumos">Gerenciar insumos</button>
         <button type="button" class="config-menu-card" data-open-config-modal="modalConfigConteudos">Gerenciar conteúdos</button>
+        <button type="button" class="config-menu-card config-menu-card-highlight" data-open-config-modal="modalConfigRegras">Regras do laboratório</button>
         <button type="button" class="config-menu-card" data-open-config-modal="modalConfigCronograma">Período e Aulas</button>
-        <button type="button" class="config-menu-card" data-open-config-modal="modalConfigRegras">Regras do laboratório</button>
-        <button type="button" class="config-menu-card" data-open-config-modal="modalConfigAcessos">Perfis e acessos</button>
+        <button type="button" class="config-menu-card config-menu-card-highlight" data-open-config-modal="modalConfigAcessos">Perfis e acessos</button>
         <button type="button" class="config-menu-card" data-open-config-modal="modalConfigAvancadas">Configurações avançadas</button>
       </div>
     </div>
@@ -588,7 +595,7 @@
   </div>
 
   <div id="toast" class="toast"></div>
-  <script src="sync-config.js?v=61"></script>
-  <script src="app.js?v=61"></script>
+  <script src="sync-config.js?v=62"></script>
+  <script src="app.js?v=62"></script>
 </body>
 </html>

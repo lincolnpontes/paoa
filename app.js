@@ -1,7 +1,7 @@
 'use strict';
 
 const STORAGE_KEY = 'paoa_lab_v1';
-const APP_VERSION = '2.4.0';
+const APP_VERSION = '2.5.0';
 const SYNC_URL_KEY = 'paoa_sync_url_v1';
 const LAST_LOGIN_KEY = 'paoa_last_login_v1';
 const SESSION_TOKEN_KEY = 'paoa_session_token_v1';
@@ -141,7 +141,8 @@ const DEFAULT_RULES = [
 
 const IMAGE_MIGRATIONS = {
   'assets/hamburguer-bovino.png': 'assets/hamburguer-bovino.jpg',
-  'assets/linguica-frescal.png': 'assets/linguica-frescal.jpg'
+  'assets/linguica-frescal.png': 'assets/linguica-frescal.jpg',
+  'assets/kafta-bovina.jpg': 'assets/kafta-bovina.png'
 };
 
 const PRODUCT_CATEGORIES = [
@@ -333,7 +334,7 @@ const DEFAULT_DB = {
         proibeProteinaNaoCarnea: false,
         mostrarValidacao: true
       },
-      fotos: ['assets/kafta-bovina.jpg'],
+      fotos: ['assets/kafta-bovina.png'],
       fluxo: [
         'Seleção da carne e gordura sob refrigeração',
         'Moagem da matéria-prima na granulometria definida',
@@ -784,7 +785,7 @@ const DEFAULT_DB = {
       descricao: 'Produto cárneo reestruturado elaborado com carne de frango moída, moldado em porções padronizadas e destinado à cocção completa.',
       objetivo: 'Avaliar a influência da proporção entre peito e sobrecoxa, do sal, da água gelada e da mistura sobre liga, suculência, rendimento e estabilidade do hambúrguer de frango.',
       parametros: { gorduraMax: 25, proteinaMin: 15, carbMax: 3, proteinaNaoCarneaMax: 4, proibeProteinaNaoCarnea: false, mostrarValidacao: true },
-      fotos: [],
+      fotos: ['assets/hamburguer-frango.png'],
       fluxo: [
         'Receber peito e sobrecoxa de frango refrigerados, conferir integridade e registrar a temperatura',
         'Realizar toalete, padronizar cubos e manter a matéria-prima refrigerada até a moagem',
@@ -822,7 +823,7 @@ const DEFAULT_DB = {
       descricao: 'Embutido fresco elaborado com carne de frango moída, condimentada e embutida, mantido sob refrigeração e destinado à cocção completa.',
       objetivo: 'Relacionar proporção de cortes, granulometria, temperatura, mistura e embutimento com coesão, suculência, calibre, rendimento e segurança da linguiça de frango.',
       parametros: { gorduraMax: 30, proteinaMin: 12, carbMax: '', proteinaNaoCarneaMax: 2.5, proibeProteinaNaoCarnea: false, mostrarValidacao: true },
-      fotos: [],
+      fotos: ['assets/linguica-frango.png'],
       fluxo: [
         'Receber peito e sobrecoxa de frango refrigerados, conferir integridade e registrar a temperatura',
         'Executar toalete, cortar em cubos compatíveis com o moedor e manter sob refrigeração',
@@ -1294,6 +1295,8 @@ let tempProductPhotos = [];
 let tempIngredientPhoto = '';
 let tempTheoryImages = [];
 let formulaDraftItems = [];
+let formulaDraftMeat = { usarBlend: false, materiaPrimaUnica: null, blendComponentes: [] };
+let formulaModalFromProductManager = false;
 let activeProductSlideId = 'visao';
 let activeProductReturnPage = 'Produtos';
 let activeTheoryLessonIndex = 0;
@@ -1402,6 +1405,15 @@ function setupEvents() {
     renderFormulaItems();
   });
   $('#formulaBaseCalculo')?.addEventListener('change', renderFormulaItems);
+  $('#formulaUsarBlend')?.addEventListener('change', () => {
+    formulaDraftMeat.usarBlend = $('#formulaUsarBlend').checked;
+    if (formulaDraftMeat.usarBlend && formulaDraftMeat.blendComponentes.length < 2) {
+      const first = clone(formulaDraftMeat.materiaPrimaUnica || defaultModalMeatComponent());
+      formulaDraftMeat.blendComponentes = [first, { ...defaultModalMeatComponent(), id: uid('blend'), gramas: 0 }];
+    }
+    renderFormulaMeatBaseEditor();
+    renderFormulaSummary();
+  });
   $('#btnGerarRelatorio')?.addEventListener('click', showFormulaReport);
   $('#btnCopiarRelatorio')?.addEventListener('click', copyReport);
   $('#btnCopiarRoteiro')?.addEventListener('click', copyLesson);
@@ -2505,18 +2517,45 @@ function renderConfigProdutos() {
   const produtos = db.produtos.filter(p => [p.nome, p.categoria, p.especie, p.descricao].join(' ').toLowerCase().includes(term));
   root.innerHTML = produtos.map(productConfigHTML).join('') || emptyHTML('Nenhum produto encontrado.');
   root.querySelectorAll('[data-config-edit-product]').forEach(btn => btn.addEventListener('click', () => openProductModal(btn.dataset.configEditProduct)));
+  root.querySelectorAll('[data-open-base-formula]').forEach(btn => btn.addEventListener('click', () => openBaseFormulaModal(btn.dataset.openBaseFormula)));
+  root.querySelectorAll('[data-move-product]').forEach(btn => btn.addEventListener('click', () => moveProduct(btn.dataset.moveProduct, Number(btn.dataset.direction))));
 }
 
 function productConfigHTML(p) {
+  const index = db.produtos.findIndex(product => product.id === p.id);
+  const formulaButton = can('manage.formulas')
+    ? `<button type="button" class="secondary-btn compact product-base-formula-btn" data-open-base-formula="${escapeAttr(p.id)}">Formulação base</button>`
+    : '';
   return `
-    <button type="button" class="item-card" data-config-edit-product="${escapeAttr(p.id)}">
-      <div class="item-avatar">${photoOrInitial(p)}</div>
-      <div>
-        <div class="item-title">${escapeHTML(p.nome)}</div>
-        <div class="item-subtitle">${escapeHTML(productCategoryLabel(p))}</div>
-        ${p.oculto ? '<div class="item-meta"><span class="badge warn">Oculto para alunos</span></div>' : ''}
+    <div class="config-product-card">
+      <button type="button" class="item-card config-product-main" data-config-edit-product="${escapeAttr(p.id)}">
+        <div class="item-avatar">${photoOrInitial(p)}</div>
+        <div>
+          <div class="item-title">${escapeHTML(p.nome)}</div>
+          <div class="item-subtitle">${escapeHTML(productCategoryLabel(p))}</div>
+          ${p.oculto ? '<div class="item-meta"><span class="badge warn">Oculto para alunos</span></div>' : ''}
+        </div>
+      </button>
+      <div class="config-product-actions">
+        ${formulaButton}
+        <div class="product-order-actions" aria-label="Ordenar produto">
+          <button type="button" class="product-order-btn" data-move-product="${escapeAttr(p.id)}" data-direction="-1" title="Mover para cima" aria-label="Mover ${escapeAttr(p.nome)} para cima" ${index <= 0 ? 'disabled' : ''}>↑</button>
+          <button type="button" class="product-order-btn" data-move-product="${escapeAttr(p.id)}" data-direction="1" title="Mover para baixo" aria-label="Mover ${escapeAttr(p.nome)} para baixo" ${index >= db.produtos.length - 1 ? 'disabled' : ''}>↓</button>
+        </div>
       </div>
-    </button>`;
+    </div>`;
+}
+
+function moveProduct(productId, direction) {
+  if (!requirePermission('manage.products')) return;
+  const index = db.produtos.findIndex(product => product.id === productId);
+  const target = index + (direction < 0 ? -1 : 1);
+  if (index < 0 || target < 0 || target >= db.produtos.length) return;
+  [db.produtos[index], db.produtos[target]] = [db.produtos[target], db.produtos[index]];
+  saveDB();
+  renderConfigProdutos();
+  renderProdutos();
+  toast('Ordem dos produtos atualizada.');
 }
 
 function openProductWorkspace(id, returnPage = activePage) {
@@ -2678,15 +2717,18 @@ function productFormulaHTML(f) {
 
 function processingProtocolHTML(product) {
   const steps = product?.protocolo?.length ? product.protocolo : product?.fluxo || [];
-  return `<section class="processing-protocol">
-    <div class="processing-protocol-head">
-      <div><span>Procedimento operacional</span><h4>Protocolo tecnológico de processamento</h4></div>
-      <small>${escapeHTML(product?.nome || '')}</small>
+  return `<details class="processing-protocol">
+    <summary class="processing-protocol-toggle">
+      <span><small>Procedimento operacional</small><strong>Protocolo tecnológico de processamento</strong></span>
+      <b>Expandir</b>
+    </summary>
+    <div class="processing-protocol-content">
+      <div class="processing-protocol-product">${escapeHTML(product?.nome || '')}</div>
+      <div class="processing-protocol-alert"><strong>Antes de iniciar:</strong> conferir higienização, identificação do lote, temperatura das matérias-primas, equipamentos e formulação travada.</div>
+      <ol class="processing-protocol-steps">${steps.map(step => `<li>${escapeHTML(step)}</li>`).join('')}</ol>
+      <div class="processing-protocol-alert closing"><strong>Encerramento:</strong> registrar massas, temperaturas, rendimento, desvios observados e identificação das amostras.</div>
     </div>
-    <div class="processing-protocol-alert"><strong>Antes de iniciar:</strong> conferir higienização, identificação do lote, temperatura das matérias-primas, equipamentos e formulação travada.</div>
-    <ol class="processing-protocol-steps">${steps.map(step => `<li>${escapeHTML(step)}</li>`).join('')}</ol>
-    <div class="processing-protocol-alert closing"><strong>Encerramento:</strong> registrar massas, temperaturas, rendimento, desvios observados e identificação das amostras.</div>
-  </section>`;
+  </details>`;
 }
 
 function blendToggleButtonHTML(f, state = formulaBlendState(f)) {
@@ -2759,7 +2801,7 @@ function meatProfileOptionsHTML(cut, selected) {
     { value: 'com_gordura', label: 'Com gordura', available: cut.comGordura !== null && cut.comGordura !== undefined },
     { value: 'sem_gordura', label: 'Sem gordura', available: cut.semGordura !== null && cut.semGordura !== undefined }
   ];
-  return profiles.map(profile => `<option value="${profile.value}" ${profile.value === selected ? 'selected' : ''}>${profile.label}</option>`).join('');
+  return profiles.map(profile => `<option value="${profile.value}" ${profile.value === selected ? 'selected' : ''} ${profile.available ? '' : 'disabled'}>${profile.label}${profile.available ? '' : ' (sem referência)'}</option>`).join('');
 }
 
 function inlineFormulaEditorHTML(f) {
@@ -4445,23 +4487,140 @@ function deleteIngredientFromModal() {
   toast('Insumo excluído.');
 }
 
-function openFormulaModal(id = null, productId = null) {
+function baseFormulaForProduct(productId) {
+  const formulas = db.formulacoes.filter(formula => formula.produtoId === productId);
+  return formulas.find(formula => /_base$/i.test(formula.id))
+    || formulas.find(formula => /base/i.test(formula.nome || ''))
+    || formulas[0]
+    || null;
+}
+
+function openBaseFormulaModal(productId) {
+  if (!requirePermission('manage.formulas')) return;
+  const formula = baseFormulaForProduct(productId);
+  openFormulaModal(formula?.id || null, productId, { fromProductManager: true });
+}
+
+function defaultModalMeatComponent(product = null, grams = 1000) {
+  const text = [product?.nome, product?.especie].join(' ').toLowerCase();
+  const corteId = text.includes('frango') || text.includes('ave')
+    ? 'peito_frango'
+    : text.includes('suín') || text.includes('suin') || text.includes('porco')
+      ? 'pernil_suino'
+      : 'acem';
+  return {
+    id: uid('materia'),
+    corteId,
+    perfil: normalizeMeatProfile('', corteId),
+    gramas: Math.max(1, toNumber(grams) || 1000),
+    gorduraCustom: ''
+  };
+}
+
+function openFormulaModal(id = null, productId = null, options = {}) {
   if (!requirePermission('manage.formulas')) return;
   renderFormulaFilters();
   const f = id ? findFormula(id) : null;
   const selectedProduct = productId || activeProductId || db.produtos[0]?.id || '';
   const product = findProduct(f?.produtoId || selectedProduct);
+  formulaModalFromProductManager = options.fromProductManager === true;
   $('#formulaId').value = f?.id || '';
   $('#formulaProduto').value = f?.produtoId || selectedProduct;
-  $('#formulaNome').value = f?.nome || '';
+  $('#formulaProduto').disabled = formulaModalFromProductManager;
+  $('#formulaNome').value = f?.nome || (formulaModalFromProductManager ? product?.nome || 'Formulação base' : '');
   $('#formulaPeso').value = f?.pesoReferencia || 1000;
   $('#formulaBaseCalculo').value = f?.baseCalculo || defaultFormulaBase(product);
   $('#formulaRendimento').value = f?.rendimento ?? '';
   $('#formulaObs').value = f?.observacoes || '';
-  formulaDraftItems = clone(f?.itens || [{ insumoId: formulaEligibleIngredients()[0]?.id || '', percentual: 100 }]);
-  $('#btnExcluirFormula').style.display = f ? 'inline-flex' : 'none';
+  const defaultMeatIngredient = formulaEligibleIngredients().find(isMeatIngredient) || formulaEligibleIngredients()[0];
+  formulaDraftItems = clone(f?.itens || [{ insumoId: defaultMeatIngredient?.id || '', percentual: 100 }]);
+  const formulaForMeat = f || { produtoId: selectedProduct, pesoReferencia: toNumber($('#formulaPeso').value) || 1000, itens: formulaDraftItems };
+  const single = f?.materiaPrimaUnica
+    ? normalizeSingleMaterial(f.materiaPrimaUnica, formulaForMeat)
+    : defaultModalMeatComponent(product, formulaForMeat.pesoReferencia);
+  const components = f?.blendComponentes?.length
+    ? normalizeBlendComponents(f.blendComponentes, formulaForMeat)
+    : [clone(single), { ...defaultModalMeatComponent(product, 0), id: uid('blend'), gramas: 0 }];
+  formulaDraftMeat = {
+    usarBlend: f?.usarBlend === true,
+    materiaPrimaUnica: single,
+    blendComponentes: components
+  };
+  $('#formulaUsarBlend').checked = formulaDraftMeat.usarBlend;
+  $('#formulaModalTitle').textContent = formulaModalFromProductManager ? `Formulação base · ${product?.nome || ''}` : 'Formulação';
+  $('#btnExcluirFormula').style.display = f && !formulaModalFromProductManager ? 'inline-flex' : 'none';
+  renderFormulaMeatBaseEditor();
   renderFormulaItems();
   openModal('modalFormula');
+}
+
+function renderFormulaMeatBaseEditor() {
+  const root = $('#formulaMeatBaseRows');
+  if (!root) return;
+  const useBlend = formulaDraftMeat.usarBlend === true;
+  const product = findProduct($('#formulaProduto')?.value);
+  if (!formulaDraftMeat.materiaPrimaUnica) formulaDraftMeat.materiaPrimaUnica = defaultModalMeatComponent(product, $('#formulaPeso')?.value);
+  if (!formulaDraftMeat.blendComponentes.length) formulaDraftMeat.blendComponentes = [clone(formulaDraftMeat.materiaPrimaUnica)];
+  const rows = useBlend ? formulaDraftMeat.blendComponentes : [formulaDraftMeat.materiaPrimaUnica];
+  root.innerHTML = rows.map((component, index) => modalMeatComponentHTML(component, index, useBlend, rows.length)).join('')
+    + (useBlend ? '<button type="button" class="secondary-btn compact base-meat-add" data-add-base-meat>Adicionar matéria-prima ao blend</button>' : '');
+  root.querySelectorAll('[data-base-meat-cut]').forEach(control => control.addEventListener('change', () => {
+    const component = modalMeatComponent(control.dataset.baseMeatKind, Number(control.dataset.baseMeatIndex));
+    if (!component) return;
+    component.corteId = control.value;
+    component.perfil = normalizeMeatProfile('', control.value);
+    component.gorduraCustom = '';
+    renderFormulaMeatBaseEditor();
+    renderFormulaSummary();
+  }));
+  root.querySelectorAll('[data-base-meat-profile]').forEach(control => control.addEventListener('change', () => {
+    const component = modalMeatComponent(control.dataset.baseMeatKind, Number(control.dataset.baseMeatIndex));
+    if (!component) return;
+    component.perfil = normalizeMeatProfile(control.value, component.corteId);
+    component.gorduraCustom = '';
+    renderFormulaMeatBaseEditor();
+    renderFormulaSummary();
+  }));
+  root.querySelectorAll('[data-base-meat-grams]').forEach(control => control.addEventListener('input', () => {
+    const component = modalMeatComponent(control.dataset.baseMeatKind, Number(control.dataset.baseMeatIndex));
+    if (!component) return;
+    component.gramas = Math.max(useBlend ? 0 : 1, toNumber(control.value));
+    renderFormulaSummary();
+  }));
+  root.querySelectorAll('[data-base-meat-fat]').forEach(control => control.addEventListener('input', () => {
+    const component = modalMeatComponent(control.dataset.baseMeatKind, Number(control.dataset.baseMeatIndex));
+    if (!component) return;
+    component.gorduraCustom = String(control.value).trim() === '' ? '' : Math.max(0, Math.min(100, toNumber(control.value)));
+    renderFormulaSummary();
+  }));
+  root.querySelectorAll('[data-remove-base-meat]').forEach(button => button.addEventListener('click', () => {
+    if (formulaDraftMeat.blendComponentes.length <= 2) return toast('O blend deve manter ao menos duas matérias-primas.');
+    formulaDraftMeat.blendComponentes.splice(Number(button.dataset.removeBaseMeat), 1);
+    renderFormulaMeatBaseEditor();
+    renderFormulaSummary();
+  }));
+  root.querySelector('[data-add-base-meat]')?.addEventListener('click', () => {
+    formulaDraftMeat.blendComponentes.push({ ...defaultModalMeatComponent(product, 0), id: uid('blend'), gramas: 0 });
+    renderFormulaMeatBaseEditor();
+    renderFormulaSummary();
+  });
+}
+
+function modalMeatComponent(kind, index) {
+  return kind === 'blend' ? formulaDraftMeat.blendComponentes[index] : formulaDraftMeat.materiaPrimaUnica;
+}
+
+function modalMeatComponentHTML(component, index, useBlend, total) {
+  const cut = MEAT_CUTS.find(item => item.id === component.corteId) || MEAT_CUTS[MEAT_CUTS.length - 1];
+  const kind = useBlend ? 'blend' : 'single';
+  const fat = component.gorduraCustom === '' || component.gorduraCustom === undefined ? blendComponentFat(component) : component.gorduraCustom;
+  return `<div class="base-meat-row">
+    <div class="form-group"><label>${useBlend ? `Matéria-prima ${index + 1}` : 'Matéria-prima'}</label><select data-base-meat-cut data-base-meat-kind="${kind}" data-base-meat-index="${index}">${MEAT_CUTS.map(item => `<option value="${escapeAttr(item.id)}" ${item.id === component.corteId ? 'selected' : ''}>${escapeHTML(item.nome)}</option>`).join('')}</select></div>
+    <div class="form-group"><label>Perfil</label><select data-base-meat-profile data-base-meat-kind="${kind}" data-base-meat-index="${index}">${meatProfileOptionsHTML(cut, component.perfil)}</select></div>
+    <div class="form-group"><label>Peso (g)</label><input type="number" min="${useBlend ? '0' : '1'}" step="1" value="${escapeAttr(fmtInput(component.gramas))}" data-base-meat-grams data-base-meat-kind="${kind}" data-base-meat-index="${index}"></div>
+    <div class="form-group"><label>Gordura (%)</label><input type="number" min="0" max="100" step="0.1" value="${escapeAttr(fmtInput(fat))}" data-base-meat-fat data-base-meat-kind="${kind}" data-base-meat-index="${index}"></div>
+    ${useBlend ? `<button type="button" class="tiny-btn base-meat-remove" data-remove-base-meat="${index}" title="Remover do blend" ${total <= 2 ? 'disabled' : ''}>×</button>` : ''}
+  </div>`;
 }
 
 function renderFormulaItems() {
@@ -4522,9 +4681,9 @@ function getFormulaFromModal(requireName = true) {
       ...(isCureSaltId(item.insumoId) ? { cura: clone(item.cura || { teorPct: DEFAULT_CURE_CONCENTRATION_PCT, ppm: CURE_LIMIT_PPM }) } : {})
     })).filter(item => item.insumoId),
     observacoes: $('#formulaObs').value.trim(),
-    usarBlend: existing?.usarBlend === true,
-    blendComponentes: clone(existing?.blendComponentes || []),
-    materiaPrimaUnica: clone(existing?.materiaPrimaUnica || null),
+    usarBlend: formulaDraftMeat.usarBlend === true,
+    blendComponentes: clone(formulaDraftMeat.blendComponentes || []),
+    materiaPrimaUnica: clone(formulaDraftMeat.materiaPrimaUnica || null),
     bloqueada: Boolean(existing?.bloqueada)
   };
 }
@@ -4980,7 +5139,8 @@ function blendComponentHasReferenceData(component) {
 function normalizeMeatProfile(profile, cutId) {
   const cut = MEAT_CUTS.find(item => item.id === cutId) || MEAT_CUTS[MEAT_CUTS.length - 1];
   const migrated = profile === 'normal' ? 'com_gordura' : profile === 'magra' ? 'sem_gordura' : profile;
-  if (migrated === 'com_gordura' || migrated === 'sem_gordura') return migrated;
+  if (migrated === 'com_gordura' && cut.comGordura !== null && cut.comGordura !== undefined) return migrated;
+  if (migrated === 'sem_gordura' && cut.semGordura !== null && cut.semGordura !== undefined) return migrated;
   if (cut.semGordura !== null && cut.semGordura !== undefined) return 'sem_gordura';
   return 'com_gordura';
 }
@@ -5343,13 +5503,40 @@ function renderSavedReports() {
   root.innerHTML = reports.length ? reports.map(report => {
     const product = findProduct(report.produtoId);
     const formulaName = cleanFormulaName(report.formula?.nome || findFormula(report.formulaId)?.nome || 'Formulação');
-    return `<button type="button" class="saved-report-card" data-open-saved-report="${escapeAttr(report.id)}" data-report-period="${escapeAttr(period.id)}">
-      <span class="saved-report-sequence">${String(report.sequencia).padStart(2, '0')}</span>
-      <span><strong>${escapeHTML(report.aulaLabel || 'Aula')} · ${escapeHTML(product?.nome || formulaName)}</strong><small>${escapeHTML(report.aulaTema || formulaName)} · ${escapeHTML(formatSavedReportDate(report.salvoEm))}</small></span>
-      <b>›</b>
-    </button>`;
+    return `<div class="saved-report-card">
+      <button type="button" class="saved-report-open" data-open-saved-report="${escapeAttr(report.id)}" data-report-period="${escapeAttr(period.id)}">
+        <span class="saved-report-sequence">${String(report.sequencia).padStart(2, '0')}</span>
+        <span><strong>${escapeHTML(report.aulaLabel || 'Aula')} · ${escapeHTML(product?.nome || formulaName)}</strong><small>${escapeHTML(report.aulaTema || formulaName)} · ${escapeHTML(formatSavedReportDate(report.salvoEm))}</small></span>
+        <b>›</b>
+      </button>
+      <button type="button" class="saved-report-delete" data-delete-saved-report="${escapeAttr(report.id)}" data-report-period="${escapeAttr(period.id)}" title="Excluir relatório" aria-label="Excluir relatório ${String(report.sequencia).padStart(2, '0')}">🗑</button>
+    </div>`;
   }).join('') : emptyHTML('Nenhuma formulação foi salva neste período.');
   root.querySelectorAll('[data-open-saved-report]').forEach(button => button.addEventListener('click', () => openSavedReport(button.dataset.reportPeriod, button.dataset.openSavedReport)));
+  root.querySelectorAll('[data-delete-saved-report]').forEach(button => button.addEventListener('click', () => requestSavedReportDeletion(button.dataset.reportPeriod, button.dataset.deleteSavedReport)));
+}
+
+function requestSavedReportDeletion(periodId, reportId) {
+  if (!requirePermission('manage.schedule')) return;
+  const period = getPeriodById(getSchedulePeriods(), periodId);
+  const report = normalizePracticeReports(period?.relatorios || []).find(item => item.id === reportId);
+  if (!period || !report) return toast('Relatório não encontrado.');
+  openConfirmation({
+    title: 'Excluir relatório da aula',
+    message: `Para excluir definitivamente o relatório ${String(report.sequencia).padStart(2, '0')} de ${report.aulaLabel || 'aula'}, digite exatamente "desejo excluir".`,
+    confirmLabel: 'Excluir relatório',
+    requireText: 'desejo excluir',
+    action: () => deleteSavedReport(periodId, reportId)
+  });
+}
+
+function deleteSavedReport(periodId, reportId) {
+  const period = getPeriodById(getSchedulePeriods(), periodId);
+  if (!period) return;
+  period.relatorios = normalizePracticeReports(period.relatorios || []).filter(report => report.id !== reportId);
+  saveDB();
+  renderSavedReports();
+  toast('Relatório excluído.');
 }
 
 function openSavedReport(periodId, reportId) {
@@ -5443,7 +5630,7 @@ function resetDemo() {
 
 function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('service-worker.js?v=61').then(registration => registration.update()).catch(err => console.warn('Service worker não registrado', err));
+    navigator.serviceWorker.register('service-worker.js?v=62').then(registration => registration.update()).catch(err => console.warn('Service worker não registrado', err));
   }
 }
 

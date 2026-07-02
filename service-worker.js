@@ -1,9 +1,9 @@
-const CACHE_NAME = 'paoa-v61';
+const CACHE_NAME = 'paoa-v62';
 const ASSETS = [
   './',
   './index.html',
-  './style.css?v=61',
-  './app.js?v=61',
+  './style.css?v=62',
+  './app.js?v=62',
   './manifest.json',
   './icon.png',
   './assets/home-aulas.png',
@@ -14,7 +14,9 @@ const ASSETS = [
   './assets/instagram.png',
   './assets/hamburguer-bovino.jpg',
   './assets/linguica-frescal.jpg',
-  './assets/kafta-bovina.jpg',
+  './assets/kafta-bovina.png',
+  './assets/hamburguer-frango.png',
+  './assets/linguica-frango.png',
   './assets/almondega-bovina.jpg',
   './assets/pate-carneo.jpg',
   './assets/salsicha.jpg',
